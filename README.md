@@ -20,7 +20,7 @@ You may also see any lint errors in the console.
 
 ### `npm start-backend`
 
-Runs the backend flask app. Make sure you have installed the required
+Runs the backend flask app. Make sure you have installed the required dependencies (see below) for python.
 
 ### `npm test`
 
