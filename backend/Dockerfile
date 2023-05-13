@@ -7,6 +7,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src /app
+COPY ./config.yml /app/config.yml
 
 ENV PORT=8080
-CMD ["gunicorn", "-w", "4", "app:app"]
+CMD ["gunicorn", "-w", "1", "app:app"]

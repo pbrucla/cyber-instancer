@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 import os
-from typing import Any, IO
+from typing import Any, IO, Callable, TypeVar
 import yaml
+import jsonschema
 from sys import stderr
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
@@ -17,11 +18,13 @@ def try_open(files: list[str], mode: str) -> IO:
         f"Attempted to open files {', '.join(files)} and none existed"
     )
 
+
 def load_dict(stream: Any) -> dict:
     ret = yaml.load(stream, yaml.Loader)
     if not isinstance(ret, dict):
         raise ValueError("Top-level value must be a mapping")
     return ret
+
 
 @dataclass
 class ChallengeConfig:
@@ -31,60 +34,73 @@ class ChallengeConfig:
 
 @dataclass
 class Config:
-    challenge_dir: str = os.environ.get("INSTANCER_CHALLENGE_DIR", "./challenges") + "/"
-    defaults: dict[str, Any] = field(default_factory=dict)
-    challenges: dict[str, ChallengeConfig] = field(default_factory=dict)
+    secret_key: bytes = None
+    docker_registry: str = "docker.io"
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_password: str | None = None
 
 
 config = Config()
 
-user_config = load_dict(
-    try_open(
-        [
-            config.challenge_dir + "instancer.yaml",
-            config.challenge_dir + "instancer.yml",
-        ],
-        "r",
+
+def apply_dict(c: dict, out_key: str, *keys: str, func: Callable = None):
+    cur = c
+    for k in keys:
+        if k not in cur:
+            return
+        cur = cur[k]
+    if func is not None:
+        cur = func(cur)
+    setattr(config, out_key, cur)
+
+def apply_env(var: Any, out_key: str, func: Callable = None):
+    val = os.environ.get(var)
+    if val is None:
+        return
+    if func is not None:
+        val = func(val)
+    setattr(config, out_key, val)
+
+
+def apply_config(c: dict):
+    jsonschema.validate(
+        c,
+        {
+            "type": "object",
+            "properties": {
+                "secret_key": {"type": "string"},
+                "docker_registry": {"type": "string"},
+                "redis": {
+                    "type": "object",
+                    "properties": {
+                        "host": {"type": "string"},
+                        "port": {"type": "number"},
+                        "password": {"type": "string"},
+                    },
+                },
+            },
+        },
     )
-)
 
-if "defaults" in user_config:
-    config.defaults = user_config["defaults"]
+    apply_dict(c, "secret_key", "secret_key", func=lambda x: x.encode())
+    apply_dict(c, "docker_registry", "docker_registry")
+    apply_dict(c, "redis_host", "redis", "host")
+    apply_dict(c, "redis_port", "redis", "port")
+    apply_dict(c, "redis_password", "redis", "password")
 
-for td in os.scandir(config.challenge_dir):
-    if not td.is_dir():
-        continue
-    for d in os.scandir(td.path):
-        if not d.is_dir():
-            continue
-        try:
-            if d.name.startswith("-") or any(x not in VALID_ID_CHARS for x in d.name):
-                raise ValueError("Challenge id must be [a-z0-9][-a-z0-9]*")
-            if d.name in config.challenges:
-                raise ValueError("Challenge with same id already exists")
-            try:
-                challenge_config = load_dict(
-                    try_open(
-                        [
-                            os.path.join(d.path, "challenge.yaml"),
-                            os.path.join(d.path, "challenge.yml"),
-                        ],
-                        "r",
-                    )
-                )
-            except FileNotFoundError:
-                continue
-            
 
-            total_config = config.defaults | challenge_config
+try:
+    user_config = load_dict(try_open(["config.yml", "config.yaml"], "r"))
+    apply_config(user_config)
+except FileNotFoundError:
+    pass
 
-            if "deploy" not in total_config:
-                continue
+apply_env("INSTANCER_SECRET_KEY", "secret_key", func=lambda x: x.encode())
+apply_env("INSTANCER_DOCKER_REGISTRY", "docker_registry")
+apply_env("INSTANCER_REDIS_HOST", "redis_host")
+apply_env("INSTANCER_REDIS_PORT", "redis_port", func=int)
+apply_env("INSTANCER_REDIS_PASSWORD", "redis_password")
 
-            parsed_config = ChallengeConfig(id=d.name, build_path=os.path.join(d.path, total_config["deploy"]))
-            config.challenges[d.name] = parsed_config
-        except Exception:
-            print(f"Got exception when parsing challenge {d.name}:", file=stderr)
-            raise
-
-print(config)
+if config.secret_key is None:
+    raise ValueError("No secret key was supplied in configuration")

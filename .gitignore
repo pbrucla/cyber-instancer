@@ -1,3 +1,10 @@
+# Config
+backend/config.yml
+backend/kube-resources.yml
+
+# Python
+__pycache__/
+
 # Logs
 logs
 *.log

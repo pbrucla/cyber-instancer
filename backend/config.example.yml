@@ -1,0 +1,5 @@
+secret_key: abcd
+docker_registry: docker.io
+redis_host: localhost
+redis_port: 6379
+redis_password: abcd
