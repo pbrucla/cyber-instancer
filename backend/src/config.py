@@ -35,7 +35,6 @@ class ChallengeConfig:
 @dataclass
 class Config:
     secret_key: bytes = None
-    docker_registry: str = "docker.io"
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_password: str | None = None
@@ -70,7 +69,6 @@ def apply_config(c: dict):
             "type": "object",
             "properties": {
                 "secret_key": {"type": "string"},
-                "docker_registry": {"type": "string"},
                 "redis": {
                     "type": "object",
                     "properties": {
@@ -84,7 +82,6 @@ def apply_config(c: dict):
     )
 
     apply_dict(c, "secret_key", "secret_key", func=lambda x: x.encode())
-    apply_dict(c, "docker_registry", "docker_registry")
     apply_dict(c, "redis_host", "redis", "host")
     apply_dict(c, "redis_port", "redis", "port")
     apply_dict(c, "redis_password", "redis", "password")
@@ -97,7 +94,6 @@ except FileNotFoundError:
     pass
 
 apply_env("INSTANCER_SECRET_KEY", "secret_key", func=lambda x: x.encode())
-apply_env("INSTANCER_DOCKER_REGISTRY", "docker_registry")
 apply_env("INSTANCER_REDIS_HOST", "redis_host")
 apply_env("INSTANCER_REDIS_PORT", "redis_port", func=int)
 apply_env("INSTANCER_REDIS_PASSWORD", "redis_password")

@@ -1,6 +1,6 @@
 # Config
 backend/config.yml
-backend/kube-resources.yml
+kube-resources.yml
 
 # Python
 __pycache__/
