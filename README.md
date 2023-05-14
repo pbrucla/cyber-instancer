@@ -2,77 +2,50 @@
 Challenge Instancer Project for 35L. Please do not touch unless you are part of the PeanutButteR S23 35L group.
 
 
-# Getting Started with Create React App
+# Setup
+Please note: setup for this application is done in 3 stages: deploying a kubernetes cluster, setting up a docker container repository, and (finally) actually deploying this app into the kubernetes cluster.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Requirements:
+- A kubernetes cluster. For this project (and this setup tutorial), we will be using [k3s](https://k3s.io/) deployed on a linux box, so [the minimum k3s requirement](https://docs.k3s.io/installation/requirements) must be met:
+    - An x86_64 linux machine with preferably minimum 4GB ram
+        - Nothing other than the bare minimum in services (ssh) should be running. k3s requires a lot of ports, including 80, 443, 6443, and all ports 30000-32767
+        - All ports should be accessible from the internet
+        - Our guide assumes you are using ubuntu or a similar linux system, but should work on any standard linux distribution that k3s supports
+- A (sub)domain to point towards the application, including a wildcard subdomain for challenge urls
+- [docker](https://docs.docker.com/get-docker/), [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
-## Setup files
-- `backend/config.yml`: copy `config.example.yml` and fill with credentials to redis
-- `k3s.yaml`: Copy kubernetes authentication config into this file.
+## Config files
+- `backend/config.yml`: copy `config.example.yml` and fill with credentials to redis. If using docker-compose development enviornent, set
+```yaml
+redis:
+  host: redis-service
+```
+- `k3s.yaml`: If running this app outside of the kubernetes cluster, copy kubernetes authentication config into this file. For k3s, this file can be found at `/etc/rancher/k3s/k3s.yaml`, and modify `clusters[0].cluster.server` or similar to be the actual remote ip address and not `127.0.0.1`.
 
-## Available Development Commands
+## TODO: continue setup guide with full kube setup
 
-In the project directory, you can run:
-
-### `npm run dev`
+# Available Development Commands
+## Root Project directory
 
 Runs app in a development enviornment. Requires [Docker Compose](https://docs.docker.com/compose/install/) (and by extension docker) to be installed.
 - `docker-compose up --build -d` (same as `npm run dev`): (re)starts images, rebuilding react and running flask server on port 8080
 - `docker-compose down`: Stops flask server 
 
+## Inside Backend directory
+
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Builds the app for production to the `build` folder.
+It bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### `npm run dev`
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Same as running `docker-compose up --build -d` in project root: see above
 
-### `npm run eject`
+### `npm run lint`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Test linter against code to ensure code conformity.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### `npm run preview`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-
-# Setting up python/flask
-1. `cd backend`
-2. Create and enable a virtual env: [https://docs.python.org/3/tutorial/venv.html](https://docs.python.org/3/tutorial/venv.html)
-3. `pip install -r requirements.txt`
-4. Test run with `flask run`
+Builds just the react app and runs a preview. Does not startup any backend server and will probably be non-functional.
