@@ -6,6 +6,10 @@ Challenge Instancer Project for 35L. Please do not touch unless you are part of 
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Setup files
+- `backend/config.yml`: copy `config.example.yml` and fill with credentials to redis
+- `k3s.yaml`: Copy kubernetes authentication config into this file.
+
 ## Available Development Commands
 
 In the project directory, you can run:
