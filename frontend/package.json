@@ -19,7 +19,8 @@
         "build": "tsc && vite build",
         "lint": "tsc --noEmit && eslint . --max-warnings 0 && prettier --check .",
         "preview": "vite preview",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "prepare": "cd .. && husky install frontend/.husky"
     },
     "browserslist": {
         "production": [
