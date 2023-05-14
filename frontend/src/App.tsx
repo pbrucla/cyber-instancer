@@ -1,6 +1,7 @@
 import {useState} from "react";
-import axios from "axios";
+import axios, {AxiosError, AxiosResponse} from "axios";
 import "./App.css";
+import {Profile} from "./apiTypes";
 
 const App = () => {
     const [profileName, setProfileName] = useState<string | null>(null);
@@ -10,11 +11,11 @@ const App = () => {
             method: "GET",
             url: "/api/me",
         })
-            .then((response) => {
+            .then((response: AxiosResponse<Profile>) => {
                 const res = response.data;
                 setProfileName(res.name);
             })
-            .catch((error) => {
+            .catch((error: AxiosError) => {
                 if (error.response) {
                     console.log(error.response);
                     console.log(error.response.status);
