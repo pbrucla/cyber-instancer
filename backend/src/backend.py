@@ -18,7 +18,6 @@ def snake_to_camel(snake: str):
 
 
 def config_to_container(cont_name: str, cfg: dict):
-    kube = cfg["kube"]
     kwargs = {}
     kwargs["name"] = cont_name
     kwargs["image"] = cfg["image"]
@@ -34,13 +33,13 @@ def config_to_container(cont_name: str, cfg: dict):
         "working_dir",
     ]:
         cprop = snake_to_camel(prop)
-        if cprop in kube:
-            kwargs[prop] = kube[cprop]
-    if "environment" in kube and "env" not in kube:
-        kube["env"] = kube["environment"]
-    if "env" in kube:
+        if cprop in cfg:
+            kwargs[prop] = cfg[cprop]
+    if "environment" in cfg and "env" not in cfg:
+        cfg["env"] = cfg["environment"]
+    if "env" in cfg:
         kwargs["env"] = [
-            client.V1EnvVar(name=x["name"], value=x["value"]) for x in kube["env"]
+            client.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg["env"]
         ]
     for prop in [
         "env_from",
@@ -51,16 +50,20 @@ def config_to_container(cont_name: str, cfg: dict):
         "volume_devices",
         "volume_mounts",
     ]:
-        if snake_to_camel(prop) in kube:
+        if snake_to_camel(prop) in cfg:
             raise NotImplementedError(
                 f"{prop} container config currently not supported"
             )
-    if "ports" in kube:
-        kwargs["ports"] = [client.V1ContainerPort(**x) for x in kube["ports"]]
-    if "securityContext" in kube:
-        kwargs["security_context"] = client.V1SecurityContext(**kube["securityContext"])
-    if "resources" in kube:
-        kwargs["resources"] = client.V1ResourceRequirements(**kube["resources"])
+    if "kubePorts" in cfg:
+        kwargs["ports"] = [client.V1ContainerPort(**x) for x in cfg["kubePorts"]]
+    elif "ports" in cfg:
+        kwargs["ports"] = [
+            client.V1ContainerPort(container_port=x) for x in cfg["ports"]
+        ]
+    if "securityContext" in cfg:
+        kwargs["security_context"] = client.V1SecurityContext(**cfg["securityContext"])
+    if "resources" in cfg:
+        kwargs["resources"] = client.V1ResourceRequirements(**cfg["resources"])
     else:
         kwargs["resources"] = client.V1ResourceRequirements(
             limits={"cpu": "500m", "memory": "512Mi"},
@@ -114,6 +117,16 @@ class SharedChallenge(Challenge):
         self.id = id
         self.lifetime = 3600
 
+        self.containers = {
+            "app": {
+                "image": "docker.acmcyber.com/simple-redis-chall:latest",
+                "ports": [8080],
+            },
+            "redis": {"image": "redis:7-alpine", "ports": [6379]},
+        }
+        self.exposed_ports = {"redis": [6379]}
+        self.http_ports = {"app": [(8080, "testing.egg.gnk.sh")]}
+
     def start(self):
         namespace = f"cyber-instancer-{self.id}"
 
@@ -153,16 +166,25 @@ class SharedChallenge(Challenge):
                 dep = client.V1Deployment(
                     metadata=client.V1ObjectMeta(
                         name=depname,
-                        labels={"instancer.acmcyber.com/instance-id": self.id},
+                        labels={
+                            "instancer.acmcyber.com/instance-id": self.id,
+                            "instancer.acmcyber.com/container-name": depname,
+                        },
                     ),
                     spec=client.V1DeploymentSpec(
                         selector=client.V1LabelSelector(
-                            match_labels={"instancer.acmcyber.com/instance-id": self.id}
+                            match_labels={
+                                "instancer.acmcyber.com/instance-id": self.id,
+                                "instancer.acmcyber.com/container-name": depname,
+                            }
                         ),
                         replicas=1,
                         template=client.V1PodTemplateSpec(
                             metadata=client.V1ObjectMeta(
-                                labels={"instancer.acmcyber.com/instance-id": self.id},
+                                labels={
+                                    "instancer.acmcyber.com/instance-id": self.id,
+                                    "instancer.acmcyber.com/container-name": depname,
+                                },
                                 annotations={
                                     "instancer.acmcyber.com/chall-started": str(curtime)
                                 },
@@ -170,7 +192,7 @@ class SharedChallenge(Challenge):
                             spec=client.V1PodSpec(
                                 enable_service_links=False,
                                 automount_service_account_token=False,
-                                containers=[config_to_container(container)],
+                                containers=[config_to_container(depname, container)],
                             ),
                         ),
                     ),
@@ -185,10 +207,11 @@ class SharedChallenge(Challenge):
                     serv_spec = client.V1ServiceSpec(
                         selector={
                             "instancer.acmcyber.com/instance-id": self.id,
+                            "instancer.acmcyber.com/container-name": servname,
                         },
                         ports=[
                             client.V1ServicePort(port=port, target_port=port)
-                            for port in exposed_ports
+                            for port in exposed_ports + [x[0] for x in http_ports]
                         ],
                         type="NodePort",
                     )
@@ -196,6 +219,7 @@ class SharedChallenge(Challenge):
                     serv_spec = client.V1ServiceSpec(
                         selector={
                             "instancer.acmcyber.com/instance-id": self.id,
+                            "instancer.acmcyber.com/container-name": servname,
                         },
                         ports=[
                             client.V1ServicePort(port=port, target_port=port)
@@ -206,7 +230,10 @@ class SharedChallenge(Challenge):
                 serv = client.V1Service(
                     metadata=client.V1ObjectMeta(
                         name=servname,
-                        labels={"instancer.acmcyber.com/instance-id": self.id},
+                        labels={
+                            "instancer.acmcyber.com/instance-id": self.id,
+                            "instancer.acmcyber.com/container-name": servname,
+                        },
                     ),
                     spec=serv_spec,
                 )
@@ -219,6 +246,8 @@ class SharedChallenge(Challenge):
                         f"[*] Making ingress {ingname} under namespace {namespace}..."
                     )
                     ing = {
+                        "apiVersion": "traefik.containo.us/v1alpha1",
+                        "kind": "IngressRoute",
                         "metadata": {"name": ingname},
                         "spec": {
                             "entryPoints": ["web", "websecure"],
@@ -232,9 +261,10 @@ class SharedChallenge(Challenge):
                             ],
                         },
                     }
-                    crdapi.create_cluster_custom_object(
+                    crdapi.create_namespaced_custom_object(
                         "traefik.containo.us",
                         "v1alpha1",
+                        namespace,
                         "ingressroutes",
                         ing,
                     )
@@ -248,6 +278,9 @@ class SharedChallenge(Challenge):
             capi.delete_namespace(namespace)
         except ApiException as e:
             print(f"[*] Could not delete namespace {namespace}...")
+
+    def expiration(self):
+        raise NotImplementedError()
 
 
 class PerTeamChallenge(Challenge):

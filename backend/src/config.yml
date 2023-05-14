@@ -1,0 +1,4 @@
+secret_key: "hTo5pLvFTxfgRTbu278k9Q"
+redis:
+  host: 127.0.0.1
+in_cluster: false

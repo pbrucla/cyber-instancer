@@ -21,12 +21,12 @@ class Lock:
     "The value stored in the lock. Used to determine if a lock should be released."
 
     def lock(self):
-        if not rclient.set("lock:" + self.name, nx=True, ex=self.max_time):
+        if not rclient.set("lock:" + self.name, self.lock_value, nx=True, ex=self.max_time):
             raise LockException(f"Lock {self.name} already exists")
 
     def unlock(self):
         lock = "lock:" + self.name
-        if rclient.get(lock) == self.lock_value:
+        if rclient.get(lock) == self.lock_value.encode():
             rclient.delete(lock)
 
     def __enter__(self):
