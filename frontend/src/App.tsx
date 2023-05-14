@@ -27,9 +27,7 @@ const App = () => {
         <>
             <div className="App">
                 <header className="App-header">
-                    <p>
-                        now with vite B)
-                    </p>
+                    <p>now with vite B)</p>
 
                     <p>Test API request</p>
                     <button onClick={getData}>Click me</button>
