@@ -1,5 +1,6 @@
 secret_key: abcd
-docker_registry: docker.io
-redis_host: localhost
-redis_port: 6379
-redis_password: abcd
+redis:
+  host: localhost
+  port: 6379
+  password: abcd
+in_cluster: false

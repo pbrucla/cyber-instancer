@@ -4,6 +4,7 @@ from typing import Any, IO, Callable, TypeVar
 import yaml
 import jsonschema
 from sys import stderr
+import redis
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 
@@ -26,6 +27,14 @@ def load_dict(stream: Any) -> dict:
     return ret
 
 
+def parse_bool(s: str):
+    if s.lower() in ["y", "yes", "t", "true", "1"]:
+        return True
+    elif s.lower() in ["n", "no", "f", "false", "0", ""]:
+        return False
+    raise ValueError(f"Could not parse boolean {s}")
+
+
 @dataclass
 class ChallengeConfig:
     id: str
@@ -35,13 +44,14 @@ class ChallengeConfig:
 @dataclass
 class Config:
     secret_key: bytes = None
+    in_cluster: bool = False
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_password: str | None = None
 
 
 config = Config()
-
+"Server configuration"
 
 def apply_dict(c: dict, out_key: str, *keys: str, func: Callable = None):
     cur = c
@@ -69,6 +79,7 @@ def apply_config(c: dict):
             "type": "object",
             "properties": {
                 "secret_key": {"type": "string"},
+                "in_cluster": {"type": "boolean"},
                 "redis": {
                     "type": "object",
                     "properties": {
@@ -82,6 +93,7 @@ def apply_config(c: dict):
     )
 
     apply_dict(c, "secret_key", "secret_key", func=lambda x: x.encode())
+    apply_dict(c, "in_cluster", "in_cluster")
     apply_dict(c, "redis_host", "redis", "host")
     apply_dict(c, "redis_port", "redis", "port")
     apply_dict(c, "redis_password", "redis", "password")
@@ -97,6 +109,10 @@ apply_env("INSTANCER_SECRET_KEY", "secret_key", func=lambda x: x.encode())
 apply_env("INSTANCER_REDIS_HOST", "redis_host")
 apply_env("INSTANCER_REDIS_PORT", "redis_port", func=int)
 apply_env("INSTANCER_REDIS_PASSWORD", "redis_password")
+apply_env("INSTANCER_IN_CLUSTER", "in_cluster", func=parse_bool)
 
 if config.secret_key is None:
     raise ValueError("No secret key was supplied in configuration")
+
+rclient = redis.Redis(host=config.redis_host, port=config.redis_port, password=config.redis_password)
+"Redis client"
