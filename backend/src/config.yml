@@ -1,4 +1,0 @@
-secret_key: "W8yw4wtw5LlT7cqCQSB0lA"
-redis:
-  host: 127.0.0.1
-in_cluster: false
