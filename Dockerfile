@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./backend/src /app
 COPY ./backend/config.yml /app/config.yml
 
-COPY --from=build-frontend /app/build /app/static/
+COPY --from=build-frontend /app/dist /app/static/
 
 ENV PORT=8080
 CMD ["gunicorn", "-w", "1", "app:app"]

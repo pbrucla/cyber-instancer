@@ -1,5 +1,5 @@
-function Challs() {
+const Challs = () => {
     return <p>Hello World</p>;
-}
+};
 
 export default Challs;

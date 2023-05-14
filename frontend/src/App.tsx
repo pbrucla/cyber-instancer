@@ -2,9 +2,8 @@ import {useState} from "react";
 import axios from "axios";
 import "./App.css";
 
-function App() {
-    // new line start
-    const [profileData, setProfileData] = useState(null);
+const App = () => {
+    const [profileName, setProfileName] = useState<string | null>(null);
 
     function getData() {
         axios({
@@ -13,9 +12,7 @@ function App() {
         })
             .then((response) => {
                 const res = response.data;
-                setProfileData({
-                    profile_name: res.name,
-                });
+                setProfileName(res.name);
             })
             .catch((error) => {
                 if (error.response) {
@@ -25,29 +22,26 @@ function App() {
                 }
             });
     }
-    //end of new line
 
     return (
         <>
             <div className="App">
                 <header className="App-header">
                     <p>
-                        Edit <code>src/App.js</code> and save to reload.
+                        now with vite B)
                     </p>
 
-                    {/* new line start*/}
                     <p>Test API request</p>
                     <button onClick={getData}>Click me</button>
-                    {profileData && (
+                    {profileName && (
                         <div>
-                            <p>Name: {profileData.profile_name}</p>
+                            <p>Name: {profileName}</p>
                         </div>
                     )}
-                    {/* end of new line */}
                 </header>
             </div>
         </>
     );
-}
+};
 
 export default App;
