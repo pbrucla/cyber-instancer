@@ -15,6 +15,7 @@
     "web-vitals": "^3.3.1"
   },
   "scripts": {
+    "dev": "docker-compose up --build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

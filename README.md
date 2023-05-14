@@ -6,26 +6,15 @@ Challenge Instancer Project for 35L. Please do not touch unless you are part of 
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+## Available Development Commands
 
 In the project directory, you can run:
 
-### `npm start`
+### `npm run dev`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm start-backend`
-
-Runs the backend flask app. Make sure you have installed the required dependencies (see below) for python.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Runs app in a development enviornment. Requires [Docker Compose](https://docs.docker.com/compose/install/) (and by extension docker) to be installed.
+- `docker-compose up --build -d` (same as `npm run dev`): (re)starts images, rebuilding react and running flask server on port 8080
+- `docker-compose down`: Stops flask server 
 
 ### `npm run build`
 
