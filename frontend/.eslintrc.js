@@ -17,4 +17,7 @@ module.exports = {
     },
     reportUnusedDisableDirectives: true,
     root: true,
+    rules: {
+        "@typescript-eslint/no-non-null-assertion": "off",
+    },
 };
