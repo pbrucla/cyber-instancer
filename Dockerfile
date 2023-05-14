@@ -29,4 +29,4 @@ COPY ./backend/config.yml /app/config.yml
 COPY --from=build-frontend /app/dist /app/static/
 
 ENV PORT=8080
-CMD ["gunicorn", "-w", "1", "app:app"]
+CMD ["gunicorn", "-w", "4", "app:app"]

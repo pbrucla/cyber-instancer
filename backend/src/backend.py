@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from kubernetes import client, config as kconfig
 from kubernetes.client.exceptions import ApiException
 from config import config, rclient
+from lock import Lock, LockException
 from time import time
 from typing import Any
 
@@ -16,8 +17,7 @@ def snake_to_camel(snake: str):
     return "".join(x.capitalize() for x in snake.split("_"))
 
 
-def config_to_container(cfg: dict):
-    cont_name = cfg["name"]
+def config_to_container(cont_name: str, cfg: dict):
     kube = cfg["kube"]
     kwargs = {}
     kwargs["name"] = cont_name
@@ -36,6 +36,8 @@ def config_to_container(cfg: dict):
         cprop = snake_to_camel(prop)
         if cprop in kube:
             kwargs[prop] = kube[cprop]
+    if "environment" in kube and "env" not in kube:
+        kube["env"] = kube["environment"]
     if "env" in kube:
         kwargs["env"] = [
             client.V1EnvVar(name=x["name"], value=x["value"]) for x in kube["env"]
@@ -49,7 +51,7 @@ def config_to_container(cfg: dict):
         "volume_devices",
         "volume_mounts",
     ]:
-        if prop in kube:
+        if snake_to_camel(prop) in kube:
             raise NotImplementedError(
                 f"{prop} container config currently not supported"
             )
@@ -74,12 +76,12 @@ class Challenge(ABC):
     "Challenge ID"
     lifetime: int
     "Challenge lifetime, in seconds"
-    containers: list[dict]
-    "List of challenge container configs."
-    exposed_ports: list[int]
-    "List of container ports to expose"
-    http_ports: list[int]
-    "List of ports to expose to an HTTP proxy"
+    containers: dict[str, dict]
+    "Mapping from container name to container config."
+    exposed_ports: dict[str, list[int]]
+    "Mapping from container name to list of container ports to expose"
+    http_ports: dict[str, list[(int, str)]]
+    "Mapping from container name to list of port, subdomain pairs to expose to an HTTP proxy"
 
     @staticmethod
     def fetch(challenge_id: str, team_id: str) -> Challenge:
@@ -93,7 +95,7 @@ class Challenge(ABC):
 
     @abstractmethod
     def start(self):
-        """Starts a challenge, or restarts it if it was already running."""
+        """Starts a challenge, or renews it if it was already running."""
         pass
 
     @abstractmethod
@@ -114,178 +116,128 @@ class SharedChallenge(Challenge):
 
     def start(self):
         namespace = f"cyber-instancer-{self.id}"
-        depname = f"cyber-instancer-{self.id}-dep"
-        servname = f"cyber-instancer-{self.id}-svc"
-        ingname = f"cyber-instancer-{self.id}-ing"
 
         api = client.AppsV1Api()
         capi = client.CoreV1Api()
-        napi = client.NetworkingV1Api()
+        crdapi = client.CustomObjectsApi()
 
         curtime = int(time())
         expiration = curtime + self.lifetime
 
-        print(f"[*] Making namespace {namespace}...")
-        try:
-            capi.read_namespace(namespace)
-        except ApiException as e:
-            if e.status != 404:
-                raise e
-            print(f"[*] Namespace doesn't exist, creating for first time...")
-            capi.create_namespace(
-                client.V1Namespace(
-                    metadata=client.V1ObjectMeta(
-                        name=namespace,
-                        annotations={
-                            "instancer.acmcyber.com/chall-expires": str(expiration)
-                        },
+        with Lock(namespace):
+            try:
+                curns = capi.read_namespace(namespace)
+                print(f"[*] Renewing namespace {namespace}...")
+                curns.metadata.annotations[
+                    "instancer.acmcyber.com/chall-expires"
+                ] = str(expiration)
+                capi.replace_namespace(namespace, curns)
+                return
+            except ApiException as e:
+                if e.status != 404:
+                    raise e
+                print(f"[*] Making namespace {namespace}...")
+                capi.create_namespace(
+                    client.V1Namespace(
+                        metadata=client.V1ObjectMeta(
+                            name=namespace,
+                            annotations={
+                                "instancer.acmcyber.com/chall-expires": str(expiration)
+                            },
+                        )
                     )
                 )
-            )
-        print(f"[*] Making deployment {depname} under namespace {namespace}...")
-        dep = client.V1Deployment(
-            metadata=client.V1ObjectMeta(
-                name=depname, labels={"instancer.acmcyber.com/instance-id": self.id}
-            ),
-            spec=client.V1DeploymentSpec(
-                selector=client.V1LabelSelector(
-                    match_labels={"instancer.acmcyber.com/instance-id": self.id}
-                ),
-                replicas=1,
-                template=client.V1PodTemplateSpec(
+
+            for depname, container in self.containers.items():
+                print(f"[*] Making deployment {depname} under namespace {namespace}...")
+                dep = client.V1Deployment(
                     metadata=client.V1ObjectMeta(
+                        name=depname,
                         labels={"instancer.acmcyber.com/instance-id": self.id},
-                        annotations={
-                            "instancer.acmcyber.com/chall-started": str(curtime)
-                        },
                     ),
-                    spec=client.V1PodSpec(
-                        enable_service_links=False,
-                        automount_service_account_token=False,
-                        containers=[config_to_container(x) for x in self.containers],
+                    spec=client.V1DeploymentSpec(
+                        selector=client.V1LabelSelector(
+                            match_labels={"instancer.acmcyber.com/instance-id": self.id}
+                        ),
+                        replicas=1,
+                        template=client.V1PodTemplateSpec(
+                            metadata=client.V1ObjectMeta(
+                                labels={"instancer.acmcyber.com/instance-id": self.id},
+                                annotations={
+                                    "instancer.acmcyber.com/chall-started": str(curtime)
+                                },
+                            ),
+                            spec=client.V1PodSpec(
+                                enable_service_links=False,
+                                automount_service_account_token=False,
+                                containers=[config_to_container(container)],
+                            ),
+                        ),
                     ),
-                ),
-            ),
-        )
-        try:
-            print("[*] Attempting to patch deployment...")
-            curdep = api.read_namespaced_deployment(depname, namespace)
-            dep.metadata.resource_version = curdep.metadata.resource_version
-            api.replace_namespaced_deployment(depname, namespace, dep)
-        except ApiException as e:
-            if e.status == 404:
-                print("[*] Deployment doesn't exist, creating for first time...")
+                )
                 api.create_namespaced_deployment(namespace, dep)
-            else:
-                raise e
-        print(f"[*] Making service {servname} under namespace {namespace}...")
-        if len(self.exposed_ports) > 0:
-            serv_spec = client.V1ServiceSpec(
-                selector={
-                    "instancer.acmcyber.com/instance-id": self.id,
-                },
-                ports=[
-                    client.V1ServicePort(port=port, target_port=port)
-                    for port in self.exposed_ports
-                ],
-                type="NodePort",
-            )
-        else:
-            serv_spec = client.V1ServiceSpec(
-                selector={
-                    "instancer.acmcyber.com/instance-id": self.id,
-                },
-                ports=[
-                    client.V1ServicePort(port=port, target_port=port)
-                    for port in self.http_ports
-                ],
-                type="ClusterIP",
-            )
-        serv = client.V1Service(
-            metadata=client.V1ObjectMeta(
-                name=servname,
-                labels={"instancer.acmcyber.com/instance-id": self.id},
-            ),
-            spec=serv_spec,
-        )
-        try:
-            print("[*] Attempting to patch service...")
-            curserv = capi.read_namespaced_service(servname, namespace)
-            serv.metadata.resource_version = curserv.metadata.resource_version
-            capi.replace_namespaced_service(servname, namespace, serv)
-        except ApiException as e:
-            if e.status == 404:
-                print("[*] Service doesn't exist, creating for first time...")
+
+            for servname, container in self.containers.items():
+                print(f"[*] Making service {servname} under namespace {namespace}...")
+                exposed_ports = self.exposed_ports.get(servname, [])
+                http_ports = self.http_ports.get(servname, [])
+                if len(exposed_ports) > 0:
+                    serv_spec = client.V1ServiceSpec(
+                        selector={
+                            "instancer.acmcyber.com/instance-id": self.id,
+                        },
+                        ports=[
+                            client.V1ServicePort(port=port, target_port=port)
+                            for port in exposed_ports
+                        ],
+                        type="NodePort",
+                    )
+                else:
+                    serv_spec = client.V1ServiceSpec(
+                        selector={
+                            "instancer.acmcyber.com/instance-id": self.id,
+                        },
+                        ports=[
+                            client.V1ServicePort(port=port, target_port=port)
+                            for port, _ in http_ports
+                        ],
+                        type="ClusterIP",
+                    )
+                serv = client.V1Service(
+                    metadata=client.V1ObjectMeta(
+                        name=servname,
+                        labels={"instancer.acmcyber.com/instance-id": self.id},
+                    ),
+                    spec=serv_spec,
+                )
                 capi.create_namespaced_service(namespace, serv)
-            else:
-                raise e
-        # if len(chall.get("http", [])) > 0:
-        #     print(f"[*] Making ingress {ingname} under namespace {namespace}...")
-        #     ing = client.V1Ingress(
-        #         metadata=client.V1ObjectMeta(
-        #             name=ingname,
-        #             annotations={"cert-manager.io/cluster-issuer": "letsencrypt"},
-        #         ),
-        #         spec=client.V1IngressSpec(
-        #             ingress_class_name="nginx",
-        #             tls=[
-        #                 client.V1IngressTLS(
-        #                     hosts=[
-        #                         x["subdomain"] + settings.ingress_suffix
-        #                         for x in chall["http"]
-        #                     ],
-        #                     secret_name=chall["name"],
-        #                 )
-        #             ],
-        #             rules=[
-        #                 client.V1IngressRule(
-        #                     host=x["subdomain"] + settings.ingress_suffix,
-        #                     http=client.V1HTTPIngressRuleValue(
-        #                         paths=[
-        #                             client.V1HTTPIngressPath(
-        #                                 path="/",
-        #                                 path_type="Prefix",
-        #                                 backend=client.V1IngressBackend(
-        #                                     service=client.V1IngressServiceBackend(
-        #                                         name=servname,
-        #                                         port=client.V1ServiceBackendPort(
-        #                                             number=x["port"]
-        #                                         ),
-        #                                     )
-        #                                 ),
-        #                             )
-        #                         ]
-        #                     ),
-        #                 )
-        #                 for x in chall["http"]
-        #             ],
-        #         ),
-        #     )
-        #     try:
-        #         print("[*] Attempting to patch ingress...")
-        #         curing = napi.read_namespaced_ingress(ingname, namespace)
-        #         ing.metadata.resource_version = curing.metadata.resource_version
-        #         napi.replace_namespaced_ingress(ingname, namespace, ing)
-        #     except ApiException as e:
-        #         if e.status == 404:
-        #             print("[*] Ingress doesn't exist, creating for first time...")
-        #             napi.create_namespaced_ingress(namespace, ing)
-        #         else:
-        #             raise e
-        # else:
-        #     print("[*] Ensuring unused ingress has been removed...")
-        #     removed = False
-        #     try:
-        #         curing = napi.read_namespaced_ingress(ingname, namespace)
-        #     except ApiException as e:
-        #         if e.status == 404:
-        #             removed = True
-        #             print("[*] Ingress doesn't exist, no action needed...")
-        #         else:
-        #             raise e
-        #     if not removed:
-        #         print("[*] Found unused ingress, deleting...")
-        #         napi.delete_namespaced_ingress(ingname, namespace)
+
+            for ingname, container in self.containers.items():
+                http_ports = self.http_ports.get(ingname, [])
+                if len(http_ports) > 0:
+                    print(
+                        f"[*] Making ingress {ingname} under namespace {namespace}..."
+                    )
+                    ing = {
+                        "metadata": {"name": ingname},
+                        "spec": {
+                            "entryPoints": ["web", "websecure"],
+                            "routes": [
+                                {
+                                    "match": f"Host(`{sub}`)",
+                                    "kind": "Rule",
+                                    "services": [{"name": ingname, "port": port}],
+                                }
+                                for (port, sub) in http_ports
+                            ],
+                        },
+                    }
+                    crdapi.create_cluster_custom_object(
+                        "traefik.containo.us",
+                        "v1alpha1",
+                        "ingressroutes",
+                        ing,
+                    )
 
     def stop(self):
         namespace = f"cyber-instancer-{self.id}"

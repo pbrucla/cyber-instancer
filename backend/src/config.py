@@ -53,6 +53,7 @@ class Config:
 config = Config()
 "Server configuration"
 
+
 def apply_dict(c: dict, out_key: str, *keys: str, func: Callable = None):
     cur = c
     for k in keys:
@@ -62,6 +63,7 @@ def apply_dict(c: dict, out_key: str, *keys: str, func: Callable = None):
     if func is not None:
         cur = func(cur)
     setattr(config, out_key, cur)
+
 
 def apply_env(var: Any, out_key: str, func: Callable = None):
     val = os.environ.get(var)
@@ -114,5 +116,7 @@ apply_env("INSTANCER_IN_CLUSTER", "in_cluster", func=parse_bool)
 if config.secret_key is None:
     raise ValueError("No secret key was supplied in configuration")
 
-rclient = redis.Redis(host=config.redis_host, port=config.redis_port, password=config.redis_password)
+rclient = redis.Redis(
+    host=config.redis_host, port=config.redis_port, password=config.redis_password
+)
 "Redis client"
