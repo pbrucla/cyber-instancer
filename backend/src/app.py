@@ -10,9 +10,8 @@ app = Flask(__name__, static_folder="static")
 
 @app.route("/api/me")
 def hello_world():
-    count = r.incr("count") 
+    count = r.incr("count")
     return f"<p>Hello, World! {count}</p>"
-
 
 
 # Serve react app
@@ -22,11 +21,12 @@ def hello_world():
 @app.route("/chall/<string:challID>")
 @app.route("/login")
 @app.route("/register")
-def react(challID = ""):
+def react(challID=""):
     return send_from_directory(app.static_folder, "index.html")
 
+
 # Serve static files
-@app.route('/<path:path>')
+@app.route("/<path:path>")
 def serve(path):
     return send_from_directory(app.static_folder, path)
 

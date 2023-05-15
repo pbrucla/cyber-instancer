@@ -17,6 +17,8 @@ RUN npm run build
 
 FROM python:3.11-slim-bullseye
 
+RUN apt-get update -y && apt-get install -y libpq5
+
 WORKDIR /app
 
 COPY backend/requirements.txt /app/

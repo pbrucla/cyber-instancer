@@ -5,6 +5,7 @@ import yaml
 import jsonschema
 from sys import stderr
 import redis
+import psycopg
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 
@@ -48,6 +49,11 @@ class Config:
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_password: str | None = None
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_user: str = "postgres"
+    postgres_password: str | None = None
+    postgres_database: str = "postgres"
 
 
 config = Config()
@@ -90,6 +96,16 @@ def apply_config(c: dict):
                         "password": {"type": "string"},
                     },
                 },
+                "postgres": {
+                    "type": "object",
+                    "properties": {
+                        "host": {"type": "string"},
+                        "port": {"type": "number"},
+                        "user": {"type": "string"},
+                        "database": {"type": "string"},
+                        "password": {"type": "string"},
+                    },
+                },
             },
         },
     )
@@ -99,6 +115,11 @@ def apply_config(c: dict):
     apply_dict(c, "redis_host", "redis", "host")
     apply_dict(c, "redis_port", "redis", "port")
     apply_dict(c, "redis_password", "redis", "password")
+    apply_dict(c, "postgres_host", "postgres", "host")
+    apply_dict(c, "postgres_port", "postgres", "port")
+    apply_dict(c, "postgres_user", "postgres", "user")
+    apply_dict(c, "postgres_database", "postgres", "database")
+    apply_dict(c, "postgres_password", "postgres", "password")
 
 
 try:
@@ -112,6 +133,11 @@ apply_env("INSTANCER_REDIS_HOST", "redis_host")
 apply_env("INSTANCER_REDIS_PORT", "redis_port", func=int)
 apply_env("INSTANCER_REDIS_PASSWORD", "redis_password")
 apply_env("INSTANCER_IN_CLUSTER", "in_cluster", func=parse_bool)
+apply_env("INSTANCER_POSTGRES_HOST", "postgres_host")
+apply_env("INSTANCER_POSTGRES_PORT", "postgres_port", func=int)
+apply_env("INSTANCER_POSTGRES_USER", "postgres_user")
+apply_env("INSTANCER_POSTGRES_DATABASE", "postgres_database")
+apply_env("INSTANCER_POSTGRES_PASSWORD", "postgres_password")
 
 if config.secret_key is None:
     raise ValueError("No secret key was supplied in configuration")
@@ -120,3 +146,14 @@ rclient = redis.Redis(
     host=config.redis_host, port=config.redis_port, password=config.redis_password
 )
 "Redis client"
+
+
+def spawn_pg() -> psycopg.Connection:
+    """Spawn a postgres connection."""
+    return psycopg.connect(
+        host=config.postgres_host,
+        dbname=config.postgres_database,
+        user=config.postgres_user,
+        port=config.postgres_port,
+        password=config.postgres_password,
+    )
