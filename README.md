@@ -91,7 +91,7 @@ spec:
 
 Runs app in a development enviornment. Requires [Docker Compose](https://docs.docker.com/compose/install/) (and by extension docker) to be installed.
 - `docker compose up --build -d` (same as `npm run dev`): (re)starts images, rebuilding react and running flask server on port 8080
-- `docker compose down`: Stops flask server 
+- `docker compose down`: Stops flask server
 
 ## Inside Backend directory
 
