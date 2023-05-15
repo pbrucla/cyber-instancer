@@ -1,5 +1,6 @@
 from flask import Flask
 from flask import send_from_directory
+import api
 import os
 import redis
 import backend
@@ -12,6 +13,10 @@ app = Flask(__name__, static_folder="static")
 def hello_world():
     count = r.incr("count")
     return f"<p>Hello, World! {count}</p>"
+
+
+# Serve APIs
+app.register_blueprint(api.blueprint)
 
 
 # Serve react app
