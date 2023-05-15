@@ -13,14 +13,23 @@ def hello_world():
     count = r.incr("count") 
     return f"<p>Hello, World! {count}</p>"
 
-# Serve React App
-@app.route('/', defaults={'path': ''})
+
+
+# Serve react app
+@app.route("/")
+@app.route("/profile")
+@app.route("/challs")
+@app.route("/chall/<string:challID>")
+@app.route("/login")
+@app.route("/register")
+def react(challID = ""):
+    return send_from_directory(app.static_folder, "index.html")
+
+# Serve static files
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory(app.static_folder, path)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
