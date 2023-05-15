@@ -265,7 +265,9 @@ class SharedChallenge(Challenge):
                         "metadata": {
                             "name": ingname,
                             "annotations": {
-                                "instancer.acmcyber.com/raw-routes": json.dumps(http_ports)
+                                "instancer.acmcyber.com/raw-routes": json.dumps(
+                                    http_ports
+                                )
                             },
                         },
                         "spec": {
@@ -336,8 +338,10 @@ class SharedChallenge(Challenge):
             "traefik.containo.us", "v1alpha1", self.namespace, "ingressroutes"
         )["items"]
         for ing in ingresses:
-            http_ports = json.loads(ing["metadata"]["annotations"]["instancer.acmcyber.com/raw-routes"])
-            for (port, sub) in http_ports:
+            http_ports = json.loads(
+                ing["metadata"]["annotations"]["instancer.acmcyber.com/raw-routes"]
+            )
+            for port, sub in http_ports:
                 ret[ing["metadata"]["name"], port] = sub
 
         cache_entry = {}
