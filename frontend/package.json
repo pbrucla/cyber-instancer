@@ -17,7 +17,7 @@
     "scripts": {
         "dev": "docker compose --project-directory .. up --build",
         "build": "tsc && vite build",
-        "lint": "tsc --noEmit && tsc -p tsconfig.eslint.json --noEmit && eslint . --max-warnings 0 && prettier --check .",
+        "lint": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit && eslint . --max-warnings 0 && prettier --check .",
         "preview": "vite preview",
         "format": "prettier --write .",
         "prepare": "cd .. && husky install frontend/.husky"
