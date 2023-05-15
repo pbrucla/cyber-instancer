@@ -6,6 +6,7 @@ import jsonschema
 from sys import stderr
 import redis
 import psycopg
+from psycopg_pool import ConnectionPool
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 
@@ -147,13 +148,13 @@ rclient = redis.Redis(
 )
 "Redis client"
 
-
-def spawn_pg() -> psycopg.Connection:
-    """Spawn a postgres connection."""
-    return psycopg.connect(
-        host=config.postgres_host,
-        dbname=config.postgres_database,
-        user=config.postgres_user,
-        port=config.postgres_port,
-        password=config.postgres_password,
-    )
+pg_pool = ConnectionPool(
+    kwargs={
+        "host": config.postgres_host,
+        "dbname": config.postgres_database,
+        "user": config.postgres_user,
+        "port": config.postgres_port,
+        "password": config.postgres_password,
+    },
+)
+"Postgres connection pool"

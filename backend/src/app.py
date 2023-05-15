@@ -18,10 +18,10 @@ def hello_world():
 @app.route("/")
 @app.route("/profile")
 @app.route("/challs")
-@app.route("/chall/<string:challID>")
+@app.route("/chall/<string:chall_id>")
 @app.route("/login")
 @app.route("/register")
-def react(challID=""):
+def react(chall_id=""):
     return send_from_directory(app.static_folder, "index.html")
 
 

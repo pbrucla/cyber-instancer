@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from kubernetes import client, config as kconfig
 from kubernetes.client.exceptions import ApiException
-from config import config, rclient, spawn_pg
+from config import config, rclient, pg_pool
 from lock import Lock, LockException
 from time import time
 from typing import Any
@@ -94,7 +94,7 @@ class Challenge(ABC):
         """Fetches the appropriate Challenge instance given challenge ID and team ID.
 
         Returns None if the challenge doesn't exist."""
-        with spawn_pg() as conn:
+        with pg_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT cfg, per_team, lifetime FROM challenges WHERE id=%s",
