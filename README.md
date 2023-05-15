@@ -17,7 +17,7 @@ Please note: setup for this application is done in 3 stages: deploying a kuberne
 - [docker](https://docs.docker.com/get-docker/), [kubectl](https://kubernetes.io/docs/tasks/tools/)
 
 ## Config files
-- `backend/config.yml`: copy `config.example.yml` and fill with credentials to redis and postgres. If using docker-compose development environment, set
+- `backend/config.yml`: copy `config.example.yml` and fill with credentials to redis and postgres. If using docker compose development environment, set
 ```yaml
 redis:
   host: redis-service
@@ -90,8 +90,8 @@ spec:
 ## Root Project directory
 
 Runs app in a development enviornment. Requires [Docker Compose](https://docs.docker.com/compose/install/) (and by extension docker) to be installed.
-- `docker-compose up --build -d` (same as `npm run dev`): (re)starts images, rebuilding react and running flask server on port 8080
-- `docker-compose down`: Stops flask server 
+- `docker compose up --build -d` (same as `npm run dev`): (re)starts images, rebuilding react and running flask server on port 8080
+- `docker compose down`: Stops flask server 
 
 ## Inside Backend directory
 
@@ -102,7 +102,7 @@ It bundles React in production mode and optimizes the build for the best perform
 
 ### `npm run dev`
 
-Same as running `docker-compose up --build -d` in project root: see above
+Same as running `docker compose up --build -d` in project root: see above
 
 ### `npm run lint`
 
