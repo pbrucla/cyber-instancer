@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from kubernetes import client, config as kconfig
 from kubernetes.client.exceptions import ApiException
-from config import config, rclient
+from config import config, rclient, spawn_pg
 from lock import Lock, LockException
 from time import time
 from typing import Any
@@ -86,56 +86,113 @@ class Challenge(ABC):
     "Mapping from container name to list of container ports to expose"
     http_ports: dict[str, list[tuple[int, str]]]
     "Mapping from container name to list of port, subdomain pairs to expose to an HTTP proxy"
+    namespace: str
+    "The kubernetes namespace the challenge is running in."
 
     @staticmethod
-    def fetch(challenge_id: str, team_id: str) -> Challenge:
-        """Fetches the appropriate Challenge instance given challenge ID and team ID."""
-        return SharedChallenge(challenge_id)
+    def fetch(challenge_id: str, team_id: str) -> Challenge | None:
+        """Fetches the appropriate Challenge instance given challenge ID and team ID.
 
-    @abstractmethod
+        Returns None if the challenge doesn't exist."""
+        with spawn_pg() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT cfg, per_team, lifetime FROM challenges WHERE id=%s",
+                    (challenge_id,),
+                )
+                result = cur.fetchone()
+                if result is None:
+                    return None
+                cfg, per_team, lifetime = result
+                if per_team:
+                    return PerTeamChallenge(challenge_id, team_id, cfg, lifetime)
+                else:
+                    return SharedChallenge(challenge_id, cfg, lifetime)
+
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""
-        pass
+        # Trust that the cache is correct in this case
+        score = rclient.zscore("expiration", self.namespace)
+        if score is None:
+            return None
+        return int(score)
 
     @abstractmethod
     def start(self):
         """Starts a challenge, or renews it if it was already running."""
         pass
 
-    @abstractmethod
     def stop(self):
         """Stops a challenge if it's running."""
-        pass
+        capi = client.CoreV1Api()
 
-    @abstractmethod
+        print(f"[*] Deleting namespace {self.namespace}...")
+        try:
+            capi.delete_namespace(self.namespace)
+        except ApiException as e:
+            print(f"[*] Could not delete namespace {self.namespace}...")
+
     def port_mappings(self) -> dict[tuple[str, int], int | str] | None:
         """Return a mapping from (container name, port) pairs to either a TCP port or HTTP domain."""
-        pass
+        # Exit early if the container isn't running
+        # This check is cached so it should be pretty quick
+        if self.expiration() is None:
+            return None
+        cache_key = f"ports:{self.namespace}"
+        cached = rclient.get(cache_key)
+        if cached is not None:
+            ret = {}
+            parsed = json.loads(cached)
+            for k, port in parsed.items():
+                cont, cport = k.rsplit(":", 1)
+                if isinstance(port, float):
+                    port = int(port)
+                ret[cont, int(cport)] = port
+            return ret
+
+        ret = {}
+        capi = client.CoreV1Api()
+        crdapi = client.CustomObjectsApi()
+
+        services = capi.list_namespaced_service(self.namespace).items
+        for serv in services:
+            if serv.spec.type != "NodePort":
+                continue
+            for port in serv.spec.ports:
+                ret[serv.metadata.name, port.port] = port.node_port
+
+        ingresses = crdapi.list_namespaced_custom_object(
+            "traefik.containo.us", "v1alpha1", self.namespace, "ingressroutes"
+        )["items"]
+        for ing in ingresses:
+            http_ports = json.loads(
+                ing["metadata"]["annotations"]["instancer.acmcyber.com/raw-routes"]
+            )
+            for port, sub in http_ports:
+                ret[ing["metadata"]["name"], port] = sub
+
+        cache_entry = {}
+        for (cont, cport), port in ret.items():
+            cache_entry[f"{cont}:{cport}"] = port
+        rclient.set(cache_key, json.dumps(cache_entry), ex=3600)
+
+        return ret
 
 
 class SharedChallenge(Challenge):
     """A challenge with one shared instance among all teams."""
 
-    namespace: str
-    "The namespace the challenge is deployed under."
-
-    def __init__(self, id: str):
+    def __init__(self, id: str, cfg: dict, lifetime: int):
         """Constructs a SharedChallenge given the challenge ID.
 
         Do not call this constructor directly; use Challenge.fetch instead."""
         self.id = id
-        self.lifetime = 3600
+        self.lifetime = lifetime
         self.namespace = f"cyber-instancer-{id}"
 
-        self.containers = {
-            "app": {
-                "image": "docker.acmcyber.com/simple-redis-chall:latest",
-                "ports": [8080],
-            },
-            "redis": {"image": "redis:7-alpine", "ports": [6379]},
-        }
-        self.exposed_ports = {"redis": [6379]}
-        self.http_ports = {"app": [(8080, "testing.egg.gnk.sh")]}
+        self.containers = cfg["containers"]
+        self.exposed_ports = cfg["tcp"]
+        self.http_ports = cfg["http"]
 
     def start(self):
         api = client.AppsV1Api()
@@ -290,74 +347,13 @@ class SharedChallenge(Challenge):
                         ing,
                     )
 
-    def stop(self):
-        capi = client.CoreV1Api()
-
-        print(f"[*] Deleting namespace {self.namespace}...")
-        try:
-            capi.delete_namespace(self.namespace)
-        except ApiException as e:
-            print(f"[*] Could not delete namespace {self.namespace}...")
-
-    def expiration(self) -> int | None:
-        # Trust that the cache is correct in this case
-        score = rclient.zscore("expiration", self.namespace)
-        if score is None:
-            return None
-        return int(score)
-
-    def port_mappings(self) -> dict[tuple[str, int], int | str] | None:
-        # Exit early if the container isn't running
-        # This check is cached so it should be pretty quick
-        if self.expiration() is None:
-            return None
-        cache_key = f"ports:{self.namespace}"
-        cached = rclient.get(cache_key)
-        if cached is not None:
-            ret = {}
-            parsed = json.loads(cached)
-            for k, port in parsed.items():
-                cont, cport = k.rsplit(":", 1)
-                if isinstance(port, float):
-                    port = int(port)
-                ret[cont, int(cport)] = port
-            return ret
-
-        ret = {}
-        capi = client.CoreV1Api()
-        crdapi = client.CustomObjectsApi()
-
-        services = capi.list_namespaced_service(self.namespace).items
-        for serv in services:
-            if serv.spec.type != "NodePort":
-                continue
-            for port in serv.spec.ports:
-                ret[serv.metadata.name, port.port] = port.node_port
-
-        ingresses = crdapi.list_namespaced_custom_object(
-            "traefik.containo.us", "v1alpha1", self.namespace, "ingressroutes"
-        )["items"]
-        for ing in ingresses:
-            http_ports = json.loads(
-                ing["metadata"]["annotations"]["instancer.acmcyber.com/raw-routes"]
-            )
-            for port, sub in http_ports:
-                ret[ing["metadata"]["name"], port] = sub
-
-        cache_entry = {}
-        for (cont, cport), port in ret.items():
-            cache_entry[f"{cont}:{cport}"] = port
-        rclient.set(cache_key, json.dumps(cache_entry), ex=3600)
-
-        return ret
-
 
 class PerTeamChallenge(Challenge):
     """A challenge that needs to spawn a unique instance per team."""
 
     team_id: str
 
-    def __init__(self, id: str, team_id: str):
+    def __init__(self, id: str, team_id: str, cfg: dict, liftime: int):
         """Constructs a PerTeamChallenge given the challenge ID and team ID.
 
         Do not call this constructor directly; use Challenge.fetch instead."""
