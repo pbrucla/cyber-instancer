@@ -19,8 +19,7 @@
         "build": "tsc && vite build",
         "lint": "tsc --noEmit && tsc -p tsconfig.node.json --noEmit && eslint . --max-warnings 0 && prettier --check .",
         "preview": "vite preview",
-        "format": "prettier --write .",
-        "prepare": "cd .. && husky install frontend/.husky"
+        "format": "prettier --write ."
     },
     "browserslist": {
         "production": [
@@ -45,8 +44,6 @@
         "eslint-config-prettier": "^8.8.0",
         "eslint-config-react-app": "^7.0.1",
         "eslint-plugin-react": "^7.32.2",
-        "husky": "^8.0.3",
-        "lint-staged": "^13.2.2",
         "prettier": "2.8.8",
         "typescript": "^5.0.2",
         "vite": "^4.3.2"
