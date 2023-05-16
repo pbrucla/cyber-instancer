@@ -9,7 +9,6 @@ module.exports = {
         "react-app/jest",
         "prettier",
     ],
-    ignorePatterns: ["/dist/"],
     plugins: ["@typescript-eslint", "react"],
     parser: "@typescript-eslint/parser",
     parserOptions: {
