@@ -87,7 +87,9 @@ spec:
 ```
 
 ## Database Setup
+
 Create a table for the database:
+
 ```sql
 CREATE TABLE IF NOT EXISTS challenges(id varchar(256), name varchar(256), description text, lifetime integer, cfg json, per_team boolean);
 ```
