@@ -3,5 +3,5 @@
         "noEmit": true,
         "allowJs": true
     },
-    "include": [".eslintrc.js", "lint-staged.config.js"]
+    "include": [".eslintrc.cjs", "lint-staged.config.js"]
 }
