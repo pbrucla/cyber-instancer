@@ -5,30 +5,29 @@ FROM node:20-alpine AS build-frontend
 WORKDIR /app
 
 # install app dependencies
-COPY ./frontend/package.json ./
-COPY ./frontend/package-lock.json ./
-RUN npm ci
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --omit=dev
 
 # add app
-COPY /frontend ./
+COPY frontend .
 
 # Build app
 RUN npm run build
 
 FROM python:3.11-slim-bullseye
 
-RUN apt-get update -y && apt-get install -y libpq5
+RUN apt-get update && apt-get install -y libpq5
 
 WORKDIR /app
 
-COPY backend/requirements.txt /app/
+COPY backend/requirements.txt ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./backend/src /app
-COPY ./backend/config.yml /app/config.yml
+COPY backend/src .
+COPY backend/config.yml config.yml
 
-COPY --from=build-frontend /app/dist /app/static/
+COPY --from=build-frontend /app/dist static
 
 ENV PORT=8080
 CMD ["gunicorn", "-w", "4", "app:app"]
