@@ -6,6 +6,7 @@ services:
       - "8080:8080"
     volumes:
       - ./k3s.yaml:/app/.kube/config:ro
+      - ./config.yml:/app/config.yml
     environment:
       - KUBECONFIG=/app/.kube/config
   redis-service:

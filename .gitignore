@@ -1,4 +1,5 @@
 # Config
+/config.yml
 backend/**/config.yml
 kube-resources.yml
 

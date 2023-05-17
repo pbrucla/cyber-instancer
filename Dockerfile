@@ -25,7 +25,6 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/src .
-COPY backend/config.yml config.yml
 
 COPY --from=build-frontend /app/dist static
 
