@@ -6,7 +6,7 @@ WORKDIR /app
 
 # install app dependencies
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # add app
 COPY frontend .
