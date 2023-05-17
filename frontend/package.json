@@ -12,7 +12,8 @@
         "http-proxy-middleware": "^2.0.6",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "react-router-dom": "^6.11.1"
+        "react-router-dom": "^6.11.1",
+        "vite": "^4.3.2"
     },
     "scripts": {
         "dev": "docker compose --project-directory .. up --build",
@@ -45,7 +46,6 @@
         "eslint-config-react-app": "^7.0.1",
         "eslint-plugin-react": "^7.32.2",
         "prettier": "2.8.8",
-        "typescript": "^5.0.2",
-        "vite": "^4.3.2"
+        "typescript": "^5.0.2"
     }
 }
