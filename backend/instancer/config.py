@@ -61,7 +61,7 @@ config = Config()
 "Server configuration"
 
 
-def apply_dict(c: dict, out_key: str, *keys: str, func: Callable = None):
+def apply_dict(c: dict, out_key: str, *keys: str, func: Callable | None = None):
     cur = c
     for k in keys:
         if k not in cur:
@@ -72,7 +72,7 @@ def apply_dict(c: dict, out_key: str, *keys: str, func: Callable = None):
     setattr(config, out_key, cur)
 
 
-def apply_env(var: Any, out_key: str, func: Callable = None):
+def apply_env(var: Any, out_key: str, func: Callable | None = None):
     val = os.environ.get(var)
     if val is None:
         return
