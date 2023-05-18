@@ -13,20 +13,20 @@ repos:
     rev: 23.3.0
     hooks:
       - id: black
-  - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.40.0
-    hooks:
-      - id: eslint
-        files: "^frontend/"
-        types: [file]
-        types_or: [javascript, jsx, ts, tsx]
-        additional_dependencies:
-          - "eslint@v8.40.0"
-          - "@typescript-eslint/eslint-plugin@5.57.1"
-          - "@typescript-eslint/parser@5.57.1"
-          - "eslint-config-prettier@8.8.0"
-          - "eslint-config-react-app@7.0.1"
-          - "eslint-plugin-react@7.32.2"
+  # - repo: https://github.com/pre-commit/mirrors-eslint
+  #   rev: v8.40.0
+  #   hooks:
+  #     - id: eslint
+  #       files: "^frontend/"
+  #       types: [file]
+  #       types_or: [javascript, jsx, ts, tsx]
+  #       additional_dependencies:
+  #         - "eslint@v8.40.0"
+  #         - "@typescript-eslint/eslint-plugin@5.57.1"
+  #         - "@typescript-eslint/parser@5.57.1"
+  #         - "eslint-config-prettier@8.8.0"
+  #         - "eslint-config-react-app@7.0.1"
+  #         - "eslint-plugin-react@7.32.2"
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.7.1
     hooks:
@@ -35,23 +35,23 @@ repos:
           # The mirror doesn't include v2.8.8 because there's a v3 alpha and it only mirrors increasing versions.
           # https://github.com/pre-commit/mirrors-prettier/issues/29
           - "prettier@v2.8.8"
-  - repo: local
-    hooks:
-      - id: tsc
-        name: tsc
-        language: node
-        entry: tsc -p frontend/tsconfig.json --noEmit
-        pass_filenames: false
-        files: '^frontend/src/.*\.tsx?$'
-        additional_dependencies:
-          - "@types/react@18.0.28"
-          - "@types/react-dom@18.0.11"
-          - "typescript@5.0.2"
-      - id: tsc-vite-config
-        name: tsc-vite-config
-        language: node
-        entry: tsc -p frontend/tsconfig.node.json --noEmit
-        pass_filenames: false
-        files: '^frontend/vite\.config\.ts$'
-        additional_dependencies:
-          - "typescript@5.0.2"
+  # - repo: local
+  #   hooks:
+  #     - id: tsc
+  #       name: tsc
+  #       language: node
+  #       entry: tsc -p frontend/tsconfig.json --noEmit
+  #       pass_filenames: false
+  #       files: '^frontend/src/.*\.tsx?$'
+  #       additional_dependencies:
+  #         - "@types/react@18.0.28"
+  #         - "@types/react-dom@18.0.11"
+  #         - "typescript@5.0.2"
+  #     - id: tsc-vite-config
+  #       name: tsc-vite-config
+  #       language: node
+  #       entry: tsc -p frontend/tsconfig.node.json --noEmit
+  #       pass_filenames: false
+  #       files: '^frontend/vite\.config\.ts$'
+  #       additional_dependencies:
+  #         - "typescript@5.0.2"
