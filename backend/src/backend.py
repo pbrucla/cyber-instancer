@@ -1,11 +1,11 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from kubernetes import client, config as kconfig
+from kubernetes import client as kclient, config as kconfig
 from kubernetes.client.exceptions import ApiException
 from config import config, rclient, pg_pool
 from lock import Lock, LockException
 from time import time
-from typing import Any
+from typing import Module
 import random
 import json
 
@@ -13,7 +13,6 @@ if config.in_cluster:
     kconfig.load_incluster_config()
 else:
     kconfig.load_kube_config()
-
 
 def snake_to_camel(snake: str):
     return "".join(x.capitalize() for x in snake.split("_"))
@@ -41,7 +40,7 @@ def config_to_container(cont_name: str, cfg: dict):
         cfg["env"] = cfg["environment"]
     if "env" in cfg:
         kwargs["env"] = [
-            client.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg["env"]
+            kclient.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg["env"]
         ]
     for prop in [
         "env_from",
@@ -57,21 +56,21 @@ def config_to_container(cont_name: str, cfg: dict):
                 f"{prop} container config currently not supported"
             )
     if "kubePorts" in cfg:
-        kwargs["ports"] = [client.V1ContainerPort(**x) for x in cfg["kubePorts"]]
+        kwargs["ports"] = [kclient.V1ContainerPort(**x) for x in cfg["kubePorts"]]
     elif "ports" in cfg:
         kwargs["ports"] = [
-            client.V1ContainerPort(container_port=x) for x in cfg["ports"]
+            kclient.V1ContainerPort(container_port=x) for x in cfg["ports"]
         ]
     if "securityContext" in cfg:
-        kwargs["security_context"] = client.V1SecurityContext(**cfg["securityContext"])
+        kwargs["security_context"] = kclient.V1SecurityContext(**cfg["securityContext"])
     if "resources" in cfg:
-        kwargs["resources"] = client.V1ResourceRequirements(**cfg["resources"])
+        kwargs["resources"] = kclient.V1ResourceRequirements(**cfg["resources"])
     else:
-        kwargs["resources"] = client.V1ResourceRequirements(
+        kwargs["resources"] = kclient.V1ResourceRequirements(
             limits={"cpu": "500m", "memory": "512Mi"},
             requests={"cpu": "50m", "memory": "64Mi"},
         )
-    return client.V1Container(**kwargs)
+    return kclient.V1Container(**kwargs)
 
 
 class Challenge(ABC):
@@ -122,9 +121,9 @@ class Challenge(ABC):
 
     def start(self):
         """Starts a challenge, or renews it if it was already running."""
-        api = client.AppsV1Api()
-        capi = client.CoreV1Api()
-        crdapi = client.CustomObjectsApi()
+        api = kclient.AppsV1Api()
+        capi = kclient.CoreV1Api()
+        crdapi = kclient.CustomObjectsApi()
 
         curtime = int(time())
         expiration = curtime + self.lifetime
@@ -144,8 +143,8 @@ class Challenge(ABC):
                     raise e
                 print(f"[*] Making namespace {self.namespace}...")
                 capi.create_namespace(
-                    client.V1Namespace(
-                        metadata=client.V1ObjectMeta(
+                    kclient.V1Namespace(
+                        metadata=kclient.V1ObjectMeta(
                             name=self.namespace,
                             annotations={
                                 "instancer.acmcyber.com/chall-expires": str(expiration),
@@ -163,8 +162,8 @@ class Challenge(ABC):
                 print(
                     f"[*] Making deployment {depname} under namespace {self.namespace}..."
                 )
-                dep = client.V1Deployment(
-                    metadata=client.V1ObjectMeta(
+                dep = kclient.V1Deployment(
+                    metadata=kclient.V1ObjectMeta(
                         name=depname,
                         labels={
                             "instancer.acmcyber.com/instance-id": self.id,
@@ -172,8 +171,8 @@ class Challenge(ABC):
                             **self.additional_labels,
                         },
                     ),
-                    spec=client.V1DeploymentSpec(
-                        selector=client.V1LabelSelector(
+                    spec=kclient.V1DeploymentSpec(
+                        selector=kclient.V1LabelSelector(
                             match_labels={
                                 "instancer.acmcyber.com/instance-id": self.id,
                                 "instancer.acmcyber.com/container-name": depname,
@@ -181,8 +180,8 @@ class Challenge(ABC):
                             }
                         ),
                         replicas=1,
-                        template=client.V1PodTemplateSpec(
-                            metadata=client.V1ObjectMeta(
+                        template=kclient.V1PodTemplateSpec(
+                            metadata=kclient.V1ObjectMeta(
                                 labels={
                                     "instancer.acmcyber.com/instance-id": self.id,
                                     "instancer.acmcyber.com/container-name": depname,
@@ -192,7 +191,7 @@ class Challenge(ABC):
                                     "instancer.acmcyber.com/chall-started": str(curtime)
                                 },
                             ),
-                            spec=client.V1PodSpec(
+                            spec=kclient.V1PodSpec(
                                 enable_service_links=False,
                                 automount_service_account_token=False,
                                 containers=[config_to_container(depname, container)],
@@ -209,33 +208,33 @@ class Challenge(ABC):
                 exposed_ports = self.exposed_ports.get(servname, [])
                 http_ports = self.http_ports.get(servname, [])
                 if len(exposed_ports) > 0:
-                    serv_spec = client.V1ServiceSpec(
+                    serv_spec = kclient.V1ServiceSpec(
                         selector={
                             "instancer.acmcyber.com/instance-id": self.id,
                             "instancer.acmcyber.com/container-name": servname,
                             **self.additional_labels,
                         },
                         ports=[
-                            client.V1ServicePort(port=port, target_port=port)
+                            kclient.V1ServicePort(port=port, target_port=port)
                             for port in exposed_ports + [x[0] for x in http_ports]
                         ],
                         type="NodePort",
                     )
                 else:
-                    serv_spec = client.V1ServiceSpec(
+                    serv_spec = kclient.V1ServiceSpec(
                         selector={
                             "instancer.acmcyber.com/instance-id": self.id,
                             "instancer.acmcyber.com/container-name": servname,
                             **self.additional_labels,
                         },
                         ports=[
-                            client.V1ServicePort(port=port, target_port=port)
+                            kclient.V1ServicePort(port=port, target_port=port)
                             for port, _ in http_ports
                         ],
                         type="ClusterIP",
                     )
-                serv = client.V1Service(
-                    metadata=client.V1ObjectMeta(
+                serv = kclient.V1Service(
+                    metadata=kclient.V1ObjectMeta(
                         name=servname,
                         labels={
                             "instancer.acmcyber.com/instance-id": self.id,
@@ -286,7 +285,7 @@ class Challenge(ABC):
 
     def stop(self):
         """Stops a challenge if it's running."""
-        capi = client.CoreV1Api()
+        capi = kclient.CoreV1Api()
 
         print(f"[*] Deleting namespace {self.namespace}...")
         try:
@@ -313,8 +312,8 @@ class Challenge(ABC):
             return ret
 
         ret = {}
-        capi = client.CoreV1Api()
-        crdapi = client.CustomObjectsApi()
+        capi = kclient.CoreV1Api()
+        crdapi = kclient.CustomObjectsApi()
 
         services = capi.list_namespaced_service(self.namespace).items
         for serv in services:
