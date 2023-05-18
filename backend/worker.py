@@ -1,5 +1,5 @@
-from config import rclient, config
-from backend import kclient
+from instancer.config import rclient, config
+from instancer.backend import kclient
 from time import sleep, time
 from kubernetes.client.exceptions import ApiException
 from instancer.lock import Lock
