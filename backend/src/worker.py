@@ -16,8 +16,9 @@ def main():
             except ApiException as e:
                 print(f"[*] Got exception while deleting {chall}: {e}")
             rclient.zrem(chall)
-            
+
         sleep(5)
+
 
 if __name__ == "__main__":
     main()

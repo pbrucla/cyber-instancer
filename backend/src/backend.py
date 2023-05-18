@@ -14,6 +14,7 @@ if config.in_cluster:
 else:
     kconfig.load_kube_config()
 
+
 def snake_to_camel(snake: str):
     return "".join(x.capitalize() for x in snake.split("_"))
 
