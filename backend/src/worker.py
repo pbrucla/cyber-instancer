@@ -10,22 +10,15 @@ def main():
     while True:
         curtime = int(time())
 
-        for chall in rclient.zrange("expiration", curtime, "+inf", byscore=True):
+        for chall in rclient.zrange("expiration", "-inf", curtime, byscore=True):
             print(f"[*] Deleting namespace {chall}...")
             chall = chall.decode()
-<<<<<<< HEAD
-            try:
-                capi.delete_namespace(chall)
-            except ApiException as e:
-                print(f"[*] Got exception while deleting {chall}: {e}")
-            rclient.zrem(chall)
-=======
             with Lock(chall):
                 try:
                     capi.delete_namespace(chall)
                 except ApiException as e:
                     print(f"[*] Got exception while deleting {chall}: {e}")
-                rclient.zrem(chall)
+                rclient.zrem("expiration", chall)
 
         last_resync = rclient.get("last_resync")
         if (
@@ -51,7 +44,6 @@ def main():
                         pass
 
             rclient.set("last_resync", int(time()))
->>>>>>> 02eb3bd (update worker to resync)
 
         sleep(5)
 
