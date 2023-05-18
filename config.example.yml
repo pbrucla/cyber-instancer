@@ -11,3 +11,4 @@ postgres:
   database: abcd
 in_cluster: false
 redis_resync_interval: 60
+dev: false
