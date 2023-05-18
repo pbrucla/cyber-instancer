@@ -104,7 +104,8 @@ spec:
 Create a table for the database:
 
 ```sql
-CREATE TABLE IF NOT EXISTS challenges(id varchar(256), name varchar(256), description text, lifetime integer, cfg json, per_team boolean);
+CREATE TABLE IF NOT EXISTS challenges(id varchar(256), name varchar(256), description text, author text, cfg json, per_team boolean, lifetime integer);
+CREATE TABLE IF NOT EXISTS tags(challenge_id varchar(256), name varchar(64), is_category boolean);
 ```
 
 # Available Development Commands
