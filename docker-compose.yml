@@ -30,3 +30,6 @@ services:
       - POSTGRES_DB=instancer
     volumes:
       - ./fixture.sql:/docker-entrypoint-initdb.d/fixture.sql:ro
+      - instancerdb:/var/lib/postgresql/data
+volumes:
+  instancerdb:
