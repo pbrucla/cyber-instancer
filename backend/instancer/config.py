@@ -144,6 +144,7 @@ apply_env("INSTANCER_POSTGRES_USER", "postgres_user")
 apply_env("INSTANCER_POSTGRES_DATABASE", "postgres_database")
 apply_env("INSTANCER_POSTGRES_PASSWORD", "postgres_password")
 apply_env("INSTANCER_REDIS_RESYNC_INTERVAL", "redis_resync_interval", func=int)
+apply_env("INSTANCER_DEV", "dev", func=parse_bool)
 
 if config.secret_key is None:
     raise ValueError("No secret key was supplied in configuration")
