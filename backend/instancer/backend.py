@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from kubernetes import client as kclient, config as kconfig
 from kubernetes.client.exceptions import ApiException
 from instancer.config import config, rclient, pg_pool
@@ -73,6 +74,16 @@ def config_to_container(cont_name: str, cfg: dict):
     return kclient.V1Container(**kwargs)
 
 
+@dataclass
+class ChallengeTag:
+    """A challenge tag."""
+
+    name: str
+    "The name of the tag."
+    is_category: bool
+    "Whether the tag is a challenge category."
+
+
 class Challenge(ABC):
     """A Challenge that can be started or stopped."""
 
@@ -110,6 +121,20 @@ class Challenge(ABC):
                     return PerTeamChallenge(challenge_id, team_id, cfg, lifetime)
                 else:
                     return SharedChallenge(challenge_id, cfg, lifetime)
+
+    def tags(self) -> list[ChallengeTag]:
+        """Return a list of tags for the challenge.
+
+        The category tags will be listed first and tags will be sorted alphabetically.
+        """
+
+        with pg_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",
+                    (self.id,),
+                )
+                return [ChallengeTag(*tag) for tag in cur.fetchall()]
 
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""
