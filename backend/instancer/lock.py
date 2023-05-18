@@ -1,4 +1,4 @@
-from config import rclient
+from instancer.config import rclient
 from dataclasses import dataclass, field
 from random import randbytes
 

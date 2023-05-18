@@ -9,6 +9,9 @@ services:
       - ./config.yml:/app/config.yml:ro
     environment:
       - KUBECONFIG=/app/.kube/config
+    depends_on:
+      - redis-service
+      - db
   worker:
     build: .
     volumes:
@@ -19,3 +22,11 @@ services:
     command: ["python", "worker.py"]
   redis-service:
     image: "redis:alpine"
+  db:
+    image: "postgres"
+    environment:
+      - POSTGRES_PASSWORD=Q7FHcs0R2TQYqFyP92OD
+      - POSTGRES_USER=instancer
+      - POSTGRES_DB=instancer
+    volumes:
+      - ./backend/setup.sql.sh:/docker-entrypoint-initdb.d/setup.sh:ro

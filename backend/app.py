@@ -1,10 +1,9 @@
-from flask import Flask
-from flask import send_from_directory
-import api
+from flask import Flask, send_from_directory, request
+from instancer import api
 import os
 import redis
-import backend
-from config import config, rclient as r
+from instancer import backend
+from instancer.config import config, rclient as r, pg_pool
 
 app = Flask(__name__, static_folder="static")
 
@@ -34,6 +33,20 @@ def react(chall_id=""):
 @app.route("/<path:path>")
 def serve(path):
     return send_from_directory(app.static_folder, path)
+
+
+# Testing
+@app.route("/api/test_db")
+def test_db():
+    if not config.dev:
+        return "Disabled due to not in dev mode"
+    with pg_pool.connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name = %s;",
+            [request.args.get("table")],
+        )
+        return str(cursor.fetchall())
 
 
 if __name__ == "__main__":

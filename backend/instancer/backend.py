@@ -2,8 +2,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from kubernetes import client as kclient, config as kconfig
 from kubernetes.client.exceptions import ApiException
-from config import config, rclient, pg_pool
-from lock import Lock, LockException
+from instancer.config import config, rclient, pg_pool
+from instancer.lock import Lock, LockException
 from time import time
 import random
 import json

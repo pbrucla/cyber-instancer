@@ -54,6 +54,7 @@ class Config:
     postgres_password: str | None = None
     postgres_database: str = "postgres"
     redis_resync_interval: int = 60
+    dev: bool = False
 
 
 config = Config()
@@ -107,6 +108,7 @@ def apply_config(c: dict):
                     },
                 },
                 "redis_resync_interval": {"type": "number"},
+                "dev": {"type": "boolean"},
             },
         },
     )
@@ -122,6 +124,7 @@ def apply_config(c: dict):
     apply_dict(c, "postgres_database", "postgres", "database")
     apply_dict(c, "postgres_password", "postgres", "password")
     apply_dict(c, "redis_resync_interval", "redis_resync_interval")
+    apply_dict(c, "dev", "dev")
 
 
 try:
