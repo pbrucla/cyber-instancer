@@ -1,11 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import os
-from typing import Any, IO, Callable, TypeVar
+from typing import Any, IO, Callable
 import yaml
 import jsonschema
-from sys import stderr
 import redis
-import psycopg
 from psycopg_pool import ConnectionPool
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
@@ -55,6 +53,7 @@ class Config:
     postgres_user: str = "postgres"
     postgres_password: str | None = None
     postgres_database: str = "postgres"
+    redis_resync_interval: int = 60
 
 
 config = Config()
@@ -107,6 +106,7 @@ def apply_config(c: dict):
                         "password": {"type": "string"},
                     },
                 },
+                "redis_resync_interval": {"type": "number"},
             },
         },
     )
@@ -121,6 +121,7 @@ def apply_config(c: dict):
     apply_dict(c, "postgres_user", "postgres", "user")
     apply_dict(c, "postgres_database", "postgres", "database")
     apply_dict(c, "postgres_password", "postgres", "password")
+    apply_dict(c, "redis_resync_interval", "redis_resync_interval")
 
 
 try:
@@ -139,6 +140,7 @@ apply_env("INSTANCER_POSTGRES_PORT", "postgres_port", func=int)
 apply_env("INSTANCER_POSTGRES_USER", "postgres_user")
 apply_env("INSTANCER_POSTGRES_DATABASE", "postgres_database")
 apply_env("INSTANCER_POSTGRES_PASSWORD", "postgres_password")
+apply_env("INSTANCER_REDIS_RESYNC_INTERVAL", "redis_resync_interval", func=int)
 
 if config.secret_key is None:
     raise ValueError("No secret key was supplied in configuration")

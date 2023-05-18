@@ -10,3 +10,4 @@ postgres:
   password: abcd
   database: abcd
 in_cluster: false
+redis_resync_interval: 60

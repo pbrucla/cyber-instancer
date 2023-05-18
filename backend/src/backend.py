@@ -5,7 +5,6 @@ from kubernetes.client.exceptions import ApiException
 from config import config, rclient, pg_pool
 from lock import Lock, LockException
 from time import time
-from typing import Module
 import random
 import json
 
