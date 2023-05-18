@@ -107,20 +107,27 @@ class Challenge(ABC):
         """Fetches the appropriate Challenge instance given challenge ID and team ID.
 
         Returns None if the challenge doesn't exist."""
-        with pg_pool.connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT cfg, per_team, lifetime FROM challenges WHERE id=%s",
-                    (challenge_id,),
-                )
-                result = cur.fetchone()
-                if result is None:
-                    return None
-                cfg, per_team, lifetime = result
-                if per_team:
-                    return PerTeamChallenge(challenge_id, team_id, cfg, lifetime)
-                else:
-                    return SharedChallenge(challenge_id, cfg, lifetime)
+        cache_key = f"chall:{challenge_id}"
+        cached = rclient.get(cache_key)
+        if cached is not None:
+            result = json.loads(cached)
+        else:
+            with pg_pool.connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT cfg, per_team, lifetime FROM challenges WHERE id=%s",
+                        (challenge_id,),
+                    )
+                    result = cur.fetchone()
+            rclient.set(cache_key, json.dumps(result), ex=3600)
+
+        if result is None:
+            return None
+        cfg, per_team, lifetime = result
+        if per_team:
+            return PerTeamChallenge(challenge_id, team_id, cfg, lifetime)
+        else:
+            return SharedChallenge(challenge_id, cfg, lifetime)
 
     def tags(self) -> list[ChallengeTag]:
         """Return a list of tags for the challenge.
