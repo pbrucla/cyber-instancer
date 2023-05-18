@@ -29,4 +29,4 @@ services:
       - POSTGRES_USER=instancer
       - POSTGRES_DB=instancer
     volumes:
-      - ./backend/setup.sql.sh:/docker-entrypoint-initdb.d/setup.sh:ro
+      - ./fixture.sql:/docker-entrypoint-initdb.d/fixture.sql:ro
