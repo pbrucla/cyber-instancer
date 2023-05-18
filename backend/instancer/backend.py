@@ -135,13 +135,22 @@ class Challenge(ABC):
         The category tags will be listed first and tags will be sorted alphabetically.
         """
 
-        with pg_pool.connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",
-                    (self.id,),
-                )
-                return [ChallengeTag(*tag) for tag in cur.fetchall()]
+        cache_key = f"chall_tags:{self.id}"
+        cached = rclient.get(cache_key)
+
+        if cached is not None:
+            result = json.loads(cached)
+        else:
+            with pg_pool.connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",
+                        (self.id,),
+                    )
+                    result = cur.fetchall()
+            rclient.set(cache_key, json.dumps(result), ex=3600)
+
+        return [ChallengeTag(*tag) for tag in result]
 
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""
