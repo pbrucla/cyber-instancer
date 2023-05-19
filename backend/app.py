@@ -36,17 +36,17 @@ def serve(path):
 
 
 # Testing
-@app.route("/api/test_db")
-def test_db():
-    if not config.dev:
-        return "Disabled due to not in dev mode"
-    with pg_pool.connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name = %s;",
-            [request.args.get("table")],
-        )
-        return str(cursor.fetchall())
+if config.dev:
+
+    @app.route("/api/test_db")
+    def test_db():
+        with pg_pool.connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name = %s;",
+                [request.args.get("table")],
+            )
+            return str(cursor.fetchall())
 
 
 if __name__ == "__main__":
