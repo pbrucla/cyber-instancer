@@ -1,5 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any
 from kubernetes import client as kclient, config as kconfig
 from kubernetes.client.exceptions import ApiException
 from instancer.config import config, rclient, pg_pool
@@ -73,6 +75,28 @@ def config_to_container(cont_name: str, cfg: dict):
     return kclient.V1Container(**kwargs)
 
 
+@dataclass
+class ChallengeTag:
+    """A challenge tag."""
+
+    name: str
+    "The name of the tag."
+    is_category: bool
+    "Whether the tag is a challenge category."
+
+
+@dataclass
+class ChallengeMetadata:
+    """Metadata of a challenge including the challenge name, description, and author."""
+
+    name: str
+    "The challenge name."
+    description: str
+    "The challenge description."
+    author: str
+    "The challenge author."
+
+
 class Challenge(ABC):
     """A Challenge that can be started or stopped."""
 
@@ -80,6 +104,8 @@ class Challenge(ABC):
     "Challenge ID"
     lifetime: int
     "Challenge lifetime, in seconds"
+    metadata: ChallengeMetadata
+    "Challenge metadata"
     containers: dict[str, dict]
     "Mapping from container name to container config."
     exposed_ports: dict[str, list[int]]
@@ -90,6 +116,27 @@ class Challenge(ABC):
     "The kubernetes namespace the challenge is running in."
     additional_labels: dict
     "Additional labels for the challenge deployments."
+
+    def __init__(
+        self,
+        id: str,
+        cfg: dict[str, Any],
+        lifetime: int,
+        metadata: ChallengeMetadata,
+        *,
+        namespace: str,
+        exposed_ports: dict[str, list[int]],
+        http_ports: dict[str, list[tuple[int, str]]],
+        additional_labels: dict[str, Any],
+    ):
+        self.id = id
+        self.lifetime = lifetime
+        self.metadata = metadata
+        self.namespace = namespace
+        self.containers = cfg["containers"]
+        self.exposed_ports = exposed_ports
+        self.http_ports = http_ports
+        self.additional_labels = additional_labels
 
     @staticmethod
     def fetch(challenge_id: str, team_id: str) -> Challenge | None:
@@ -104,7 +151,7 @@ class Challenge(ABC):
             with pg_pool.connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT cfg, per_team, lifetime FROM challenges WHERE id=%s",
+                        "SELECT cfg, per_team, lifetime, name, description, author FROM challenges WHERE id=%s",
                         (challenge_id,),
                     )
                     result = cur.fetchone()
@@ -112,11 +159,35 @@ class Challenge(ABC):
 
         if result is None:
             return None
-        cfg, per_team, lifetime = result
+        cfg, per_team, lifetime, name, description, author = result
+        metadata = ChallengeMetadata(name, description, author)
         if per_team:
-            return PerTeamChallenge(challenge_id, team_id, cfg, lifetime)
+            return PerTeamChallenge(challenge_id, team_id, cfg, lifetime, metadata)
         else:
-            return SharedChallenge(challenge_id, cfg, lifetime)
+            return SharedChallenge(challenge_id, cfg, lifetime, metadata)
+
+    def tags(self) -> list[ChallengeTag]:
+        """Return a list of tags for the challenge.
+
+        The category tags will be listed first and tags will be sorted alphabetically.
+        """
+
+        cache_key = f"chall_tags:{self.id}"
+        cached = rclient.get(cache_key)
+
+        if cached is not None:
+            result = json.loads(cached)
+        else:
+            with pg_pool.connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",
+                        (self.id,),
+                    )
+                    result = cur.fetchall()
+            rclient.set(cache_key, json.dumps(result), ex=3600)
+
+        return [ChallengeTag(*tag) for tag in result]
 
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""
@@ -343,19 +414,22 @@ class Challenge(ABC):
 class SharedChallenge(Challenge):
     """A challenge with one shared instance among all teams."""
 
-    def __init__(self, id: str, cfg: dict, lifetime: int):
+    def __init__(self, id: str, cfg: dict, lifetime: int, metadata: ChallengeMetadata):
         """Constructs a SharedChallenge given the challenge ID.
 
-        Do not call this constructor directly; use Challenge.fetch instead."""
-        self.id = id
-        self.lifetime = lifetime
-        self.namespace = f"chall-instance-{id}"
+        Do not call this constructor directly; use Challenge.fetch instead.
+        """
 
-        self.containers = cfg["containers"]
-        self.exposed_ports = cfg["tcp"]
-        self.http_ports = cfg["http"]
-
-        self.additional_labels = {}
+        super().__init__(
+            id,
+            cfg,
+            lifetime,
+            metadata,
+            namespace=f"chall-instance-{id}",
+            exposed_ports=cfg["tcp"],
+            http_ports=cfg["http"],
+            additional_labels={},
+        )
 
 
 class PerTeamChallenge(Challenge):
@@ -363,19 +437,20 @@ class PerTeamChallenge(Challenge):
 
     team_id: str
 
-    def __init__(self, id: str, team_id: str, cfg: dict, lifetime: int):
+    def __init__(
+        self,
+        id: str,
+        team_id: str,
+        cfg: dict,
+        lifetime: int,
+        metadata: ChallengeMetadata,
+    ):
         """Constructs a PerTeamChallenge given the challenge ID and team ID.
 
-        Do not call this constructor directly; use Challenge.fetch instead."""
-        self.id = id
-        self.team_id = team_id
-        self.lifetime = lifetime
-        self.namespace = f"chall-instance-{id}-team-{team_id}"
+        Do not call this constructor directly; use Challenge.fetch instead.
+        """
 
-        self.containers = cfg["containers"]
-        self.exposed_ports = cfg["tcp"]
-        self.http_ports = {}
-
+        http_ports = {}
         for cont_name, ports in cfg["http"].items():
             l = []
             for port, domain in ports:
@@ -384,6 +459,17 @@ class PerTeamChallenge(Challenge):
                     random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=5)
                 )
                 l.append((port, ".".join(chunks)))
-            self.http_ports[cont_name] = l
+            http_ports[cont_name] = l
 
-        self.additional_labels = {"instancer.acmcyber.com/team-id": team_id}
+        super().__init__(
+            id,
+            cfg,
+            lifetime,
+            metadata,
+            namespace=f"chall-instance-{id}-team-{team_id}",
+            exposed_ports=cfg["tcp"],
+            http_ports=http_ports,
+            additional_labels={"instancer.acmcyber.com/team-id": team_id},
+        )
+
+        self.team_id = team_id
