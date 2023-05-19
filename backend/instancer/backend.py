@@ -411,6 +411,9 @@ class Challenge(ABC):
 
         return ret
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(namespace={self.namespace!r}, expiration={self.expiration()!r})"
+
 
 class SharedChallenge(Challenge):
     """A challenge with one shared instance among all teams."""
