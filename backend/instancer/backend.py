@@ -1,6 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 from kubernetes import client as kclient, config as kconfig
 from kubernetes.client.exceptions import ApiException
 from instancer.config import config, rclient, pg_pool
@@ -101,6 +102,25 @@ class Challenge(ABC):
     "The kubernetes namespace the challenge is running in."
     additional_labels: dict
     "Additional labels for the challenge deployments."
+
+    def __init__(
+        self,
+        id: str,
+        cfg: dict[str, Any],
+        lifetime: int,
+        *,
+        namespace: str,
+        exposed_ports: dict[str, list[int]],
+        http_ports: dict[str, list[tuple[int, str]]],
+        additional_labels: dict[str, Any],
+    ):
+        self.id = id
+        self.lifetime = lifetime
+        self.namespace = namespace
+        self.containers = cfg["containers"]
+        self.exposed_ports = exposed_ports
+        self.http_ports = http_ports
+        self.additional_labels = additional_labels
 
     @staticmethod
     def fetch(challenge_id: str, team_id: str) -> Challenge | None:
@@ -387,16 +407,18 @@ class SharedChallenge(Challenge):
     def __init__(self, id: str, cfg: dict, lifetime: int):
         """Constructs a SharedChallenge given the challenge ID.
 
-        Do not call this constructor directly; use Challenge.fetch instead."""
-        self.id = id
-        self.lifetime = lifetime
-        self.namespace = f"chall-instance-{id}"
+        Do not call this constructor directly; use Challenge.fetch instead.
+        """
 
-        self.containers = cfg["containers"]
-        self.exposed_ports = cfg["tcp"]
-        self.http_ports = cfg["http"]
-
-        self.additional_labels = {}
+        super().__init__(
+            id,
+            cfg,
+            lifetime,
+            namespace=f"chall-instance-{id}",
+            exposed_ports=cfg["tcp"],
+            http_ports=cfg["http"],
+            additional_labels={},
+        )
 
 
 class PerTeamChallenge(Challenge):
@@ -407,16 +429,10 @@ class PerTeamChallenge(Challenge):
     def __init__(self, id: str, team_id: str, cfg: dict, lifetime: int):
         """Constructs a PerTeamChallenge given the challenge ID and team ID.
 
-        Do not call this constructor directly; use Challenge.fetch instead."""
-        self.id = id
-        self.team_id = team_id
-        self.lifetime = lifetime
-        self.namespace = f"chall-instance-{id}-team-{team_id}"
+        Do not call this constructor directly; use Challenge.fetch instead.
+        """
 
-        self.containers = cfg["containers"]
-        self.exposed_ports = cfg["tcp"]
-        self.http_ports = {}
-
+        http_ports = {}
         for cont_name, ports in cfg["http"].items():
             l = []
             for port, domain in ports:
@@ -425,6 +441,16 @@ class PerTeamChallenge(Challenge):
                     random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=5)
                 )
                 l.append((port, ".".join(chunks)))
-            self.http_ports[cont_name] = l
+            http_ports[cont_name] = l
 
-        self.additional_labels = {"instancer.acmcyber.com/team-id": team_id}
+        super().__init__(
+            id,
+            cfg,
+            lifetime,
+            namespace=f"chall-instance-{id}-team-{team_id}",
+            exposed_ports=cfg["tcp"],
+            http_ports=http_ports,
+            additional_labels={"instancer.acmcyber.com/team-id": team_id},
+        )
+
+        self.team_id = team_id
