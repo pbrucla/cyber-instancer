@@ -25,6 +25,7 @@ def main():
             last_resync is None
             or int(last_resync.decode()) + config.redis_resync_interval <= curtime
         ):
+            expirations = {}
             for ns in capi.list_namespace().items:
                 annotations = ns.metadata.annotations
                 if (
@@ -32,16 +33,17 @@ def main():
                     and "instancer.acmcyber.com/chall-expires" in annotations
                 ):
                     try:
-                        rclient.zadd(
-                            "expiration",
-                            {
-                                ns.metadata.name: int(
-                                    annotations["instancer.acmcyber.com/chall-expires"]
-                                )
-                            },
+                        expirations[ns.metadata.name] = int(
+                            annotations["instancer.acmcyber.com/chall-expires"]
                         )
                     except ValueError:
                         pass
+
+            rclient.zadd("expiration", expirations)
+
+            for ns in rclient.zrange("expiration", 0, -1):
+                if ns.decode() not in expirations:
+                    rclient.zrem("expiration", ns)
 
             rclient.set("last_resync", int(time()))
 

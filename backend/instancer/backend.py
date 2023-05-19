@@ -169,31 +169,22 @@ class Challenge(ABC):
                 print(
                     f"[*] Making deployment {depname} under namespace {self.namespace}..."
                 )
+                labels = {
+                    "instancer.acmcyber.com/instance-id": self.id,
+                    "instancer.acmcyber.com/container-name": depname,
+                    **self.additional_labels,
+                }
                 dep = kclient.V1Deployment(
                     metadata=kclient.V1ObjectMeta(
                         name=depname,
-                        labels={
-                            "instancer.acmcyber.com/instance-id": self.id,
-                            "instancer.acmcyber.com/container-name": depname,
-                            **self.additional_labels,
-                        },
+                        labels=labels,
                     ),
                     spec=kclient.V1DeploymentSpec(
-                        selector=kclient.V1LabelSelector(
-                            match_labels={
-                                "instancer.acmcyber.com/instance-id": self.id,
-                                "instancer.acmcyber.com/container-name": depname,
-                                **self.additional_labels,
-                            }
-                        ),
+                        selector=kclient.V1LabelSelector(match_labels=labels),
                         replicas=1,
                         template=kclient.V1PodTemplateSpec(
                             metadata=kclient.V1ObjectMeta(
-                                labels={
-                                    "instancer.acmcyber.com/instance-id": self.id,
-                                    "instancer.acmcyber.com/container-name": depname,
-                                    **self.additional_labels,
-                                },
+                                labels=labels,
                                 annotations={
                                     "instancer.acmcyber.com/chall-started": str(curtime)
                                 },
@@ -214,13 +205,14 @@ class Challenge(ABC):
                 )
                 exposed_ports = self.exposed_ports.get(servname, [])
                 http_ports = self.http_ports.get(servname, [])
+                selector = {
+                    "instancer.acmcyber.com/instance-id": self.id,
+                    "instancer.acmcyber.com/container-name": servname,
+                    **self.additional_labels,
+                }
                 if len(exposed_ports) > 0:
                     serv_spec = kclient.V1ServiceSpec(
-                        selector={
-                            "instancer.acmcyber.com/instance-id": self.id,
-                            "instancer.acmcyber.com/container-name": servname,
-                            **self.additional_labels,
-                        },
+                        selector=selector,
                         ports=[
                             kclient.V1ServicePort(port=port, target_port=port)
                             for port in exposed_ports + [x[0] for x in http_ports]
@@ -229,11 +221,7 @@ class Challenge(ABC):
                     )
                 else:
                     serv_spec = kclient.V1ServiceSpec(
-                        selector={
-                            "instancer.acmcyber.com/instance-id": self.id,
-                            "instancer.acmcyber.com/container-name": servname,
-                            **self.additional_labels,
-                        },
+                        selector=selector,
                         ports=[
                             kclient.V1ServicePort(port=port, target_port=port)
                             for port, _ in http_ports
@@ -268,6 +256,11 @@ class Challenge(ABC):
                                 "instancer.acmcyber.com/raw-routes": json.dumps(
                                     http_ports
                                 )
+                            },
+                            "labels": {
+                                "instancer.acmcyber.com/instance-id": self.id,
+                                "instancer.acmcyber.com/container-name": ingname,
+                                **self.additional_labels,
                             },
                         },
                         "spec": {
