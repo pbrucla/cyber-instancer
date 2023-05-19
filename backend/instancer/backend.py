@@ -361,6 +361,7 @@ class Challenge(ABC):
         print(f"[*] Deleting namespace {self.namespace}...")
         try:
             capi.delete_namespace(self.namespace)
+            rclient.zrem("expiration", self.namespace)
         except ApiException as e:
             print(f"[*] Could not delete namespace {self.namespace}...")
 
