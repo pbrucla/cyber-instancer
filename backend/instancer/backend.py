@@ -20,7 +20,7 @@ def snake_to_camel(snake: str):
     return "".join(x.capitalize() for x in snake.split("_"))
 
 
-def config_to_container(cont_name: str, cfg: dict):
+def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
     kwargs = {}
     kwargs["name"] = cont_name
     kwargs["image"] = cfg["image"]
@@ -41,9 +41,16 @@ def config_to_container(cont_name: str, cfg: dict):
     if "environment" in cfg and "env" not in cfg:
         cfg["env"] = cfg["environment"]
     if "env" in cfg:
-        kwargs["env"] = [
-            kclient.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg["env"]
-        ]
+        env = [kclient.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg["env"]]
+    else:
+        env = []
+    if env_metadata is not None and not any(
+        x.name == "INSTANCER_METADATA" for x in env
+    ):
+        env.append(
+            kclient.V1EnvVar(name="INSTANCER_METADATA", value=json.dumps(env_metadata))
+        )
+    kwargs["env"] = env
     for prop in [
         "env_from",
         "lifecycle",
@@ -116,6 +123,8 @@ class Challenge(ABC):
     "The kubernetes namespace the challenge is running in."
     additional_labels: dict
     "Additional labels for the challenge deployments."
+    additional_env_metadata: dict
+    "Additional metadata to put in challenge environment variables."
 
     def __init__(
         self,
@@ -127,7 +136,8 @@ class Challenge(ABC):
         namespace: str,
         exposed_ports: dict[str, list[int]],
         http_ports: dict[str, list[tuple[int, str]]],
-        additional_labels: dict[str, Any],
+        additional_labels: dict[str, Any] = {},
+        additional_env_metadata: dict[str, Any] = {}
     ):
         self.id = id
         self.lifetime = lifetime
@@ -137,6 +147,7 @@ class Challenge(ABC):
         self.exposed_ports = exposed_ports
         self.http_ports = http_ports
         self.additional_labels = additional_labels
+        self.additional_env_metadata = additional_env_metadata
 
     @staticmethod
     def fetch(challenge_id: str, team_id: str) -> Challenge | None:
@@ -263,7 +274,18 @@ class Challenge(ABC):
                             spec=kclient.V1PodSpec(
                                 enable_service_links=False,
                                 automount_service_account_token=False,
-                                containers=[config_to_container(depname, container)],
+                                containers=[
+                                    config_to_container(
+                                        depname,
+                                        container,
+                                        env_metadata={
+                                            "namespace": self.namespace,
+                                            "instance_id": self.id,
+                                            "container_name": depname,
+                                            **self.additional_env_metadata
+                                        },
+                                    )
+                                ],
                             ),
                         ),
                     ),
@@ -432,7 +454,6 @@ class SharedChallenge(Challenge):
             namespace=f"chall-instance-{id}",
             exposed_ports=cfg["tcp"],
             http_ports=cfg["http"],
-            additional_labels={},
         )
 
 
@@ -474,6 +495,7 @@ class PerTeamChallenge(Challenge):
             exposed_ports=cfg["tcp"],
             http_ports=http_ports,
             additional_labels={"instancer.acmcyber.com/team-id": team_id},
+            additional_env_metadata={"team_id": team_id}
         )
 
         self.team_id = team_id
