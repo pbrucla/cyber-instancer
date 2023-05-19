@@ -137,7 +137,7 @@ class Challenge(ABC):
         exposed_ports: dict[str, list[int]],
         http_ports: dict[str, list[tuple[int, str]]],
         additional_labels: dict[str, Any] = {},
-        additional_env_metadata: dict[str, Any] = {}
+        additional_env_metadata: dict[str, Any] = {},
     ):
         self.id = id
         self.lifetime = lifetime
@@ -217,6 +217,22 @@ class Challenge(ABC):
         curtime = int(time())
         expiration = curtime + self.lifetime
 
+        env_metadata = {
+            "namespace": self.namespace,
+            "instance_id": self.id,
+            "http": {
+                contname: {
+                    port: sub
+                    for (
+                        port,
+                        sub,
+                    ) in self.http_ports.get(contname, [])
+                }
+                for contname in self.containers
+            },
+            **self.additional_env_metadata,
+        }
+
         with Lock(self.namespace):
             try:
                 curns = capi.read_namespace(self.namespace)
@@ -279,10 +295,8 @@ class Challenge(ABC):
                                         depname,
                                         container,
                                         env_metadata={
-                                            "namespace": self.namespace,
-                                            "instance_id": self.id,
+                                            **env_metadata,
                                             "container_name": depname,
-                                            **self.additional_env_metadata
                                         },
                                     )
                                 ],
@@ -495,7 +509,7 @@ class PerTeamChallenge(Challenge):
             exposed_ports=cfg["tcp"],
             http_ports=http_ports,
             additional_labels={"instancer.acmcyber.com/team-id": team_id},
-            additional_env_metadata={"team_id": team_id}
+            additional_env_metadata={"team_id": team_id},
         )
 
         self.team_id = team_id
