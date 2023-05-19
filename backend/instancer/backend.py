@@ -85,6 +85,18 @@ class ChallengeTag:
     "Whether the tag is a challenge category."
 
 
+@dataclass
+class ChallengeMetadata:
+    """Metadata of a challenge including the challenge name, description, and author."""
+
+    name: str
+    "The challenge name."
+    description: str
+    "The challenge description."
+    author: str
+    "The challenge author."
+
+
 class Challenge(ABC):
     """A Challenge that can be started or stopped."""
 
@@ -92,6 +104,8 @@ class Challenge(ABC):
     "Challenge ID"
     lifetime: int
     "Challenge lifetime, in seconds"
+    metadata: ChallengeMetadata
+    "Challenge metadata"
     containers: dict[str, dict]
     "Mapping from container name to container config."
     exposed_ports: dict[str, list[int]]
@@ -108,6 +122,7 @@ class Challenge(ABC):
         id: str,
         cfg: dict[str, Any],
         lifetime: int,
+        metadata: ChallengeMetadata,
         *,
         namespace: str,
         exposed_ports: dict[str, list[int]],
@@ -116,6 +131,7 @@ class Challenge(ABC):
     ):
         self.id = id
         self.lifetime = lifetime
+        self.metadata = metadata
         self.namespace = namespace
         self.containers = cfg["containers"]
         self.exposed_ports = exposed_ports
@@ -135,7 +151,7 @@ class Challenge(ABC):
             with pg_pool.connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT cfg, per_team, lifetime FROM challenges WHERE id=%s",
+                        "SELECT cfg, per_team, lifetime, name, description, author FROM challenges WHERE id=%s",
                         (challenge_id,),
                     )
                     result = cur.fetchone()
@@ -143,11 +159,12 @@ class Challenge(ABC):
 
         if result is None:
             return None
-        cfg, per_team, lifetime = result
+        cfg, per_team, lifetime, name, description, author = result
+        metadata = ChallengeMetadata(name, description, author)
         if per_team:
-            return PerTeamChallenge(challenge_id, team_id, cfg, lifetime)
+            return PerTeamChallenge(challenge_id, team_id, cfg, lifetime, metadata)
         else:
-            return SharedChallenge(challenge_id, cfg, lifetime)
+            return SharedChallenge(challenge_id, cfg, lifetime, metadata)
 
     def tags(self) -> list[ChallengeTag]:
         """Return a list of tags for the challenge.
@@ -404,7 +421,7 @@ class Challenge(ABC):
 class SharedChallenge(Challenge):
     """A challenge with one shared instance among all teams."""
 
-    def __init__(self, id: str, cfg: dict, lifetime: int):
+    def __init__(self, id: str, cfg: dict, lifetime: int, metadata: ChallengeMetadata):
         """Constructs a SharedChallenge given the challenge ID.
 
         Do not call this constructor directly; use Challenge.fetch instead.
@@ -414,6 +431,7 @@ class SharedChallenge(Challenge):
             id,
             cfg,
             lifetime,
+            metadata,
             namespace=f"chall-instance-{id}",
             exposed_ports=cfg["tcp"],
             http_ports=cfg["http"],
@@ -426,7 +444,14 @@ class PerTeamChallenge(Challenge):
 
     team_id: str
 
-    def __init__(self, id: str, team_id: str, cfg: dict, lifetime: int):
+    def __init__(
+        self,
+        id: str,
+        team_id: str,
+        cfg: dict,
+        lifetime: int,
+        metadata: ChallengeMetadata,
+    ):
         """Constructs a PerTeamChallenge given the challenge ID and team ID.
 
         Do not call this constructor directly; use Challenge.fetch instead.
@@ -447,6 +472,7 @@ class PerTeamChallenge(Challenge):
             id,
             cfg,
             lifetime,
+            metadata,
             namespace=f"chall-instance-{id}-team-{team_id}",
             exposed_ports=cfg["tcp"],
             http_ports=http_ports,
