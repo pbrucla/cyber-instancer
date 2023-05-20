@@ -9,12 +9,6 @@ app = Flask(__name__, static_folder="static")
 app.secret_key = config.secret_key
 
 
-@app.route("/api/me")
-def hello_world():
-    count = r.incr("count")
-    return f"<p>Hello, World! {count}</p>"
-
-
 # Serve APIs
 app.register_blueprint(api.blueprint)
 
