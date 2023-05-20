@@ -5,7 +5,7 @@ import redis
 from instancer import backend
 from instancer.config import config, rclient as r, pg_pool
 
-app = Flask(__name__, static_folder="static")
+app = Flask(__name__, static_folder="static", static_url_path="/")
 app.secret_key = config.secret_key
 
 
@@ -22,12 +22,6 @@ app.register_blueprint(api.blueprint)
 @app.route("/register")
 def react(chall_id=""):
     return send_from_directory(app.static_folder, "index.html")
-
-
-# Serve static files
-@app.route("/<path:path>")
-def serve(path):
-    return send_from_directory(app.static_folder, path)
 
 
 # Testing
