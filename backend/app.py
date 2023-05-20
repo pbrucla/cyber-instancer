@@ -9,7 +9,7 @@ app = Flask(__name__, static_folder="static", static_url_path="/")
 
 
 # Serve APIs
-app.register_blueprint(api.blueprint, url_prefix="/api")
+app.register_blueprint(api.blueprint)
 
 
 # Serve react app

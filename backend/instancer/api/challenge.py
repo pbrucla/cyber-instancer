@@ -2,7 +2,7 @@ from flask import Blueprint, g
 
 from instancer.backend import Challenge
 
-blueprint = Blueprint("challenge", __name__)
+blueprint = Blueprint("challenge", __name__, url_prefix="/challenge")
 
 
 @blueprint.route("/<string:chall_id>/deployment", methods=["POST"])

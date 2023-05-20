@@ -5,10 +5,10 @@ from . import authentication
 from . import challenge
 from . import challenges
 
-blueprint = Blueprint("api", __name__)
+blueprint = Blueprint("api", __name__, url_prefix="/api")
 blueprint.register_blueprint(account.blueprint)
-blueprint.register_blueprint(challenge.blueprint, url_prefix="/challenge")
-blueprint.register_blueprint(challenges.blueprint, url_prefix="/challenges")
+blueprint.register_blueprint(challenge.blueprint)
+blueprint.register_blueprint(challenges.blueprint)
 
 
 @blueprint.before_request
