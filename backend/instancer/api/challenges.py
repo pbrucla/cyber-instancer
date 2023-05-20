@@ -1,6 +1,7 @@
 import flask
+from flask import Blueprint
 
-from . import blueprint
+blueprint = Blueprint("challenges", __name__)
 
 
 @blueprint.route("/api/challenges", methods=["GET"])

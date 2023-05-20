@@ -1,6 +1,6 @@
-import flask
+from flask import Blueprint
 
-from . import blueprint
+blueprint = Blueprint("challenge", __name__)
 
 
 @blueprint.route("/api/challenge/<string:challID>/deployment", methods=["POST"])
