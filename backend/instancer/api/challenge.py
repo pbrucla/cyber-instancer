@@ -50,7 +50,7 @@ def challenge_get(chall_id):
             "name": chall.metadata.name,
             "author": chall.metadata.author,
             "description": chall.metadata.description,
-            "categories": chall.categories,
-            "tags": chall.tags,
+            "categories": chall.categories(),
+            "tags": chall.tags(),
         },
     }
