@@ -208,6 +208,7 @@ class Challenge(ABC):
         api = kclient.AppsV1Api()
         capi = kclient.CoreV1Api()
         crdapi = kclient.CustomObjectsApi()
+        napi = kclient.NetworkingV1Api()
 
         curtime = int(time())
         expiration = curtime + self.lifetime
@@ -226,6 +227,11 @@ class Challenge(ABC):
                 for contname in self.containers
             },
             **self.additional_env_metadata,
+        }
+
+        common_labels = {
+            "instancer.acmcyber.com/instance-id": self.id,
+            **self.additional_labels,
         }
 
         with Lock(self.namespace):
@@ -249,10 +255,7 @@ class Challenge(ABC):
                             annotations={
                                 "instancer.acmcyber.com/chall-expires": str(expiration),
                             },
-                            labels={
-                                "instancer.acmcyber.com/instance-id": self.id,
-                                **self.additional_labels,
-                            },
+                            labels=common_labels,
                         )
                     )
                 )
@@ -263,9 +266,18 @@ class Challenge(ABC):
                     f"[*] Making deployment {depname} under namespace {self.namespace}..."
                 )
                 labels = {
-                    "instancer.acmcyber.com/instance-id": self.id,
+                    **common_labels,
                     "instancer.acmcyber.com/container-name": depname,
-                    **self.additional_labels,
+                }
+                pod_labels = {
+                    **labels,
+                    "instancer.acmcyber.com/has-egress": "true"
+                    if container.get("hasEgress", True)
+                    else "false",
+                    "instancer.acmcyber.com/has-ingress": "true"
+                    if len(self.exposed_ports.get(depname, [])) > 0
+                    or len(self.http_ports.get(depname, [])) > 0
+                    else "false",
                 }
                 dep = kclient.V1Deployment(
                     metadata=kclient.V1ObjectMeta(
@@ -273,11 +285,11 @@ class Challenge(ABC):
                         labels=labels,
                     ),
                     spec=kclient.V1DeploymentSpec(
-                        selector=kclient.V1LabelSelector(match_labels=labels),
+                        selector=kclient.V1LabelSelector(match_labels=pod_labels),
                         replicas=1,
                         template=kclient.V1PodTemplateSpec(
                             metadata=kclient.V1ObjectMeta(
-                                labels=labels,
+                                labels=pod_labels,
                                 annotations={
                                     "instancer.acmcyber.com/chall-started": str(curtime)
                                 },
@@ -290,8 +302,8 @@ class Challenge(ABC):
                                         depname,
                                         container,
                                         env_metadata={
-                                            **env_metadata,
                                             "container_name": depname,
+                                            **env_metadata,
                                         },
                                     )
                                 ],
@@ -308,9 +320,8 @@ class Challenge(ABC):
                 exposed_ports = self.exposed_ports.get(servname, [])
                 http_ports = self.http_ports.get(servname, [])
                 selector = {
-                    "instancer.acmcyber.com/instance-id": self.id,
+                    **common_labels,
                     "instancer.acmcyber.com/container-name": servname,
-                    **self.additional_labels,
                 }
                 if len(exposed_ports) > 0:
                     serv_spec = kclient.V1ServiceSpec(
@@ -334,9 +345,8 @@ class Challenge(ABC):
                     metadata=kclient.V1ObjectMeta(
                         name=servname,
                         labels={
-                            "instancer.acmcyber.com/instance-id": self.id,
+                            **common_labels,
                             "instancer.acmcyber.com/container-name": servname,
-                            **self.additional_labels,
                         },
                     ),
                     spec=serv_spec,
@@ -360,9 +370,8 @@ class Challenge(ABC):
                                 )
                             },
                             "labels": {
-                                "instancer.acmcyber.com/instance-id": self.id,
+                                **common_labels,
                                 "instancer.acmcyber.com/container-name": ingname,
-                                **self.additional_labels,
                             },
                         },
                         "spec": {
@@ -384,6 +393,103 @@ class Challenge(ABC):
                         "ingressroutes",
                         ing,
                     )
+
+            pol_interns = kclient.V1NetworkPolicy(
+                metadata=kclient.V1ObjectMeta(name="interns", labels=common_labels),
+                spec=kclient.V1NetworkPolicySpec(
+                    pod_selector=kclient.V1LabelSelector(),
+                    policy_types=["Ingress", "Egress"],
+                    ingress=[
+                        # allow ingress from other pods in the namespace
+                        kclient.V1NetworkPolicyIngressRule(
+                            _from=[
+                                kclient.V1NetworkPolicyPeer(
+                                    namespace_selector=kclient.V1LabelSelector(
+                                        match_labels=common_labels
+                                    )
+                                )
+                            ]
+                        )
+                    ],
+                    egress=[
+                        # allow egress to other pods in the namespace
+                        kclient.V1NetworkPolicyEgressRule(
+                            to=[
+                                kclient.V1NetworkPolicyPeer(
+                                    namespace_selector=kclient.V1LabelSelector(
+                                        match_labels=common_labels
+                                    )
+                                )
+                            ]
+                        ),
+                        # allow egress to the cluster's dns server
+                        kclient.V1NetworkPolicyEgressRule(
+                            to=[
+                                kclient.V1NetworkPolicyPeer(
+                                    namespace_selector=kclient.V1LabelSelector(
+                                        match_labels={
+                                            "kubernetes.io/metadata.name": "kube-system"
+                                        }
+                                    )
+                                )
+                            ],
+                            ports=[
+                                kclient.V1NetworkPolicyPort(port=53, protocol="UDP")
+                            ],
+                        ),
+                    ],
+                ),
+            )
+            pol_ingress = kclient.V1NetworkPolicy(
+                metadata=kclient.V1ObjectMeta(name="ingress", labels=common_labels),
+                spec=kclient.V1NetworkPolicySpec(
+                    pod_selector=kclient.V1LabelSelector(
+                        match_labels={"instancer.acmcyber.com/has-ingress": "true"}
+                    ),
+                    policy_types=["Ingress"],
+                    ingress=[
+                        # allow ingress from anyone
+                        kclient.V1NetworkPolicyIngressRule(
+                            _from=[
+                                kclient.V1NetworkPolicyPeer(
+                                    ip_block=kclient.V1IPBlock(cidr="0.0.0.0/0")
+                                )
+                            ]
+                        )
+                    ],
+                ),
+            )
+            pol_egress = kclient.V1NetworkPolicy(
+                metadata=kclient.V1ObjectMeta(name="egress", labels=common_labels),
+                spec=kclient.V1NetworkPolicySpec(
+                    pod_selector=kclient.V1LabelSelector(
+                        match_labels={"instancer.acmcyber.com/has-egress": "true"}
+                    ),
+                    policy_types=["Egress"],
+                    egress=[
+                        # allow egress to anyone except IANA private IP blocks
+                        kclient.V1NetworkPolicyEgressRule(
+                            to=[
+                                kclient.V1NetworkPolicyPeer(
+                                    ip_block=kclient.V1IPBlock(
+                                        cidr="0.0.0.0/0",
+                                        _except=[
+                                            "10.0.0.0/8",
+                                            "172.16.0.0/12",
+                                            "192.168.0.0/16",
+                                            "169.254.0.0/16",
+                                        ],
+                                    )
+                                )
+                            ]
+                        )
+                    ],
+                ),
+            )
+            print(f"[*] Making network policies under namespace {self.namespace}...")
+            napi.create_namespaced_network_policy(self.namespace, pol_interns)
+            napi.create_namespaced_network_policy(self.namespace, pol_ingress)
+            napi.create_namespaced_network_policy(self.namespace, pol_egress)
 
     def stop(self):
         """Stops a challenge if it's running."""
