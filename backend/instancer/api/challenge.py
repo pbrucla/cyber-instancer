@@ -40,10 +40,12 @@ def challenge_get(chall_id):
         return {"status": "error", "msg": "invalid challenge ID"}, 404
     return {
         "status": "ok",
-        "id": chall_id,
-        "name": chall.metadata.name,
-        "author": chall.metadata.author,
-        "description": chall.metadata.description,
-        "categories": chall.categories,
-        "tags": chall.tags,
+        "challenge_info": {
+            "id": chall_id,
+            "name": chall.metadata.name,
+            "author": chall.metadata.author,
+            "description": chall.metadata.description,
+            "categories": chall.categories,
+            "tags": chall.tags,
+        },
     }
