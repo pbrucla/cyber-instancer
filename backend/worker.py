@@ -38,8 +38,9 @@ def main():
                         )
                     except ValueError:
                         pass
-
-            rclient.zadd("expiration", expirations)
+            
+            if len(expirations) > 0:
+                rclient.zadd("expiration", expirations)
 
             for ns in rclient.zrange("expiration", 0, -1):
                 if ns.decode() not in expirations:
