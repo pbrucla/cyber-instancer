@@ -1,5 +1,5 @@
 from instancer.config import rclient, config
-from instancer.backend import kclient
+from instancer.backend import kclient, Challenge
 from time import sleep, time
 from kubernetes.client.exceptions import ApiException
 from instancer.lock import Lock
@@ -11,14 +11,7 @@ def main():
         curtime = int(time())
 
         for chall in rclient.zrange("expiration", "-inf", curtime, byscore=True):
-            print(f"[*] Deleting namespace {chall}...")
-            chall = chall.decode()
-            with Lock(chall):
-                try:
-                    capi.delete_namespace(chall)
-                except ApiException as e:
-                    print(f"[*] Got exception while deleting {chall}: {e}")
-                rclient.zrem("expiration", chall)
+            Challenge.stop_namespace(chall)
 
         last_resync = rclient.get("last_resync")
         if (

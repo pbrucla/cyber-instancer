@@ -81,12 +81,14 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
         )
     return kclient.V1Container(**kwargs)
 
+
 class ResourceUnavailableException(Exception):
     """Exception thrown when a resource is temporarily unavailable
-    
+
     For example: a namespace is locked or terminating."""
 
     pass
+
 
 @dataclass
 class ChallengeMetadata:
@@ -254,12 +256,16 @@ class Challenge(ABC):
             **self.additional_labels,
         }
 
+        namespace_made = False
+
         try:
             with Lock(self.namespace):
                 try:
                     curns = capi.read_namespace(self.namespace)
                     if curns.status.phase == "Terminating":
-                        raise ResourceUnavailableException(f"namespace {self.namespace} is still terminating")
+                        raise ResourceUnavailableException(
+                            f"namespace {self.namespace} is still terminating"
+                        )
                     print(f"[*] Renewing namespace {self.namespace}...")
                     curns.metadata.annotations[
                         "instancer.acmcyber.com/chall-expires"
@@ -276,13 +282,16 @@ class Challenge(ABC):
                             metadata=kclient.V1ObjectMeta(
                                 name=self.namespace,
                                 annotations={
-                                    "instancer.acmcyber.com/chall-expires": str(expiration),
+                                    "instancer.acmcyber.com/chall-expires": str(
+                                        expiration
+                                    ),
                                 },
                                 labels=common_labels,
                             )
                         )
                     )
 
+                namespace_made = True
                 rclient.zadd("expiration", {self.namespace: expiration})
                 for depname, container in self.containers.items():
                     print(
@@ -314,7 +323,9 @@ class Challenge(ABC):
                                 metadata=kclient.V1ObjectMeta(
                                     labels=pod_labels,
                                     annotations={
-                                        "instancer.acmcyber.com/chall-started": str(curtime)
+                                        "instancer.acmcyber.com/chall-started": str(
+                                            curtime
+                                        )
                                     },
                                 ),
                                 spec=kclient.V1PodSpec(
@@ -509,29 +520,47 @@ class Challenge(ABC):
                         ],
                     ),
                 )
-                print(f"[*] Making network policies under namespace {self.namespace}...")
+                print(
+                    f"[*] Making network policies under namespace {self.namespace}..."
+                )
                 napi.create_namespaced_network_policy(self.namespace, pol_interns)
                 napi.create_namespaced_network_policy(self.namespace, pol_ingress)
                 napi.create_namespaced_network_policy(self.namespace, pol_egress)
         except LockException:
             raise ResourceUnavailableException(f"namespace {self.namespace} is locked")
+        except Exception:
+            if namespace_made:
+                print(f"[*] Got error, cleaning up namespace {self.namespace}...")
+                try:
+                    capi.delete_namespace(self.namespace)
+                    rclient.zrem("expiration", self.namespace)
+                except ApiException:
+                    print(f"[*] Could not clean up namespace {self.namespace}...")
+            raise
+
+    @staticmethod
+    def stop_namespace(namespace):
+        """Stops a challenge given the namespace of the challenge."""
+        capi = kclient.CoreV1Api()
+
+        print(f"[*] Deleting namespace {namespace}...")
+        try:
+            capi.delete_namespace(namespace)
+            rclient.zrem("expiration", namespace)
+            rclient.delete(f"ports:{namespace}")
+        except ApiException as e:
+            print(f"[*] Could not delete namespace {namespace}...")
 
     def stop(self):
         """Stops a challenge if it's running."""
-        capi = kclient.CoreV1Api()
-
-        print(f"[*] Deleting namespace {self.namespace}...")
-        try:
-            capi.delete_namespace(self.namespace)
-            rclient.zrem("expiration", self.namespace)
-        except ApiException as e:
-            print(f"[*] Could not delete namespace {self.namespace}...")
+        self.stop_namespace(self.namespace)
 
     def port_mappings(self) -> dict[tuple[str, int], int | str] | None:
         """Return a mapping from (container name, port) pairs to either a TCP port or HTTP domain."""
         # Exit early if the container isn't running
         # This check is cached so it should be pretty quick
-        if self.expiration() is None:
+        exp = self.expiration()
+        if exp is None:
             return None
         cache_key = f"ports:{self.namespace}"
         cached = rclient.get(cache_key)
@@ -569,7 +598,7 @@ class Challenge(ABC):
         cache_entry = {}
         for (cont, cport), port in ret.items():
             cache_entry[f"{cont}:{cport}"] = port
-        rclient.set(cache_key, json.dumps(cache_entry), ex=3600)
+        rclient.set(cache_key, json.dumps(cache_entry), ex=exp - int(time()))
 
         return ret
 
