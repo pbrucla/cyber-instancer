@@ -6,7 +6,6 @@ from instancer import backend
 from instancer.config import config, rclient as r, pg_pool
 
 app = Flask(__name__, static_folder="static", static_url_path="/")
-app.secret_key = config.secret_key
 
 
 # Serve APIs
