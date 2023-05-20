@@ -9,8 +9,8 @@ body {
 nav {
     display: inline-block;
     font-weight: bold;
-    margin-top: 1.25rem;
     position: fixed;
+    margin-top: 1.25rem;
     width: 100%;
     top: 0;
     left: 0;
@@ -25,6 +25,14 @@ a {
     font-weight: bold;
 }
 
+h1 {
+    margin-top: 0;
+}
+
 code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+#root {
+    background-color: #101010;
 }

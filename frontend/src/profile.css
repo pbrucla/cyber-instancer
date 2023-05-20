@@ -1,0 +1,52 @@
+.Profile-div {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.Profile-div-inner {
+    text-align: left;
+}
+
+
+.Profile-heading {
+    color: #ffba44;
+    margin-left:10px;
+}
+
+.container {
+border-radius: 5px;
+overflow: hidden;
+width: 65vw;
+}
+
+.row {
+display: flex;
+align-items: center;
+padding: 5px;
+
+}
+
+.column {
+white-space: nowrap;
+overflow: auto;
+padding:10px;
+padding-left:20px;
+}
+
+.column:nth-child(1) {
+background-color: #404040;
+color: white;
+font-weight:600;
+flex-basis: 35%;
+gap: 0;
+}
+
+.column:nth-child(2) {
+background-color: #d0d0d0;
+flex-basis: 65%;
+gap: 0;
+/* Applies border radius to the bottom-left corner */
+}

@@ -12,7 +12,6 @@ const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
     <React.StrictMode>
         <BrowserRouter>
-            <h1>ACM Cyber</h1>
             <nav>
                 <div>
                     <Link to="/">Home</Link>
