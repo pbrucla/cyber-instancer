@@ -1,4 +1,6 @@
-from flask import Blueprint
+from flask import Blueprint, g
+
+from instancer.backend import Challenge
 
 blueprint = Blueprint("challenge", __name__)
 
@@ -33,9 +35,15 @@ def cd_get(chall_id):
 
 @blueprint.route("/<string:chall_id>", methods=["GET"])
 def challenge_get(chall_id):
+    chall = Challenge.fetch(chall_id, g.session["team_id"])
+    if chall is None:
+        return {"status": "error", "msg": "invalid challenge ID"}, 404
     return {
+        "status": "ok",
         "id": chall_id,
-        "name": "Test chall",
-        "tags": ["demo", "beginner"],
-        "category": "web",
+        "name": chall.metadata.name,
+        "author": chall.metadata.author,
+        "description": chall.metadata.description,
+        "categories": chall.categories,
+        "tags": chall.tags,
     }
