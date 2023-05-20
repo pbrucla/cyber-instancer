@@ -175,7 +175,6 @@ class Challenge(ABC):
         else:
             return SharedChallenge(challenge_id, cfg, lifetime, metadata)
 
-    @property
     def categories(self) -> list[str]:
         """Return a list of tags sorted in alphabetical order."""
 
@@ -196,7 +195,6 @@ class Challenge(ABC):
 
         return categories
 
-    @property
     def tags(self) -> list[str]:
         """Return a list of tags sorted in alphabetical order."""
 

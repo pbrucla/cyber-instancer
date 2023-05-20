@@ -35,6 +35,11 @@ def cd_get(chall_id):
 
 @blueprint.route("/<string:chall_id>", methods=["GET"])
 def challenge_get(chall_id):
+    """Return challenge info.
+
+    If there is no error, response contains a `challenge_info` object with the ID, name, author, description, and categories.
+    """
+
     chall = Challenge.fetch(chall_id, g.session["team_id"])
     if chall is None:
         return {"status": "error", "msg": "invalid challenge ID"}, 404
@@ -45,7 +50,7 @@ def challenge_get(chall_id):
             "name": chall.metadata.name,
             "author": chall.metadata.author,
             "description": chall.metadata.description,
-            "categories": chall.categories,
-            "tags": chall.tags,
+            "categories": chall.categories(),
+            "tags": chall.tags(),
         },
     }

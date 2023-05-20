@@ -13,6 +13,8 @@ blueprint.register_blueprint(challenges.blueprint, url_prefix="/challenges")
 
 @blueprint.before_request
 def check_authorization():
+    """Check the client's authentication token and set g.session to the session data."""
+
     if request.endpoint in [
         "api.account.register",
         "api.account.login",
