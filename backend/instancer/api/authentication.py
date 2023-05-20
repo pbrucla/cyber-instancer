@@ -17,6 +17,11 @@ def new_session(team_id: str) -> str:
 
 
 def get_session(token: str) -> dict[str, Any] | None:
+    """Retrieve session data.
+
+    Returns a dict containing the session data if the token is valid and None otherwise.
+    """
+
     data = rclient.get(f"session:{token}")
     if data is None:
         return None
