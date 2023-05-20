@@ -1,4 +1,4 @@
-.Profile-div {
+.Profile-Register-div {
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -6,12 +6,12 @@
     align-items: center;
 }
 
-.Profile-div-inner {
+.Profile-Register-inner {
     text-align: left;
 }
 
 
-.Profile-heading {
+.Profile-Register-heading {
     color: #ffba44;
     margin-left:10px;
 }
@@ -47,6 +47,4 @@ gap: 0;
 .column:nth-child(2) {
 background-color: #d0d0d0;
 flex-basis: 65%;
-gap: 0;
-/* Applies border radius to the bottom-left corner */
 }
