@@ -38,7 +38,7 @@ def main():
                         )
                     except ValueError:
                         pass
-            
+
             if len(expirations) > 0:
                 rclient.zadd("expiration", expirations)
 

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 from kubernetes import client as kclient, config as kconfig
 from kubernetes.client.exceptions import ApiException
-from instancer.config import config, rclient, pg_pool
+from instancer.config import config, rclient, connect_pg
 from instancer.lock import Lock, LockException
 from time import time
 import random
@@ -159,7 +159,7 @@ class Challenge(ABC):
         if cached is not None:
             result = json.loads(cached)
         else:
-            with pg_pool.connection() as conn:
+            with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT cfg, per_team, lifetime, name, description, author FROM challenges WHERE id=%s",
@@ -189,7 +189,7 @@ class Challenge(ABC):
         if cached is not None:
             result = json.loads(cached)
         else:
-            with pg_pool.connection() as conn:
+            with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",

@@ -3,7 +3,7 @@ from instancer import api
 import os
 import redis
 from instancer import backend
-from instancer.config import config, rclient as r, pg_pool
+from instancer.config import config, rclient as r, connect_pg
 
 app = Flask(__name__, static_folder="static")
 
@@ -40,7 +40,7 @@ def serve(path):
 def test_db():
     if not config.dev:
         return "Disabled due to not in dev mode"
-    with pg_pool.connection() as conn:
+    with connect_pg() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name = %s;",
