@@ -10,6 +10,11 @@ if config.dev:
 
     @blueprint.route("/dev_login", methods=["POST"])
     def dev_login():
+        """Login without validating token.
+
+        For development only.
+        """
+
         try:
             team_id = request.form["team_id"]
         except KeyError:
