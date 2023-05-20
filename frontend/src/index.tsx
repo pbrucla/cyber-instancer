@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App";
+import Home from "./home";
 import {BrowserRouter} from "react-router-dom";
 import {Routes, Route} from "react-router-dom";
 import {Link} from "react-router-dom";
@@ -21,7 +21,7 @@ root.render(
                 </div>
             </nav>
             <Routes>
-                <Route path="/" element={<App />} />
+                <Route path="/" element={<Home />} />
                 <Route path="/challs" element={<Challs />} />
                 <Route path="/profile" element={<Profile />} />
             </Routes>
