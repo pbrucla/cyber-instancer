@@ -3,26 +3,26 @@ from flask import Blueprint
 blueprint = Blueprint("challenge", __name__)
 
 
-@blueprint.route("/<string:challID>/deployment", methods=["POST"])
-def challenge_deploy(challID):
+@blueprint.route("/<string:chall_id>/deployment", methods=["POST"])
+def challenge_deploy(chall_id):
     return {
         "success": True,
-        "id": challID,
+        "id": chall_id,
         "connection": ["127.0.0.1:25565"],
         "expiration": 1685602800000,
         "msg": "Successfully deployed/extended challenge",
     }
 
 
-@blueprint.route("/<string:challID>/deployment", methods=["DELETE"])
-def cd_terminate(challID):
-    return {"success": True, "id": challID, "msg": "Successfully terminated challenge"}
+@blueprint.route("/<string:chall_id>/deployment", methods=["DELETE"])
+def cd_terminate(chall_id):
+    return {"success": True, "id": chall_id, "msg": "Successfully terminated challenge"}
 
 
-@blueprint.route("/<string:challID>/deployment", methods=["GET"])
-def cd_get(challID):
+@blueprint.route("/<string:chall_id>/deployment", methods=["GET"])
+def cd_get(chall_id):
     return {
-        "id": challID,
+        "id": chall_id,
         "name": "Test chall",
         "tags": ["demo", "beginner"],
         "category": "web",
@@ -31,10 +31,10 @@ def cd_get(challID):
     }
 
 
-@blueprint.route("/<string:challID>", methods=["GET"])
-def challenge_get(challID):
+@blueprint.route("/<string:chall_id>", methods=["GET"])
+def challenge_get(chall_id):
     return {
-        "id": challID,
+        "id": chall_id,
         "name": "Test chall",
         "tags": ["demo", "beginner"],
         "category": "web",
