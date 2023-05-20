@@ -1,0 +1,32 @@
+.content-div {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: left;
+    padding:10vh;
+}
+
+.round-button {
+    margin-top:5vh;
+    padding: 10px;
+    border-radius: 25px;
+    background-color: #f44d8a;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    font-weight:bold;
+    width:15vw;
+    font-size:large;
+    transition: box-shadow 0.3s ease;
+}
+
+.round-button:active {
+    background: #e43d7e;
+    -webkit-box-shadow: inset 0px 0px 5px #C82162;
+       -moz-box-shadow: inset 0px 0px 5px #C82162;
+            box-shadow: inset 0px 0px 5px #C82162;
+     outline: none;
+}
