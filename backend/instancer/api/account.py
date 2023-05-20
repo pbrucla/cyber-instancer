@@ -7,7 +7,7 @@ blueprint = Blueprint("account", __name__)
 
 if config.dev:
 
-    @blueprint.route("/api/dev_login", methods=["POST"])
+    @blueprint.route("/dev_login", methods=["POST"])
     def dev_login():
         try:
             session["team_id"] = request.form["team_id"]

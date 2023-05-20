@@ -10,7 +10,7 @@ app.secret_key = config.secret_key
 
 
 # Serve APIs
-app.register_blueprint(api.blueprint)
+app.register_blueprint(api.blueprint, url_prefix="/api")
 
 
 # Serve react app

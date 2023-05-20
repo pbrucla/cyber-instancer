@@ -3,7 +3,7 @@ from flask import Blueprint
 blueprint = Blueprint("challenge", __name__)
 
 
-@blueprint.route("/api/challenge/<string:challID>/deployment", methods=["POST"])
+@blueprint.route("/<string:challID>/deployment", methods=["POST"])
 def challenge_deploy(challID):
     return {
         "success": True,
@@ -14,12 +14,12 @@ def challenge_deploy(challID):
     }
 
 
-@blueprint.route("/api/challenge/<string:challID>/deployment", methods=["DELETE"])
+@blueprint.route("/<string:challID>/deployment", methods=["DELETE"])
 def cd_terminate(challID):
     return {"success": True, "id": challID, "msg": "Successfully terminated challenge"}
 
 
-@blueprint.route("/api/challenge/<string:challID>/deployment", methods=["GET"])
+@blueprint.route("/<string:challID>/deployment", methods=["GET"])
 def cd_get(challID):
     return {
         "id": challID,
@@ -31,7 +31,7 @@ def cd_get(challID):
     }
 
 
-@blueprint.route("/api/challenge/<string:challID>", methods=["GET"])
+@blueprint.route("/<string:challID>", methods=["GET"])
 def challenge_get(challID):
     return {
         "id": challID,

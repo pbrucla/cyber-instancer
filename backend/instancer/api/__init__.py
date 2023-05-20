@@ -6,5 +6,5 @@ from . import challenges
 
 blueprint = Blueprint("api", __name__)
 blueprint.register_blueprint(account.blueprint)
-blueprint.register_blueprint(challenge.blueprint)
-blueprint.register_blueprint(challenges.blueprint)
+blueprint.register_blueprint(challenge.blueprint, url_prefix="/challenge")
+blueprint.register_blueprint(challenges.blueprint, url_prefix="/challenges")

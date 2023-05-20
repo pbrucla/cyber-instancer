@@ -4,7 +4,7 @@ from flask import Blueprint
 blueprint = Blueprint("challenges", __name__)
 
 
-@blueprint.route("/api/challenges", methods=["GET"])
+@blueprint.route("/", methods=["GET"])
 def challenges():
     res = [
         {
