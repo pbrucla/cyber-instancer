@@ -1,32 +1,19 @@
 import flask
-from flask import Blueprint
+from flask import Blueprint, g
+from instancer.backend import Challenge
 
 blueprint = Blueprint("challenges", __name__, url_prefix="/challenges")
 
 
 @blueprint.route("", methods=["GET"])
 def challenges():
-    res = [
-        {
-            "id": "test",
-            "name": "Test chall",
-            "tags": ["demo", "beginner"],
-            "category": "web",
-            "deployed": False,
-        },
-        {
-            "id": "test2",
-            "name": "Test chall 2",
-            "tags": ["demo", "advanced"],
-            "category": "pwn",
-            "deployed": True,
-        },
-        {
-            "id": "test3",
-            "name": "Test chall 3",
-            "tags": ["demo", "la ctf 2023"],
-            "category": "misc",
-            "deployed": False,
-        },
-    ]
-    return flask.jsonify(results=res)
+    challenges = Challenge.fetchall(g.session["team_id"])
+    challenges_json = []
+    for challenge in challenges:
+        id = challenge[0].id
+        name = challenge[0].metadata.name
+        tags = challenge[1]
+        deployed = challenge[0].is_running()
+        challenges_json.append({"id": id, "name": name, "tags": tags, "deployed": deployed})
+
+    return challenges_json

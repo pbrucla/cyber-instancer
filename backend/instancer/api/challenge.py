@@ -5,6 +5,19 @@ from instancer.backend import Challenge
 blueprint = Blueprint("challenge", __name__, url_prefix="/challenge/<chall_id>")
 
 
+@staticmethod
+def process_port_mapping(
+    port_map: dict[tuple[str, int], int | str]
+) -> dict[str, int | str]:
+    return {
+        "{}:{}".format(container_name, internal_port): external_access
+        for (
+            (container_name, internal_port),
+            external_access,
+        ) in g.chall.port_mappings().items()
+    }
+
+
 @blueprint.url_value_preprocessor
 def fetch_challenge(endpoint, values):
     """Fetch the challenge ID from the URL."""
@@ -27,26 +40,37 @@ def check_challenge():
 
 @blueprint.route("/deployment", methods=["POST"])
 def challenge_deploy():
+    """
+    Starts or renews a team's challenge deployment.
+    """
+    g.chall.start()
     return {
         "success": True,
-        "id": g.chall_id,
-        "connection": ["127.0.0.1:25565"],
-        "expiration": 1685602800000,
-        "msg": "Successfully deployed/extended challenge",
+        "id": g.chall.id,
+        "port_mappings": process_port_mapping(g.chall.port_mappings()),
+        "expiration": g.chall.expiration(),
+        "msg": "Successfully deployed challenge",
     }
 
 
 @blueprint.route("/deployment", methods=["DELETE"])
 def cd_terminate():
+    """
+    Terminates a team's challenge deployment.
+    """
+    g.chall.stop()
     return {
         "success": True,
-        "id": g.chall_id,
+        "id": g.chall.id,
         "msg": "Successfully terminated challenge",
     }
 
 
 @blueprint.route("/deployment", methods=["GET"])
 def cd_get():
+    """
+    Return a team's challenge deployment info
+    """
     expiration = g.chall.expiration()
     return {
         "status": "ok",
@@ -54,7 +78,7 @@ def cd_get():
         if expiration is None
         else {
             "expiration": expiration,
-            "port_mappings": list(g.chall.port_mappings().items()),
+            "port_mappings": process_port_mapping(g.chall.port_mappings()),
         },
     }
 
