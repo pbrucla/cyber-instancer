@@ -87,7 +87,7 @@ def cd_get():
 def challenge_get():
     """Return challenge info.
 
-    If there is no error, response contains a `challenge_info` object with the ID, name, author, description, and categories.
+    If there is no error, response contains a `challenge_info` object with the ID, name, author, description, and tags.
     """
 
     return {
@@ -97,7 +97,6 @@ def challenge_get():
             "name": g.chall.metadata.name,
             "author": g.chall.metadata.author,
             "description": g.chall.metadata.description,
-            "categories": g.chall.categories(),
-            "tags": g.chall.tags(),
+            "tags": [(tag.name, tag.is_category) for tag in g.chall.tags()],
         },
     }
