@@ -190,11 +190,14 @@ class Challenge(ABC):
         self.additional_labels = additional_labels
         self.additional_env_metadata = additional_env_metadata
 
+    def is_running(self):
+        return self.expiration() is not None
+
     @classmethod
     def fetchall(cls, team_id: str) -> list[tuple[Challenge, list[ChallengeTag]]]:
         """Fetch all challenges, including categories and tags.
 
-        Returns a list where each element is a tuple of a Challenge, its categories, and its tags.
+        Returns a list where each element is a tuple of a Challenge and its tags.
         Challenges are returned in an unspecified order.
         """
 
