@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 from kubernetes import client as kclient, config as kconfig
@@ -110,6 +111,23 @@ class ChallengeMetadata:
     "The challenge author."
 
 
+def _make_challenge(
+    chall_id: str,
+    cfg: dict[str, Any],
+    per_team: bool,
+    lifetime: int,
+    name: str,
+    description: str,
+    author: str,
+    team_id: str,
+) -> Challenge:
+    metadata = ChallengeMetadata(name, description, author)
+    if per_team:
+        return PerTeamChallenge(chall_id, team_id, cfg, lifetime, metadata)
+    else:
+        return SharedChallenge(chall_id, cfg, lifetime, metadata)
+
+
 class Challenge(ABC):
     """A Challenge that can be started or stopped."""
 
@@ -155,6 +173,49 @@ class Challenge(ABC):
         self.additional_labels = additional_labels
         self.additional_env_metadata = additional_env_metadata
 
+    @classmethod
+    def fetchall(cls, team_id: str) -> list[tuple[Challenge, list[ChallengeTag]]]:
+        """Fetch all challenges, including categories and tags.
+
+        Returns a list where each element is a tuple of a Challenge, its categories, and its tags.
+        Challenges are returned in an unspecified order.
+        """
+
+        cache_key = "all_challs"
+        cached = rclient.get(cache_key)
+        if cached is not None:
+            challenge_ids = json.loads(cached)
+            result: list[tuple[Challenge, list[ChallengeTag]]] = []
+            for chall_id in challenge_ids:
+                chall = cls.fetch(chall_id, team_id)
+                if chall is not None:
+                    result.append((chall, chall.tags()))
+            return result
+        else:
+            with connect_pg() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT id, cfg, per_team, lifetime, name, description, author FROM challenges"
+                    )
+                    all_challs = cur.fetchall()
+                    cur.execute(
+                        "SELECT challenge_id, name, is_category FROM tags ORDER BY is_category DESC, name"
+                    )
+                    all_tags = cur.fetchall()
+            rclient.set(
+                cache_key, json.dumps([chall_id for (chall_id, *_) in all_challs])
+            )
+            tags: dict[str, list[ChallengeTag]] = defaultdict(list)
+            for chall_id, name, is_category in all_tags:
+                tags[chall_id].append(ChallengeTag(name, is_category))
+            return [
+                (
+                    _make_challenge(chall_id, *chall_data, team_id),
+                    tags.get(chall_id, []),
+                )
+                for (chall_id, *chall_data) in all_challs
+            ]
+
     @staticmethod
     def fetch(challenge_id: str, team_id: str) -> Challenge | None:
         """Fetches the appropriate Challenge instance given challenge ID and team ID.
@@ -176,12 +237,7 @@ class Challenge(ABC):
 
         if result is None:
             return None
-        cfg, per_team, lifetime, name, description, author = result
-        metadata = ChallengeMetadata(name, description, author)
-        if per_team:
-            return PerTeamChallenge(challenge_id, team_id, cfg, lifetime, metadata)
-        else:
-            return SharedChallenge(challenge_id, cfg, lifetime, metadata)
+        return _make_challenge(challenge_id, *result, team_id)
 
     def tags(self) -> list[ChallengeTag]:
         """Return a list of tags for the challenge.
