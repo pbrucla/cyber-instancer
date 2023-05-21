@@ -4,7 +4,7 @@ from typing import Any, IO, Callable
 import yaml
 import jsonschema
 import redis
-from psycopg_pool import ConnectionPool
+import psycopg
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 
@@ -93,7 +93,7 @@ def apply_config(c: dict):
                     "type": "object",
                     "properties": {
                         "host": {"type": "string"},
-                        "port": {"type": "number"},
+                        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                         "password": {"type": "string"},
                     },
                 },
@@ -101,7 +101,7 @@ def apply_config(c: dict):
                     "type": "object",
                     "properties": {
                         "host": {"type": "string"},
-                        "port": {"type": "number"},
+                        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                         "user": {"type": "string"},
                         "database": {"type": "string"},
                         "password": {"type": "string"},
@@ -154,13 +154,13 @@ rclient = redis.Redis(
 )
 "Redis client"
 
-pg_pool = ConnectionPool(
-    kwargs={
-        "host": config.postgres_host,
-        "dbname": config.postgres_database,
-        "user": config.postgres_user,
-        "port": config.postgres_port,
-        "password": config.postgres_password,
-    },
-)
-"Postgres connection pool"
+
+def connect_pg():
+    """Spawn a postgres connection."""
+    return psycopg.connect(
+        host=config.postgres_host,
+        dbname=config.postgres_database,
+        user=config.postgres_user,
+        port=config.postgres_port,
+        password=config.postgres_password,
+    )

@@ -1,14 +1,18 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 from kubernetes import client as kclient, config as kconfig
 from kubernetes.client.exceptions import ApiException
-from instancer.config import config, rclient, pg_pool
+from instancer.config import config, rclient, connect_pg
 from instancer.lock import Lock, LockException
 from time import time
 import random
+import re
 import json
+
+CHALL_CACHE_TIME = 3600
 
 if config.in_cluster:
     kconfig.load_incluster_config()
@@ -16,8 +20,16 @@ else:
     kconfig.load_kube_config()
 
 
-def snake_to_camel(snake: str):
-    return "".join(x.capitalize() for x in snake.split("_"))
+def snake_to_camel(snake: str) -> str:
+    return "".join(x.capitalize() for x in snake.lower().split("_"))
+
+
+def camel_to_snake(camel: str) -> str:
+    return re.sub(r"\B([A-Z])", r"_\1", camel).lower()
+
+
+def keys_to_snake(d: dict[str, Any]) -> dict[str, Any]:
+    return {camel_to_snake(k): v for (k, v) in d.items()}
 
 
 def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
@@ -38,12 +50,10 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
         cprop = snake_to_camel(prop)
         if cprop in cfg:
             kwargs[prop] = cfg[cprop]
-    if "environment" in cfg and "env" not in cfg:
-        cfg["env"] = cfg["environment"]
-    if "env" in cfg:
-        env = [kclient.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg["env"]]
-    else:
-        env = []
+    env = [
+        kclient.V1EnvVar(name=x["name"], value=x["value"])
+        for x in cfg.get("env", []) + cfg.get("environment", [])
+    ]
     if env_metadata is not None and not any(
         x.name == "INSTANCER_METADATA" for x in env
     ):
@@ -64,22 +74,36 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
             raise NotImplementedError(
                 f"{prop} container config currently not supported"
             )
+    ports = []
     if "kubePorts" in cfg:
-        kwargs["ports"] = [kclient.V1ContainerPort(**x) for x in cfg["kubePorts"]]
-    elif "ports" in cfg:
-        kwargs["ports"] = [
-            kclient.V1ContainerPort(container_port=x) for x in cfg["ports"]
-        ]
+        ports.extend(
+            kclient.V1ContainerPort(**keys_to_snake(x)) for x in cfg["kubePorts"]
+        )
+    if "ports" in cfg:
+        ports.extend(kclient.V1ContainerPort(container_port=x) for x in cfg["ports"])
+    kwargs["ports"] = ports
     if "securityContext" in cfg:
-        kwargs["security_context"] = kclient.V1SecurityContext(**cfg["securityContext"])
+        kwargs["security_context"] = kclient.V1SecurityContext(
+            **keys_to_snake(cfg["securityContext"])
+        )
     if "resources" in cfg:
-        kwargs["resources"] = kclient.V1ResourceRequirements(**cfg["resources"])
+        kwargs["resources"] = kclient.V1ResourceRequirements(
+            **keys_to_snake(cfg["resources"])
+        )
     else:
         kwargs["resources"] = kclient.V1ResourceRequirements(
             limits={"cpu": "500m", "memory": "512Mi"},
             requests={"cpu": "50m", "memory": "64Mi"},
         )
     return kclient.V1Container(**kwargs)
+
+
+class ResourceUnavailableError(Exception):
+    """Error thrown when a resource is temporarily unavailable.
+
+    For example: a namespace is locked or terminating."""
+
+    pass
 
 
 @dataclass
@@ -102,6 +126,23 @@ class ChallengeMetadata:
     "The challenge description."
     author: str
     "The challenge author."
+
+
+def _make_challenge(
+    chall_id: str,
+    cfg: dict[str, Any],
+    per_team: bool,
+    lifetime: int,
+    name: str,
+    description: str,
+    author: str,
+    team_id: str,
+) -> Challenge:
+    metadata = ChallengeMetadata(name, description, author)
+    if per_team:
+        return PerTeamChallenge(chall_id, team_id, cfg, lifetime, metadata)
+    else:
+        return SharedChallenge(chall_id, cfg, lifetime, metadata)
 
 
 class Challenge(ABC):
@@ -128,7 +169,7 @@ class Challenge(ABC):
 
     def __init__(
         self,
-        id: str,
+        chall_id: str,
         cfg: dict[str, Any],
         lifetime: int,
         metadata: ChallengeMetadata,
@@ -137,9 +178,9 @@ class Challenge(ABC):
         exposed_ports: dict[str, list[int]],
         http_ports: dict[str, list[tuple[int, str]]],
         additional_labels: dict[str, Any] = {},
-        additional_env_metadata: dict[str, Any] = {}
+        additional_env_metadata: dict[str, Any] = {},
     ):
-        self.id = id
+        self.id = chall_id
         self.lifetime = lifetime
         self.metadata = metadata
         self.namespace = namespace
@@ -148,6 +189,51 @@ class Challenge(ABC):
         self.http_ports = http_ports
         self.additional_labels = additional_labels
         self.additional_env_metadata = additional_env_metadata
+
+    @classmethod
+    def fetchall(cls, team_id: str) -> list[tuple[Challenge, list[ChallengeTag]]]:
+        """Fetch all challenges, including categories and tags.
+
+        Returns a list where each element is a tuple of a Challenge, its categories, and its tags.
+        Challenges are returned in an unspecified order.
+        """
+
+        cache_key = "all_challs"
+        cached = rclient.get(cache_key)
+        if cached is not None:
+            challenge_ids = json.loads(cached)
+            result: list[tuple[Challenge, list[ChallengeTag]]] = []
+            for chall_id in challenge_ids:
+                chall = cls.fetch(chall_id, team_id)
+                if chall is not None:
+                    result.append((chall, chall.tags()))
+            return result
+        else:
+            with connect_pg() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT id, cfg, per_team, lifetime, name, description, author FROM challenges"
+                    )
+                    all_challs = cur.fetchall()
+                    cur.execute(
+                        "SELECT challenge_id, name, is_category FROM tags ORDER BY is_category DESC, name"
+                    )
+                    all_tags = cur.fetchall()
+            rclient.set(
+                cache_key,
+                json.dumps([chall_id for (chall_id, *_) in all_challs]),
+                ex=CHALL_CACHE_TIME,
+            )
+            tags: dict[str, list[ChallengeTag]] = defaultdict(list)
+            for chall_id, name, is_category in all_tags:
+                tags[chall_id].append(ChallengeTag(name, is_category))
+            return [
+                (
+                    _make_challenge(chall_id, *chall_data, team_id),
+                    tags.get(chall_id, []),
+                )
+                for (chall_id, *chall_data) in all_challs
+            ]
 
     @staticmethod
     def fetch(challenge_id: str, team_id: str) -> Challenge | None:
@@ -159,23 +245,18 @@ class Challenge(ABC):
         if cached is not None:
             result = json.loads(cached)
         else:
-            with pg_pool.connection() as conn:
+            with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT cfg, per_team, lifetime, name, description, author FROM challenges WHERE id=%s",
                         (challenge_id,),
                     )
                     result = cur.fetchone()
-            rclient.set(cache_key, json.dumps(result), ex=3600)
+            rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
 
         if result is None:
             return None
-        cfg, per_team, lifetime, name, description, author = result
-        metadata = ChallengeMetadata(name, description, author)
-        if per_team:
-            return PerTeamChallenge(challenge_id, team_id, cfg, lifetime, metadata)
-        else:
-            return SharedChallenge(challenge_id, cfg, lifetime, metadata)
+        return _make_challenge(challenge_id, *result, team_id)
 
     def tags(self) -> list[ChallengeTag]:
         """Return a list of tags for the challenge.
@@ -189,14 +270,14 @@ class Challenge(ABC):
         if cached is not None:
             result = json.loads(cached)
         else:
-            with pg_pool.connection() as conn:
+            with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",
                         (self.id,),
                     )
                     result = cur.fetchall()
-            rclient.set(cache_key, json.dumps(result), ex=3600)
+            rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
 
         return [ChallengeTag(*tag) for tag in result]
 
@@ -213,185 +294,355 @@ class Challenge(ABC):
         api = kclient.AppsV1Api()
         capi = kclient.CoreV1Api()
         crdapi = kclient.CustomObjectsApi()
+        napi = kclient.NetworkingV1Api()
 
         curtime = int(time())
         expiration = curtime + self.lifetime
 
-        with Lock(self.namespace):
-            try:
-                curns = capi.read_namespace(self.namespace)
-                print(f"[*] Renewing namespace {self.namespace}...")
-                curns.metadata.annotations[
-                    "instancer.acmcyber.com/chall-expires"
-                ] = str(expiration)
-                capi.replace_namespace(self.namespace, curns)
-                rclient.zadd("expiration", {self.namespace: expiration})
-                return
-            except ApiException as e:
-                if e.status != 404:
-                    raise e
-                print(f"[*] Making namespace {self.namespace}...")
-                capi.create_namespace(
-                    kclient.V1Namespace(
-                        metadata=kclient.V1ObjectMeta(
-                            name=self.namespace,
-                            annotations={
-                                "instancer.acmcyber.com/chall-expires": str(expiration),
-                            },
-                            labels={
-                                "instancer.acmcyber.com/instance-id": self.id,
-                                **self.additional_labels,
-                            },
+        env_metadata = {
+            "namespace": self.namespace,
+            "instance_id": self.id,
+            "http": {
+                contname: {
+                    port: sub
+                    for (
+                        port,
+                        sub,
+                    ) in self.http_ports.get(contname, [])
+                }
+                for contname in self.containers
+            },
+            **self.additional_env_metadata,
+        }
+
+        common_labels = {
+            "instancer.acmcyber.com/instance-id": self.id,
+            **self.additional_labels,
+        }
+
+        namespace_made = False
+
+        try:
+            with Lock(self.namespace):
+                try:
+                    curns = capi.read_namespace(self.namespace)
+                    if curns.status.phase == "Terminating":
+                        raise ResourceUnavailableError(
+                            f"namespace {self.namespace} is still terminating"
+                        )
+                    print(f"[*] Renewing namespace {self.namespace}...")
+                    curns.metadata.annotations[
+                        "instancer.acmcyber.com/chall-expires"
+                    ] = str(expiration)
+                    capi.replace_namespace(self.namespace, curns)
+                    rclient.zadd("expiration", {self.namespace: expiration})
+                    return
+                except ApiException as e:
+                    if e.status != 404:
+                        raise e
+                    print(f"[*] Making namespace {self.namespace}...")
+                    capi.create_namespace(
+                        kclient.V1Namespace(
+                            metadata=kclient.V1ObjectMeta(
+                                name=self.namespace,
+                                annotations={
+                                    "instancer.acmcyber.com/chall-expires": str(
+                                        expiration
+                                    ),
+                                },
+                                labels=common_labels,
+                            )
                         )
                     )
-                )
 
-            rclient.zadd("expiration", {self.namespace: expiration})
-            for depname, container in self.containers.items():
-                print(
-                    f"[*] Making deployment {depname} under namespace {self.namespace}..."
-                )
-                labels = {
-                    "instancer.acmcyber.com/instance-id": self.id,
-                    "instancer.acmcyber.com/container-name": depname,
-                    **self.additional_labels,
-                }
-                dep = kclient.V1Deployment(
-                    metadata=kclient.V1ObjectMeta(
-                        name=depname,
-                        labels=labels,
-                    ),
-                    spec=kclient.V1DeploymentSpec(
-                        selector=kclient.V1LabelSelector(match_labels=labels),
-                        replicas=1,
-                        template=kclient.V1PodTemplateSpec(
-                            metadata=kclient.V1ObjectMeta(
-                                labels=labels,
-                                annotations={
-                                    "instancer.acmcyber.com/chall-started": str(curtime)
-                                },
-                            ),
-                            spec=kclient.V1PodSpec(
-                                enable_service_links=False,
-                                automount_service_account_token=False,
-                                containers=[
-                                    config_to_container(
-                                        depname,
-                                        container,
-                                        env_metadata={
-                                            "namespace": self.namespace,
-                                            "instance_id": self.id,
-                                            "container_name": depname,
-                                            **self.additional_env_metadata
-                                        },
-                                    )
-                                ],
+                namespace_made = True
+                rclient.zadd("expiration", {self.namespace: expiration})
+                for depname, container in self.containers.items():
+                    print(
+                        f"[*] Making deployment {depname} under namespace {self.namespace}..."
+                    )
+                    labels = {
+                        **common_labels,
+                        "instancer.acmcyber.com/container-name": depname,
+                    }
+                    pod_labels = {
+                        **labels,
+                        "instancer.acmcyber.com/has-egress": "true"
+                        if container.get("hasEgress", True)
+                        else "false",
+                        "instancer.acmcyber.com/has-ingress": "true"
+                        if len(self.exposed_ports.get(depname, [])) > 0
+                        or len(self.http_ports.get(depname, [])) > 0
+                        else "false",
+                    }
+                    dep = kclient.V1Deployment(
+                        metadata=kclient.V1ObjectMeta(
+                            name=depname,
+                            labels=labels,
+                        ),
+                        spec=kclient.V1DeploymentSpec(
+                            selector=kclient.V1LabelSelector(match_labels=pod_labels),
+                            replicas=1,
+                            template=kclient.V1PodTemplateSpec(
+                                metadata=kclient.V1ObjectMeta(
+                                    labels=pod_labels,
+                                    annotations={
+                                        "instancer.acmcyber.com/chall-started": str(
+                                            curtime
+                                        )
+                                    },
+                                ),
+                                spec=kclient.V1PodSpec(
+                                    enable_service_links=False,
+                                    automount_service_account_token=False,
+                                    containers=[
+                                        config_to_container(
+                                            depname,
+                                            container,
+                                            env_metadata={
+                                                "container_name": depname,
+                                                **env_metadata,
+                                            },
+                                        )
+                                    ],
+                                ),
                             ),
                         ),
-                    ),
-                )
-                api.create_namespaced_deployment(self.namespace, dep)
+                    )
+                    api.create_namespaced_deployment(self.namespace, dep)
 
-            for servname, container in self.containers.items():
-                print(
-                    f"[*] Making service {servname} under namespace {self.namespace}..."
-                )
-                exposed_ports = self.exposed_ports.get(servname, [])
-                http_ports = self.http_ports.get(servname, [])
-                selector = {
-                    "instancer.acmcyber.com/instance-id": self.id,
-                    "instancer.acmcyber.com/container-name": servname,
-                    **self.additional_labels,
-                }
-                if len(exposed_ports) > 0:
-                    serv_spec = kclient.V1ServiceSpec(
-                        selector=selector,
-                        ports=[
-                            kclient.V1ServicePort(port=port, target_port=port)
-                            for port in exposed_ports + [x[0] for x in http_ports]
-                        ],
-                        type="NodePort",
-                    )
-                else:
-                    serv_spec = kclient.V1ServiceSpec(
-                        selector=selector,
-                        ports=[
-                            kclient.V1ServicePort(port=port, target_port=port)
-                            for port, _ in http_ports
-                        ],
-                        type="ClusterIP",
-                    )
-                serv = kclient.V1Service(
-                    metadata=kclient.V1ObjectMeta(
-                        name=servname,
-                        labels={
-                            "instancer.acmcyber.com/instance-id": self.id,
-                            "instancer.acmcyber.com/container-name": servname,
-                            **self.additional_labels,
-                        },
-                    ),
-                    spec=serv_spec,
-                )
-                capi.create_namespaced_service(self.namespace, serv)
-
-            for ingname, container in self.containers.items():
-                http_ports = self.http_ports.get(ingname, [])
-                if len(http_ports) > 0:
-                    print(
-                        f"[*] Making ingress {ingname} under namespace {self.namespace}..."
-                    )
-                    ing = {
-                        "apiVersion": "traefik.containo.us/v1alpha1",
-                        "kind": "IngressRoute",
-                        "metadata": {
-                            "name": ingname,
-                            "annotations": {
-                                "instancer.acmcyber.com/raw-routes": json.dumps(
-                                    http_ports
-                                )
-                            },
-                            "labels": {
-                                "instancer.acmcyber.com/instance-id": self.id,
-                                "instancer.acmcyber.com/container-name": ingname,
-                                **self.additional_labels,
-                            },
-                        },
-                        "spec": {
-                            "entryPoints": ["web", "websecure"],
-                            "routes": [
-                                {
-                                    "match": f"Host(`{sub}`)",
-                                    "kind": "Rule",
-                                    "services": [{"name": ingname, "port": port}],
-                                }
-                                for (port, sub) in http_ports
-                            ],
-                        },
+                for servname, container in self.containers.items():
+                    exposed_ports = self.exposed_ports.get(servname, [])
+                    http_ports = self.http_ports.get(servname, [])
+                    private_ports = container.get("ports", []) + [
+                        x["containerPort"] for x in container.get("kubePorts", [])
+                    ]
+                    private_ports = [x for x in private_ports if x not in exposed_ports]
+                    multiservice = len(exposed_ports) > 0 and len(private_ports) > 0
+                    selector = {
+                        **common_labels,
+                        "instancer.acmcyber.com/container-name": servname,
                     }
-                    crdapi.create_namespaced_custom_object(
-                        "traefik.containo.us",
-                        "v1alpha1",
-                        self.namespace,
-                        "ingressroutes",
-                        ing,
-                    )
+                    serv_specs = []
+                    if len(exposed_ports) > 0:
+                        serv_specs.append(
+                            kclient.V1ServiceSpec(
+                                selector=selector,
+                                ports=[
+                                    kclient.V1ServicePort(port=port, target_port=port)
+                                    for port in exposed_ports
+                                ],
+                                type="NodePort",
+                            )
+                        )
+                    if len(private_ports) > 0:
+                        serv_specs.append(
+                            kclient.V1ServiceSpec(
+                                selector=selector,
+                                ports=[
+                                    kclient.V1ServicePort(port=port, target_port=port)
+                                    for port in private_ports
+                                ],
+                                type="ClusterIP",
+                            )
+                        )
+                    for serv_spec in serv_specs:
+                        print(
+                            f"[*] Making service {servname} under namespace {self.namespace}..."
+                        )
+                        serv = kclient.V1Service(
+                            metadata=kclient.V1ObjectMeta(
+                                name=servname + "-instancer-external"
+                                if multiservice and serv_spec.type == "NodePort"
+                                else servname,
+                                labels={
+                                    **common_labels,
+                                    "instancer.acmcyber.com/container-name": servname,
+                                },
+                            ),
+                            spec=serv_spec,
+                        )
+                        capi.create_namespaced_service(self.namespace, serv)
+
+                for ingname, container in self.containers.items():
+                    http_ports = self.http_ports.get(ingname, [])
+                    if len(http_ports) > 0:
+                        print(
+                            f"[*] Making ingress {ingname} under namespace {self.namespace}..."
+                        )
+                        ing = {
+                            "apiVersion": "traefik.containo.us/v1alpha1",
+                            "kind": "IngressRoute",
+                            "metadata": {
+                                "name": ingname,
+                                "annotations": {
+                                    "instancer.acmcyber.com/raw-routes": json.dumps(
+                                        http_ports
+                                    )
+                                },
+                                "labels": {
+                                    **common_labels,
+                                    "instancer.acmcyber.com/container-name": ingname,
+                                },
+                            },
+                            "spec": {
+                                "entryPoints": ["web", "websecure"],
+                                "routes": [
+                                    {
+                                        "match": f"Host(`{sub}`)",
+                                        "kind": "Rule",
+                                        "services": [{"name": ingname, "port": port}],
+                                    }
+                                    for (port, sub) in http_ports
+                                ],
+                            },
+                        }
+                        crdapi.create_namespaced_custom_object(
+                            "traefik.containo.us",
+                            "v1alpha1",
+                            self.namespace,
+                            "ingressroutes",
+                            ing,
+                        )
+
+                pol_interns = kclient.V1NetworkPolicy(
+                    metadata=kclient.V1ObjectMeta(name="interns", labels=common_labels),
+                    spec=kclient.V1NetworkPolicySpec(
+                        pod_selector=kclient.V1LabelSelector(),
+                        policy_types=["Ingress", "Egress"],
+                        ingress=[
+                            # allow ingress from other pods in the namespace
+                            kclient.V1NetworkPolicyIngressRule(
+                                _from=[
+                                    kclient.V1NetworkPolicyPeer(
+                                        namespace_selector=kclient.V1LabelSelector(
+                                            match_labels=common_labels
+                                        )
+                                    )
+                                ]
+                            )
+                        ],
+                        egress=[
+                            # allow egress to other pods in the namespace
+                            kclient.V1NetworkPolicyEgressRule(
+                                to=[
+                                    kclient.V1NetworkPolicyPeer(
+                                        namespace_selector=kclient.V1LabelSelector(
+                                            match_labels=common_labels
+                                        )
+                                    )
+                                ]
+                            ),
+                            # allow egress to the cluster's dns server
+                            kclient.V1NetworkPolicyEgressRule(
+                                to=[
+                                    kclient.V1NetworkPolicyPeer(
+                                        namespace_selector=kclient.V1LabelSelector(
+                                            match_labels={
+                                                "kubernetes.io/metadata.name": "kube-system"
+                                            }
+                                        )
+                                    )
+                                ],
+                                ports=[
+                                    kclient.V1NetworkPolicyPort(port=53, protocol="UDP")
+                                ],
+                            ),
+                        ],
+                    ),
+                )
+                pol_ingress = kclient.V1NetworkPolicy(
+                    metadata=kclient.V1ObjectMeta(name="ingress", labels=common_labels),
+                    spec=kclient.V1NetworkPolicySpec(
+                        pod_selector=kclient.V1LabelSelector(
+                            match_labels={"instancer.acmcyber.com/has-ingress": "true"}
+                        ),
+                        policy_types=["Ingress"],
+                        ingress=[
+                            # allow ingress from anyone
+                            kclient.V1NetworkPolicyIngressRule(
+                                _from=[
+                                    kclient.V1NetworkPolicyPeer(
+                                        ip_block=kclient.V1IPBlock(cidr="0.0.0.0/0")
+                                    )
+                                ]
+                            )
+                        ],
+                    ),
+                )
+                pol_egress = kclient.V1NetworkPolicy(
+                    metadata=kclient.V1ObjectMeta(name="egress", labels=common_labels),
+                    spec=kclient.V1NetworkPolicySpec(
+                        pod_selector=kclient.V1LabelSelector(
+                            match_labels={"instancer.acmcyber.com/has-egress": "true"}
+                        ),
+                        policy_types=["Egress"],
+                        egress=[
+                            # allow egress to anyone except IANA private IP blocks
+                            kclient.V1NetworkPolicyEgressRule(
+                                to=[
+                                    kclient.V1NetworkPolicyPeer(
+                                        ip_block=kclient.V1IPBlock(
+                                            cidr="0.0.0.0/0",
+                                            _except=[
+                                                "10.0.0.0/8",
+                                                "172.16.0.0/12",
+                                                "192.168.0.0/16",
+                                                "169.254.0.0/16",
+                                            ],
+                                        )
+                                    )
+                                ]
+                            )
+                        ],
+                    ),
+                )
+                print(
+                    f"[*] Making network policies under namespace {self.namespace}..."
+                )
+                napi.create_namespaced_network_policy(self.namespace, pol_interns)
+                napi.create_namespaced_network_policy(self.namespace, pol_ingress)
+                napi.create_namespaced_network_policy(self.namespace, pol_egress)
+        except LockException:
+            raise ResourceUnavailableError(f"namespace {self.namespace} is locked")
+        except Exception:
+            if namespace_made:
+                print(f"[*] Got error, cleaning up namespace {self.namespace}...")
+                try:
+                    capi.delete_namespace(self.namespace)
+                    rclient.zrem("expiration", self.namespace)
+                except ApiException:
+                    print(f"[*] Could not clean up namespace {self.namespace}...")
+            raise
+
+    @staticmethod
+    def stop_namespace(namespace):
+        """Stops a challenge given the namespace of the challenge."""
+        capi = kclient.CoreV1Api()
+
+        print(f"[*] Deleting namespace {namespace}...")
+        try:
+            capi.delete_namespace(namespace)
+            rclient.zrem("expiration", namespace)
+            rclient.delete(f"ports:{namespace}")
+        except ApiException as e:
+            if e.status == 404:
+                print(
+                    f"[*] Could not delete namespace {namespace} because namespace does not exist..."
+                )
+            else:
+                print(f"[*] Could not delete namespace {namespace} due to error {e}...")
 
     def stop(self):
         """Stops a challenge if it's running."""
-        capi = kclient.CoreV1Api()
-
-        print(f"[*] Deleting namespace {self.namespace}...")
-        try:
-            capi.delete_namespace(self.namespace)
-            rclient.zrem("expiration", self.namespace)
-        except ApiException as e:
-            print(f"[*] Could not delete namespace {self.namespace}...")
+        self.stop_namespace(self.namespace)
 
     def port_mappings(self) -> dict[tuple[str, int], int | str] | None:
         """Return a mapping from (container name, port) pairs to either a TCP port or HTTP domain."""
         # Exit early if the container isn't running
         # This check is cached so it should be pretty quick
-        if self.expiration() is None:
+        exp = self.expiration()
+        if exp is None:
             return None
         cache_key = f"ports:{self.namespace}"
         cached = rclient.get(cache_key)
@@ -429,7 +680,7 @@ class Challenge(ABC):
         cache_entry = {}
         for (cont, cport), port in ret.items():
             cache_entry[f"{cont}:{cport}"] = port
-        rclient.set(cache_key, json.dumps(cache_entry), ex=3600)
+        rclient.set(cache_key, json.dumps(cache_entry), ex=exp - int(time()))
 
         return ret
 
@@ -452,8 +703,8 @@ class SharedChallenge(Challenge):
             lifetime,
             metadata,
             namespace=f"chall-instance-{id}",
-            exposed_ports=cfg["tcp"],
-            http_ports=cfg["http"],
+            exposed_ports=cfg.get("tcp", {}),
+            http_ports=cfg.get("http", {}),
         )
 
 
@@ -476,7 +727,7 @@ class PerTeamChallenge(Challenge):
         """
 
         http_ports = {}
-        for cont_name, ports in cfg["http"].items():
+        for cont_name, ports in cfg.get("http", {}).items():
             l = []
             for port, domain in ports:
                 chunks = domain.split(".")
@@ -492,10 +743,10 @@ class PerTeamChallenge(Challenge):
             lifetime,
             metadata,
             namespace=f"chall-instance-{id}-team-{team_id}",
-            exposed_ports=cfg["tcp"],
+            exposed_ports=cfg.get("tcp", {}),
             http_ports=http_ports,
             additional_labels={"instancer.acmcyber.com/team-id": team_id},
-            additional_env_metadata={"team_id": team_id}
+            additional_env_metadata={"team_id": team_id},
         )
 
         self.team_id = team_id
