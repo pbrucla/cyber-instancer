@@ -622,8 +622,8 @@ class SharedChallenge(Challenge):
             lifetime,
             metadata,
             namespace=f"chall-instance-{id}",
-            exposed_ports=cfg["tcp"],
-            http_ports=cfg["http"],
+            exposed_ports=cfg.get("tcp", {}),
+            http_ports=cfg.get("http", {}),
         )
 
 
@@ -646,7 +646,7 @@ class PerTeamChallenge(Challenge):
         """
 
         http_ports = {}
-        for cont_name, ports in cfg["http"].items():
+        for cont_name, ports in cfg.get("http", {}).items():
             l = []
             for port, domain in ports:
                 chunks = domain.split(".")
@@ -662,7 +662,7 @@ class PerTeamChallenge(Challenge):
             lifetime,
             metadata,
             namespace=f"chall-instance-{id}-team-{team_id}",
-            exposed_ports=cfg["tcp"],
+            exposed_ports=cfg.get("tcp", {}),
             http_ports=http_ports,
             additional_labels={"instancer.acmcyber.com/team-id": team_id},
             additional_env_metadata={"team_id": team_id},
