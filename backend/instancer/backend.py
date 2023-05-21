@@ -124,7 +124,7 @@ class Challenge(ABC):
 
     def __init__(
         self,
-        id: str,
+        chall_id: str,
         cfg: dict[str, Any],
         lifetime: int,
         metadata: ChallengeMetadata,
@@ -135,7 +135,7 @@ class Challenge(ABC):
         additional_labels: dict[str, Any] = {},
         additional_env_metadata: dict[str, Any] = {},
     ):
-        self.id = id
+        self.id = chall_id
         self.lifetime = lifetime
         self.metadata = metadata
         self.namespace = namespace
