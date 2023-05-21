@@ -29,6 +29,7 @@ body {
     background-color:#404040;
     border:none;
     color:white;
+    
 }
 
 .text {
@@ -36,7 +37,7 @@ body {
 }
 
 span {
-    margin-left:1vw;
+    margin-left:1.25vw;
     display:block;
     max-width:18vw;
     overflow-wrap: break-word;
@@ -61,7 +62,7 @@ span {
 .stat{
     margin-left: 1vw;
     position: absolute;
-    bottom:1vw;
+    top:15.5vw;
     font-size: 1.5vw;
     width: 9vw;
     padding: 0.5vw;
