@@ -98,8 +98,8 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
     return kclient.V1Container(**kwargs)
 
 
-class ResourceUnavailableException(Exception):
-    """Exception thrown when a resource is temporarily unavailable
+class ResourceUnavailableError(Exception):
+    """Error thrown when a resource is temporarily unavailable.
 
     For example: a namespace is locked or terminating."""
 
@@ -327,7 +327,7 @@ class Challenge(ABC):
                 try:
                     curns = capi.read_namespace(self.namespace)
                     if curns.status.phase == "Terminating":
-                        raise ResourceUnavailableException(
+                        raise ResourceUnavailableError(
                             f"namespace {self.namespace} is still terminating"
                         )
                     print(f"[*] Renewing namespace {self.namespace}...")
@@ -417,37 +417,44 @@ class Challenge(ABC):
                     private_ports = container.get("ports", []) + [
                         x["containerPort"] for x in container.get("kubePorts", [])
                     ]
+                    private_ports = [x for x in private_ports if x not in exposed_ports]
+                    multiservice = len(exposed_ports) > 0 and len(private_ports) > 0
                     selector = {
                         **common_labels,
                         "instancer.acmcyber.com/container-name": servname,
                     }
+                    serv_specs = []
                     if len(exposed_ports) > 0:
-                        serv_spec = kclient.V1ServiceSpec(
-                            selector=selector,
-                            ports=[
-                                kclient.V1ServicePort(port=port, target_port=port)
-                                for port in exposed_ports
-                            ],
-                            type="NodePort",
+                        serv_specs.append(
+                            kclient.V1ServiceSpec(
+                                selector=selector,
+                                ports=[
+                                    kclient.V1ServicePort(port=port, target_port=port)
+                                    for port in exposed_ports
+                                ],
+                                type="NodePort",
+                            )
                         )
-                    elif len(private_ports) > 0:
-                        serv_spec = kclient.V1ServiceSpec(
-                            selector=selector,
-                            ports=[
-                                kclient.V1ServicePort(port=port, target_port=port)
-                                for port in private_ports
-                            ],
-                            type="ClusterIP",
+                    if len(private_ports) > 0:
+                        serv_specs.append(
+                            kclient.V1ServiceSpec(
+                                selector=selector,
+                                ports=[
+                                    kclient.V1ServicePort(port=port, target_port=port)
+                                    for port in private_ports
+                                ],
+                                type="ClusterIP",
+                            )
                         )
-                    else:
-                        serv_spec = None
-                    if serv_spec is not None:
+                    for serv_spec in serv_specs:
                         print(
                             f"[*] Making service {servname} under namespace {self.namespace}..."
                         )
                         serv = kclient.V1Service(
                             metadata=kclient.V1ObjectMeta(
-                                name=servname,
+                                name=servname + "-instancer-external"
+                                if multiservice and serv_spec.type == "NodePort"
+                                else servname,
                                 labels={
                                     **common_labels,
                                     "instancer.acmcyber.com/container-name": servname,
@@ -597,7 +604,7 @@ class Challenge(ABC):
                 napi.create_namespaced_network_policy(self.namespace, pol_ingress)
                 napi.create_namespaced_network_policy(self.namespace, pol_egress)
         except LockException:
-            raise ResourceUnavailableException(f"namespace {self.namespace} is locked")
+            raise ResourceUnavailableError(f"namespace {self.namespace} is locked")
         except Exception:
             if namespace_made:
                 print(f"[*] Got error, cleaning up namespace {self.namespace}...")
