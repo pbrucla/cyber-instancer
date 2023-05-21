@@ -11,7 +11,7 @@ def main():
         curtime = int(time())
 
         for chall in rclient.zrange("expiration", "-inf", curtime, byscore=True):
-            Challenge.stop_namespace(chall)
+            Challenge.stop_namespace(chall.decode())
 
         last_resync = rclient.get("last_resync")
         if (
