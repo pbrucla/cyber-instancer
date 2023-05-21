@@ -18,5 +18,5 @@ if config.dev:
         try:
             team_id = request.form["team_id"]
         except KeyError:
-            return {"status": "error", "msg": "missing team ID"}, 400
+            return {"status": "missing_team_id", "msg": "missing team ID"}, 400
         return {"status": "ok", "token": authentication.new_session(team_id)}

@@ -21,7 +21,7 @@ def check_challenge():
 
     chall = Challenge.fetch(g.chall_id, g.session["team_id"])
     if chall is None:
-        return {"status": "error", "msg": "invalid challenge ID"}, 404
+        return {"status": "invalid_chall_id", "msg": "invalid challenge ID"}, 404
     g.chall = chall
 
 
