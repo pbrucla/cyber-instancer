@@ -1,5 +1,5 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
@@ -146,6 +146,7 @@ def _make_challenge(
 
 
 class Challenge(ABC):
+    __metaclass__ = ABCMeta
     """A Challenge that can be started or stopped."""
 
     id: str
@@ -291,6 +292,11 @@ class Challenge(ABC):
         if score is None:
             return None
         return int(score)
+
+    @abstractmethod
+    def is_shared(self) -> bool:
+        """Returns True if challenge is shared, e.g. should not be terminatable"""
+        return
 
     def start(self):
         """Starts a challenge, or renews it if it was already running."""
@@ -710,6 +716,10 @@ class SharedChallenge(Challenge):
             http_ports=cfg.get("http", {}),
         )
 
+    def is_shared(self) -> bool:
+        """Returns True if challenge is shared, e.g. should not be terminatable"""
+        return True
+
 
 class PerTeamChallenge(Challenge):
     """A challenge that needs to spawn a unique instance per team."""
@@ -753,3 +763,7 @@ class PerTeamChallenge(Challenge):
         )
 
         self.team_id = team_id
+
+    def is_shared(self) -> bool:
+        """Returns True if challenge is shared, e.g. should not be terminatable"""
+        return False

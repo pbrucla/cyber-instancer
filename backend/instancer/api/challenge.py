@@ -28,6 +28,7 @@ def challenge_info(chall: Challenge, tags: list[ChallengeTag]) -> dict[str, Any]
         "author": chall.metadata.author,
         "description": chall.metadata.description,
         "tags": [(tag.name, tag.is_category) for tag in tags],
+        "is_shared": chall.is_shared(),
     }
 
 
@@ -62,10 +63,7 @@ def challenge_deploy():
     g.chall.start()
     return {
         "success": True,
-        "id": g.chall.id,
-        "port_mappings": g.chall.port_mappings(),
-        "expiration": g.chall.expiration(),
-        "msg": "Successfully deployed challenge",
+        "deployment": deployment_status(g.chall),
     }
 
 
@@ -74,6 +72,11 @@ def cd_terminate():
     """
     Terminates a team's challenge deployment.
     """
+    if g.chall.is_shared():
+        return {
+            "success": False,
+            "msg": "You do not have permission to terminate a shared challenge deployment",
+        }, 403
     g.chall.stop()
     return {
         "success": True,
