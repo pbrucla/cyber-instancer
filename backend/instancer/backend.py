@@ -191,8 +191,7 @@ class Challenge(ABC):
         self.additional_env_metadata = additional_env_metadata
 
     def is_running(self):
-        exp = self.expiration()
-        return False if exp is None else True
+        return self.expiration() is not None
 
     @classmethod
     def fetchall(cls, team_id: str) -> list[tuple[Challenge, list[ChallengeTag]]]:

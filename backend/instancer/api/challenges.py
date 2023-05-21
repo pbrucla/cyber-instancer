@@ -14,6 +14,8 @@ def challenges():
         name = challenge[0].metadata.name
         tags = challenge[1]
         deployed = challenge[0].is_running()
-        challenges_json.append({"id": id, "name": name, "tags": tags, "deployed": deployed})
+        challenges_json.append(
+            {"id": id, "name": name, "tags": tags, "deployed": deployed}
+        )
 
     return challenges_json
