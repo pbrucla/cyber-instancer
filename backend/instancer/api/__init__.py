@@ -22,13 +22,16 @@ def check_authorization():
     ]:
         return
     if request.authorization is None:
-        return {"status": "unauthenticated", "msg": "authentication is required"}, 401
+        return {
+            "status": "missing_authorization",
+            "msg": "authentication is required",
+        }, 401
     if request.authorization.type != "bearer":
         return {
-            "status": "unauthenticated",
+            "status": "unsupported_authorization_type",
             "msg": 'authorization type must be "Bearer"',
         }, 401
     session = authentication.get_session(request.authorization.token)
     if session is None:
-        return {"status": "unauthenticated", "msg": "invalid token"}, 401
+        return {"status": "invalid_token", "msg": "invalid token"}, 401
     g.session = session
