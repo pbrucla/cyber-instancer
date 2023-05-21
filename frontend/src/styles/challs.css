@@ -77,3 +77,19 @@ span {
     color:#FFFFFF;
     background-color:#F44D8A;
 }
+
+.stat.ON:active {
+    background-color: #EFD80A;
+    -webkit-box-shadow: inset 0px 0px 5px #D3BB00;
+       -moz-box-shadow: inset 0px 0px 5px #D3BB00;
+            box-shadow: inset 0px 0px 5px #D3BB00;
+     outline: none;
+}
+
+.stat.OFF:active {
+    background-color: #e43d7a;
+    -webkit-box-shadow: inset 0px 0px 5px #C82162;
+       -moz-box-shadow: inset 0px 0px 5px #C82162;
+            box-shadow: inset 0px 0px 5px #C82162;
+     outline: none;
+}

@@ -25,7 +25,7 @@
 }
 
 .round-button:active {
-    background: #e43d7e;
+    background: #e43d7a;
     -webkit-box-shadow: inset 0px 0px 5px #C82162;
        -moz-box-shadow: inset 0px 0px 5px #C82162;
             box-shadow: inset 0px 0px 5px #C82162;

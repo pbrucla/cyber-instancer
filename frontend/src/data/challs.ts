@@ -8,7 +8,7 @@ export type challProp = {
 
 const challData: challProp[] = [
     {
-        id: "",
+        id: "1",
         name: "checking",
         tags: ["demo", "beginner"],
         category: "web",

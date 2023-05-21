@@ -28,7 +28,7 @@ root.render(
                 <Route path="/challs" element={<Challs />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/chall" element={<Chall />} />
+                <Route path="/chall/:ID" element={<Chall />} />
             </Routes>
         </BrowserRouter>
     </React.StrictMode>
