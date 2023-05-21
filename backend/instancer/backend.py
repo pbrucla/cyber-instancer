@@ -12,6 +12,8 @@ import random
 import re
 import json
 
+CHALL_CACHE_TIME = 3600
+
 if config.in_cluster:
     kconfig.load_incluster_config()
 else:
@@ -218,7 +220,9 @@ class Challenge(ABC):
                     )
                     all_tags = cur.fetchall()
             rclient.set(
-                cache_key, json.dumps([chall_id for (chall_id, *_) in all_challs])
+                cache_key,
+                json.dumps([chall_id for (chall_id, *_) in all_challs]),
+                ex=CHALL_CACHE_TIME,
             )
             tags: dict[str, list[ChallengeTag]] = defaultdict(list)
             for chall_id, name, is_category in all_tags:
@@ -248,7 +252,7 @@ class Challenge(ABC):
                         (challenge_id,),
                     )
                     result = cur.fetchone()
-            rclient.set(cache_key, json.dumps(result), ex=3600)
+            rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
 
         if result is None:
             return None
@@ -273,7 +277,7 @@ class Challenge(ABC):
                         (self.id,),
                     )
                     result = cur.fetchall()
-            rclient.set(cache_key, json.dumps(result), ex=3600)
+            rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
 
         return [ChallengeTag(*tag) for tag in result]
 
