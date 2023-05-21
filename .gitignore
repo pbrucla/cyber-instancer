@@ -144,3 +144,4 @@ frontend/build
 
 k3s.yaml
 .vscode/
+.vite/

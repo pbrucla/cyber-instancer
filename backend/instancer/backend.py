@@ -1,5 +1,5 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
@@ -146,6 +146,7 @@ def _make_challenge(
 
 
 class Challenge(ABC):
+    __metaclass__ = ABCMeta
     """A Challenge that can be started or stopped."""
 
     id: str
@@ -190,11 +191,14 @@ class Challenge(ABC):
         self.additional_labels = additional_labels
         self.additional_env_metadata = additional_env_metadata
 
+    def is_running(self):
+        return self.expiration() is not None
+
     @classmethod
     def fetchall(cls, team_id: str) -> list[tuple[Challenge, list[ChallengeTag]]]:
         """Fetch all challenges, including categories and tags.
 
-        Returns a list where each element is a tuple of a Challenge, its categories, and its tags.
+        Returns a list where each element is a tuple of a Challenge and its tags.
         Challenges are returned in an unspecified order.
         """
 
@@ -288,6 +292,11 @@ class Challenge(ABC):
         if score is None:
             return None
         return int(score)
+
+    @abstractmethod
+    def is_shared(self) -> bool:
+        """Returns True if challenge is shared, e.g. should not be terminatable"""
+        return
 
     def start(self):
         """Starts a challenge, or renews it if it was already running."""
@@ -707,6 +716,10 @@ class SharedChallenge(Challenge):
             http_ports=cfg.get("http", {}),
         )
 
+    def is_shared(self) -> bool:
+        """Returns True if challenge is shared, e.g. should not be terminatable"""
+        return True
+
 
 class PerTeamChallenge(Challenge):
     """A challenge that needs to spawn a unique instance per team."""
@@ -750,3 +763,7 @@ class PerTeamChallenge(Challenge):
         )
 
         self.team_id = team_id
+
+    def is_shared(self) -> bool:
+        """Returns True if challenge is shared, e.g. should not be terminatable"""
+        return False

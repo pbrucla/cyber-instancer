@@ -1,6 +1,36 @@
+from typing import Any
+
 from flask import Blueprint, g
 
-from instancer.backend import Challenge
+from instancer.backend import Challenge, ChallengeTag
+
+
+def deployment_status(chall: Challenge) -> dict[str, Any] | None:
+    """Return a dict with the challenge deployment status or None if the challenge is not deployed."""
+
+    expiration = chall.expiration()
+    return (
+        None
+        if expiration is None
+        else {
+            "expiration": expiration,
+            "port_mappings": list(chall.port_mappings().items()),
+        }
+    )
+
+
+def challenge_info(chall: Challenge, tags: list[ChallengeTag]) -> dict[str, Any]:
+    """Return a dict with the challenge info."""
+
+    return {
+        "id": chall.id,
+        "name": chall.metadata.name,
+        "author": chall.metadata.author,
+        "description": chall.metadata.description,
+        "tags": [(tag.name, tag.is_category) for tag in tags],
+        "is_shared": chall.is_shared(),
+    }
+
 
 blueprint = Blueprint("challenge", __name__, url_prefix="/challenge/<chall_id>")
 
@@ -27,35 +57,42 @@ def check_challenge():
 
 @blueprint.route("/deployment", methods=["POST"])
 def challenge_deploy():
+    """
+    Starts or renews a team's challenge deployment.
+    """
+    g.chall.start()
     return {
         "success": True,
-        "id": g.chall_id,
-        "connection": ["127.0.0.1:25565"],
-        "expiration": 1685602800000,
-        "msg": "Successfully deployed/extended challenge",
+        "deployment": deployment_status(g.chall),
     }
 
 
 @blueprint.route("/deployment", methods=["DELETE"])
 def cd_terminate():
+    """
+    Terminates a team's challenge deployment.
+    """
+    if g.chall.is_shared():
+        return {
+            "success": False,
+            "msg": "You do not have permission to terminate a shared challenge deployment",
+        }, 403
+    g.chall.stop()
     return {
         "success": True,
-        "id": g.chall_id,
+        "id": g.chall.id,
         "msg": "Successfully terminated challenge",
     }
 
 
 @blueprint.route("/deployment", methods=["GET"])
 def cd_get():
-    expiration = g.chall.expiration()
+    """
+    Return a team's challenge deployment info
+    """
     return {
         "status": "ok",
-        "deployment": None
-        if expiration is None
-        else {
-            "expiration": expiration,
-            "port_mappings": list(g.chall.port_mappings().items()),
-        },
+        "deployment": deployment_status(g.chall),
     }
 
 
@@ -63,17 +100,10 @@ def cd_get():
 def challenge_get():
     """Return challenge info.
 
-    If there is no error, response contains a `challenge_info` object with the ID, name, author, description, and categories.
+    If there is no error, response contains a `challenge_info` object with the ID, name, author, description, and tags.
     """
 
     return {
         "status": "ok",
-        "challenge_info": {
-            "id": g.chall_id,
-            "name": g.chall.metadata.name,
-            "author": g.chall.metadata.author,
-            "description": g.chall.metadata.description,
-            "categories": g.chall.categories(),
-            "tags": g.chall.tags(),
-        },
+        "challenge_info": challenge_info(g.chall, g.chall.tags()),
     }

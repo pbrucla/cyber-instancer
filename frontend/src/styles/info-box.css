@@ -1,5 +1,5 @@
 .Profile-Register-div {
-    height: 100vh;
+    height: calc(80vh - 5rem);
     display: flex;
     flex-direction: column;
     justify-content: center;
