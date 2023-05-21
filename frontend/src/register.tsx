@@ -1,5 +1,5 @@
-import "./index.css";
-import "./info-box.css";
+import "./styles/index.css";
+import "./styles/info-box.css";
 
 const Register = () => {
     return (

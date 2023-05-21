@@ -1,5 +1,5 @@
-import "./index.css";
-import "./chall.css";
+import "./styles/index.css";
+import "./styles/chall.css";
 
 const Chall = () => {
     return (
