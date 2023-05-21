@@ -3,15 +3,9 @@ from instancer import api
 import os
 import redis
 from instancer import backend
-from instancer.config import config, rclient as r, pg_pool
+from instancer.config import config, rclient as r, connect_pg
 
-app = Flask(__name__, static_folder="static")
-
-
-@app.route("/api/me")
-def hello_world():
-    count = r.incr("count")
-    return f"<p>Hello, World! {count}</p>"
+app = Flask(__name__, static_folder="static", static_url_path="/")
 
 
 # Serve APIs
@@ -29,24 +23,18 @@ def react(chall_id=""):
     return send_from_directory(app.static_folder, "index.html")
 
 
-# Serve static files
-@app.route("/<path:path>")
-def serve(path):
-    return send_from_directory(app.static_folder, path)
-
-
 # Testing
-@app.route("/api/test_db")
-def test_db():
-    if not config.dev:
-        return "Disabled due to not in dev mode"
-    with pg_pool.connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name = %s;",
-            [request.args.get("table")],
-        )
-        return str(cursor.fetchall())
+if config.dev:
+
+    @app.route("/api/test_db")
+    def test_db():
+        with connect_pg() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name = %s;",
+                [request.args.get("table")],
+            )
+            return str(cursor.fetchall())
 
 
 if __name__ == "__main__":

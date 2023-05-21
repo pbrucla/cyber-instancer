@@ -12,14 +12,14 @@ services:
     depends_on:
       - redis-service
       - db
-  worker:
-    build: .
-    volumes:
-      - ./k3s.yaml:/app/.kube/config:ro
-      - ./config.yml:/app/config.yml:ro
-    environment:
-      - KUBECONFIG=/app/.kube/config
-    command: ["python", "worker.py"]
+  # worker:
+  #   build: .
+  #   volumes:
+  #     - ./k3s.yaml:/app/.kube/config:ro
+  #     - ./config.yml:/app/config.yml:ro
+  #   environment:
+  #     - KUBECONFIG=/app/.kube/config
+  #   command: ["python", "worker.py"]
   redis-service:
     image: "redis:alpine"
   db:
