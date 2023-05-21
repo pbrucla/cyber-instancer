@@ -93,7 +93,7 @@ def apply_config(c: dict):
                     "type": "object",
                     "properties": {
                         "host": {"type": "string"},
-                        "port": {"type": "number"},
+                        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                         "password": {"type": "string"},
                     },
                 },
@@ -101,7 +101,7 @@ def apply_config(c: dict):
                     "type": "object",
                     "properties": {
                         "host": {"type": "string"},
-                        "port": {"type": "number"},
+                        "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                         "user": {"type": "string"},
                         "database": {"type": "string"},
                         "password": {"type": "string"},
