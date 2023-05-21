@@ -173,14 +173,17 @@ class Challenge(ABC):
         else:
             return SharedChallenge(challenge_id, cfg, lifetime, metadata)
 
-    def categories(self) -> list[str]:
-        """Return a list of tags sorted in alphabetical order."""
+    def tags(self) -> tuple[list[str], list[str]]:
+        """Return a tuple of a list of category tags and a list of other tags.
 
-        cache_key = f"chall_categories:{self.id}"
+        Tags will be sorted in alphabetical order.
+        """
+
+        cache_key = f"chall_tags:{self.id}"
         cached = rclient.get(cache_key)
 
         if cached is not None:
-            categories = json.loads(cached)
+            categories, other_tags = json.loads(cached)
         else:
             with connect_pg() as conn:
                 with conn.cursor() as cur:
@@ -189,29 +192,14 @@ class Challenge(ABC):
                         (self.id,),
                     )
                     categories = [category for category, in cur.fetchall()]
-            rclient.set(cache_key, json.dumps(categories), ex=3600)
-
-        return categories
-
-    def tags(self) -> list[str]:
-        """Return a list of tags sorted in alphabetical order."""
-
-        cache_key = f"chall_tags:{self.id}"
-        cached = rclient.get(cache_key)
-
-        if cached is not None:
-            tags = json.loads(cached)
-        else:
-            with connect_pg() as conn:
-                with conn.cursor() as cur:
                     cur.execute(
                         "SELECT name FROM tags WHERE challenge_id=%s AND is_category=false ORDER BY name",
                         (self.id,),
                     )
-                    tags = [tag for tag, in cur.fetchall()]
-            rclient.set(cache_key, json.dumps(tags), ex=3600)
+                    other_tags = [tag for tag, in cur.fetchall()]
+            rclient.set(cache_key, json.dumps((categories, other_tags)), ex=3600)
 
-        return tags
+        return categories, other_tags
 
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""
