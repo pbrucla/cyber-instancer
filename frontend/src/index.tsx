@@ -21,10 +21,9 @@ root.render(
                 <div>
                     <Link to="challs"><button className="left"><HomeBtn className="svg"/></button></Link>
                     <Link to="profile"><button className="right">PROFILE</button></Link>
-                    <Link to="register">Register</Link>
                 </div>
             </nav>  
-            
+            <Link to="register">Register</Link>
             <Routes>
                 <Route path="/" element={<App />} />
                 <Route path="/challs" element={<Challs />} />
