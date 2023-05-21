@@ -1,6 +1,6 @@
 import {useState} from "react";
 import axios, {AxiosError, AxiosResponse} from "axios";
-import "./home.css";
+import "./styles/home.css";
 import {Profile} from "./apiTypes";
 
 const Home = () => {

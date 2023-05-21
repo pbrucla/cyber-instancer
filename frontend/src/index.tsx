@@ -1,27 +1,29 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
-import Home from "./home";
 import {BrowserRouter} from "react-router-dom";
 import {Routes, Route} from "react-router-dom";
 import {Link} from "react-router-dom";
+
+import App from "./home";
 import Challs from "./challs";
 import Profile from "./profile";
+
+import "./styles/index.css";
+import {ReactComponent as HomeBtn} from "./images/home.svg";
 
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 root.render(
     <React.StrictMode>
-        <BrowserRouter>
-            <h1>ACM Cyber</h1>
+        <BrowserRouter>   
             <nav>
                 <div>
-                    <Link to="/">Home</Link>
-                    <Link to="challs">Challenges</Link>
-                    <Link to="profile">Profile</Link>
+                    <Link to="challs"><button className="left"><HomeBtn className="svg"/></button></Link>
+                    <Link to="profile"><button className="right">PROFILE</button></Link>
                 </div>
-            </nav>
+            </nav>  
+            
             <Routes>
-                <Route path="/" element={<Home />} />
+                <Route path="/" element={<App />} />
                 <Route path="/challs" element={<Challs />} />
                 <Route path="/profile" element={<Profile />} />
             </Routes>

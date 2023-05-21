@@ -1,5 +1,8 @@
-const Challs = () => {
-    return <p>Hello World</p>;
-};
+import "./styles/challs.css";
 
-export default Challs;
+const HomePage = () => {
+    return (
+    <p>Hi</p>
+    )
+};
+export default HomePage;
