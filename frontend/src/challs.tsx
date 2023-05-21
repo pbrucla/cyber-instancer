@@ -4,16 +4,29 @@ import challenges, { challProp } from "./data/challs.ts"
 import "./styles/challs.css";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 
-function ChallInfo({ category, name, tags, active, path }: challProp) {
-    let status="inactive"
-    if (active) { status = "active"}
+function ChallInfo({ id, name, tags, category, deployed }: challProp) {
+    let title = name.toUpperCase();
+
+    let newTags:string[] =[];
+    for(let i = 0; i < tags.length; i++) {
+        newTags.push("#".concat(tags[i].concat(" ").toString()))
+    }
+
+    let status="inactive";
+    let statusCSS="stat OFF";
+
+    let path="../chall/".concat(id.toString());
+
+    if (deployed) { status = "active"; statusCSS="stat ON"}
     return (
         <Link to={path}>
         <button className="card">
-            <span>{category}</span>
-            <span>{name}</span>
-            <span>{tags}</span>
-            <span>{status}</span>
+            <div className="text">
+                <span className="cat">{category}</span>
+                <span className="title">{title}</span>
+                <span className="tag">{newTags}</span>
+                <div className={statusCSS}>{status}</div>
+            </div>            
         </button>
         </Link>
     );
@@ -26,11 +39,11 @@ const HomePage = () => {
             <div>
                 {challenges.map((chall: challProp) => (
                     <ChallInfo
-                    category={chall.category}
+                    id={chall.id}
                     name={chall.name}
                     tags={chall.tags}
-                    active={chall.active}
-                    path={chall.path}
+                    category={chall.category}
+                    deployed={chall.deployed}                    
                     />
                 ))}
             </div>         

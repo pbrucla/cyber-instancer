@@ -22,6 +22,7 @@ nav {
     top: 0px;
     height:5rem;
     width:100vw;
+    z-index: 9999;
 }
 
 .left {

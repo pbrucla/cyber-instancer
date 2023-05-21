@@ -31,9 +31,48 @@ body {
     color:white;
 }
 
-p {
-    overflow: hidden;
-    margin-top: 0em ;
-    margin-bottom: 0em ;
-    line-height:0.7;
+.text {
+    position:relative;    
+}
+
+span {
+    margin-left:1vw;
+    display:block;
+    max-width:18vw;
+    overflow-wrap: break-word;
+    line-height:1.5;
+}
+
+.cat{
+    margin-top:1vw;
+    color: #D0D0D0;
+    font-size:1.75vw;
+}
+
+.title{
+    color: #FFFFFF;
+    font-size:2.25vw;
+    font-weight:bold;
+}
+.tag{
+    color: #FF8C4C;
+    font-size: 1.5vw;
+}
+.stat{
+    margin-left: 1vw;
+    position: absolute;
+    bottom:1vw;
+    font-size: 1.5vw;
+    width: 9vw;
+    padding: 0.5vw;
+    text-align: center;
+    border-radius:10vw;
+}
+.stat.ON{
+    color: #101010;
+    background-color: #FFE81A;
+}
+.stat.OFF{
+    color:#FFFFFF;
+    background-color:#F44D8A;
 }
