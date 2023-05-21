@@ -1,5 +1,18 @@
-CREATE TABLE IF NOT EXISTS challenges(id varchar(256), name varchar(256), description text, author text, cfg json, per_team boolean, lifetime integer);
-CREATE TABLE IF NOT EXISTS tags(challenge_id varchar(256), name varchar(64), is_category boolean);
+CREATE TABLE public.challenges (
+    id character varying(256) NOT NULL,
+    name character varying(256) NOT NULL,
+    description text NOT NULL,
+    cfg json NOT NULL,
+    per_team boolean NOT NULL,
+    lifetime integer NOT NULL,
+    author text NOT NULL,
+    CONSTRAINT challenges_lifetime_check CHECK ((lifetime >= 0))
+);
+CREATE TABLE public.tags (
+    challenge_id character varying(256) NOT NULL,
+    name character varying(64) NOT NULL,
+    is_category boolean NOT NULL
+);
 
 COPY challenges (id, name, description, cfg, per_team, lifetime, author) FROM stdin;
 per-team-redis-chall	Simple Redis Chall	This is a testing challenge for the instancer.	{"containers": {"app": {"image": "docker.acmcyber.com/simple-redis-chall:latest", "ports": [8080]}, "redis": {"image": "redis:7-alpine", "ports": [6379]}}, "tcp": {"redis": [6379]}, "http": {"app": [[8080, "testing2.egg.gnk.sh"]]}}	t	3600	aplet123
@@ -13,3 +26,12 @@ simple-redis-chall	foobar	f
 per-team-redis-chall	pwn	t
 per-team-redis-chall	aplet123	f
 \.
+
+ALTER TABLE ONLY public.challenges
+    ADD CONSTRAINT challenges_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_pkey PRIMARY KEY (challenge_id, name);
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id);
