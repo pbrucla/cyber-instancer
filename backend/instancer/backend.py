@@ -296,7 +296,7 @@ class Challenge(ABC):
     @abstractmethod
     def is_shared(self) -> bool:
         """Returns True if challenge is shared, e.g. should not be terminatable"""
-        return
+        raise NotImplementedError
 
     def start(self):
         """Starts a challenge, or renews it if it was already running."""
