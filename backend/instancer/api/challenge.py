@@ -47,13 +47,15 @@ def cd_terminate():
 
 @blueprint.route("/deployment", methods=["GET"])
 def cd_get():
+    expiration = g.chall.expiration()
     return {
-        "id": g.chall_id,
-        "name": "Test chall",
-        "tags": ["demo", "beginner"],
-        "category": "web",
-        "deployed": True,
-        "connection": ["127.0.0.1:25565"],
+        "status": "ok",
+        "deployment": None
+        if expiration is None
+        else {
+            "expiration": expiration,
+            "port_mappings": list(g.chall.port_mappings().items()),
+        },
     }
 
 
