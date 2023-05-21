@@ -23,7 +23,6 @@ root.render(
                     <Link to="profile"><button className="right">PROFILE</button></Link>
                 </div>
             </nav>  
-            <Link to="register">Register</Link>
             <Routes>
                 <Route path="/" element={<App />} />
                 <Route path="/challs" element={<Challs />} />

@@ -2,3 +2,38 @@ body {
     background-color: #101010;
     color: #ffffff;
 }
+
+.filter {
+    display:block;
+
+    background-color: transparent;
+    border:none;
+
+    margin: 1rem 5vw 4vw;
+    aspect-ratio : 1 / 1;
+    height:2rem;
+}
+
+.svg {
+    height: 100%;
+}
+
+.card {
+    display: inline-grid;
+    text-align:left;
+    margin:0vw 0vw 4vw 4vw;
+    position:relative;
+    aspect-ratio: 1 / 1;
+    width: 20vw;
+    max-height:20vw;
+    background-color:#404040;
+    border:none;
+    color:white;
+}
+
+p {
+    overflow: hidden;
+    margin-top: 0em ;
+    margin-bottom: 0em ;
+    line-height:0.7;
+}
