@@ -546,10 +546,11 @@ class Challenge(ABC):
             rclient.delete(f"ports:{namespace}")
         except ApiException as e:
             if e.status == 404:
-                print(f"[*] Could not delete namespace {namespace} because namespace does not exist...")
+                print(
+                    f"[*] Could not delete namespace {namespace} because namespace does not exist..."
+                )
             else:
                 print(f"[*] Could not delete namespace {namespace} due to error {e}...")
-
 
     def stop(self):
         """Stops a challenge if it's running."""
