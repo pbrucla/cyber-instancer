@@ -1,21 +1,37 @@
+from typing import Any
+
 from flask import Blueprint, g
 
-from instancer.backend import Challenge
+from instancer.backend import Challenge, ChallengeTag
+
+
+def deployment_status(chall: Challenge) -> dict[str, Any] | None:
+    """Return a dict with the challenge deployment status or None if the challenge is not deployed."""
+
+    expiration = chall.expiration()
+    return (
+        None
+        if expiration is None
+        else {
+            "expiration": expiration,
+            "port_mappings": list(chall.port_mappings().items()),
+        }
+    )
+
+
+def challenge_info(chall: Challenge, tags: list[ChallengeTag]) -> dict[str, Any]:
+    """Return a dict with the challenge info."""
+
+    return {
+        "id": chall.id,
+        "name": chall.metadata.name,
+        "author": chall.metadata.author,
+        "description": chall.metadata.description,
+        "tags": [(tag.name, tag.is_category) for tag in tags],
+    }
+
 
 blueprint = Blueprint("challenge", __name__, url_prefix="/challenge/<chall_id>")
-
-
-@staticmethod
-def process_port_mapping(
-    port_map: dict[tuple[str, int], int | str]
-) -> dict[str, int | str]:
-    return {
-        "{}:{}".format(container_name, internal_port): external_access
-        for (
-            (container_name, internal_port),
-            external_access,
-        ) in g.chall.port_mappings().items()
-    }
 
 
 @blueprint.url_value_preprocessor
@@ -47,7 +63,7 @@ def challenge_deploy():
     return {
         "success": True,
         "id": g.chall.id,
-        "port_mappings": process_port_mapping(g.chall.port_mappings()),
+        "port_mappings": g.chall.port_mappings(),
         "expiration": g.chall.expiration(),
         "msg": "Successfully deployed challenge",
     }
@@ -71,15 +87,9 @@ def cd_get():
     """
     Return a team's challenge deployment info
     """
-    expiration = g.chall.expiration()
     return {
         "status": "ok",
-        "deployment": None
-        if expiration is None
-        else {
-            "expiration": expiration,
-            "port_mappings": process_port_mapping(g.chall.port_mappings()),
-        },
+        "deployment": deployment_status(g.chall),
     }
 
 
@@ -92,11 +102,5 @@ def challenge_get():
 
     return {
         "status": "ok",
-        "challenge_info": {
-            "id": g.chall_id,
-            "name": g.chall.metadata.name,
-            "author": g.chall.metadata.author,
-            "description": g.chall.metadata.description,
-            "tags": [(tag.name, tag.is_category) for tag in g.chall.tags()],
-        },
+        "challenge_info": challenge_info(g.chall, g.chall.tags()),
     }
