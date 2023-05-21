@@ -9,6 +9,7 @@ from instancer.config import config, rclient, connect_pg
 from instancer.lock import Lock, LockException
 from time import time
 import random
+import re
 import json
 
 if config.in_cluster:
@@ -17,8 +18,16 @@ else:
     kconfig.load_kube_config()
 
 
-def snake_to_camel(snake: str):
-    return "".join(x.capitalize() for x in snake.split("_"))
+def snake_to_camel(snake: str) -> str:
+    return "".join(x.capitalize() for x in snake.lower().split("_"))
+
+
+def camel_to_snake(camel: str) -> str:
+    return re.sub(r"\B([A-Z])", r"_\1", camel).lower()
+
+
+def keys_to_snake(d: dict[str, Any]) -> dict[str, Any]:
+    return {camel_to_snake(k): v for (k, v) in d.items()}
 
 
 def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
@@ -65,14 +74,20 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
             )
     ports = []
     if "kubePorts" in cfg:
-        ports.extend(kclient.V1ContainerPort(**x) for x in cfg["kubePorts"])
+        ports.extend(
+            kclient.V1ContainerPort(**keys_to_snake(x)) for x in cfg["kubePorts"]
+        )
     if "ports" in cfg:
         ports.extend(kclient.V1ContainerPort(container_port=x) for x in cfg["ports"])
     kwargs["ports"] = ports
     if "securityContext" in cfg:
-        kwargs["security_context"] = kclient.V1SecurityContext(**cfg["securityContext"])
+        kwargs["security_context"] = kclient.V1SecurityContext(
+            **keys_to_snake(cfg["securityContext"])
+        )
     if "resources" in cfg:
-        kwargs["resources"] = kclient.V1ResourceRequirements(**cfg["resources"])
+        kwargs["resources"] = kclient.V1ResourceRequirements(
+            **keys_to_snake(cfg["resources"])
+        )
     else:
         kwargs["resources"] = kclient.V1ResourceRequirements(
             limits={"cpu": "500m", "memory": "512Mi"},
@@ -393,11 +408,11 @@ class Challenge(ABC):
                     api.create_namespaced_deployment(self.namespace, dep)
 
                 for servname, container in self.containers.items():
-                    print(
-                        f"[*] Making service {servname} under namespace {self.namespace}..."
-                    )
                     exposed_ports = self.exposed_ports.get(servname, [])
                     http_ports = self.http_ports.get(servname, [])
+                    private_ports = container.get("ports", []) + [
+                        x["containerPort"] for x in container.get("kubePorts", [])
+                    ]
                     selector = {
                         **common_labels,
                         "instancer.acmcyber.com/container-name": servname,
@@ -407,30 +422,36 @@ class Challenge(ABC):
                             selector=selector,
                             ports=[
                                 kclient.V1ServicePort(port=port, target_port=port)
-                                for port in exposed_ports + [x[0] for x in http_ports]
+                                for port in exposed_ports
                             ],
                             type="NodePort",
                         )
-                    else:
+                    elif len(private_ports) > 0:
                         serv_spec = kclient.V1ServiceSpec(
                             selector=selector,
                             ports=[
                                 kclient.V1ServicePort(port=port, target_port=port)
-                                for port, _ in http_ports
+                                for port in private_ports
                             ],
                             type="ClusterIP",
                         )
-                    serv = kclient.V1Service(
-                        metadata=kclient.V1ObjectMeta(
-                            name=servname,
-                            labels={
-                                **common_labels,
-                                "instancer.acmcyber.com/container-name": servname,
-                            },
-                        ),
-                        spec=serv_spec,
-                    )
-                    capi.create_namespaced_service(self.namespace, serv)
+                    else:
+                        serv_spec = None
+                    if serv_spec is not None:
+                        print(
+                            f"[*] Making service {servname} under namespace {self.namespace}..."
+                        )
+                        serv = kclient.V1Service(
+                            metadata=kclient.V1ObjectMeta(
+                                name=servname,
+                                labels={
+                                    **common_labels,
+                                    "instancer.acmcyber.com/container-name": servname,
+                                },
+                            ),
+                            spec=serv_spec,
+                        )
+                        capi.create_namespaced_service(self.namespace, serv)
 
                 for ingname, container in self.containers.items():
                     http_ports = self.http_ports.get(ingname, [])

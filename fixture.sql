@@ -17,7 +17,7 @@ CREATE TABLE public.tags (
 COPY challenges (id, name, description, cfg, per_team, lifetime, author) FROM stdin;
 per-team-redis-chall	Simple Redis Chall	This is a testing challenge for the instancer.	{"containers": {"app": {"image": "docker.acmcyber.com/simple-redis-chall:latest", "ports": [8080]}, "redis": {"image": "redis:7-alpine", "ports": [6379]}}, "tcp": {"redis": [6379]}, "http": {"app": [[8080, "testing2.egg.gnk.sh"]]}}	t	3600	aplet123
 simple-redis-chall	Simple Redis Chall	This is a testing challenge for the instancer.	{"containers": {"app": {"image": "docker.acmcyber.com/simple-redis-chall:latest", "ports": [8080]}, "redis": {"image": "redis:7-alpine", "ports": [6379]}}, "tcp": {"redis": [6379]}, "http": {"app": [[8080, "testing.egg.gnk.sh"]]}}	f	3600	kaiphat
-private-redis-chall	Simple Redis Chall	This is a testing challenge for the instancer.	{"containers": {"app": {"image": "docker.acmcyber.com/simple-redis-chall:latest", "ports": [8080]}, "redis": {"image": "redis:7-alpine", "ports": [6379]}}, "http": {"app": [[8080, "testing.egg.gnk.sh"]]}}	f	3600	kaiphat
+private-redis-chall	Simple Redis Chall	This is a testing challenge for the instancer.	{"containers": {"app": {"image": "docker.acmcyber.com/simple-redis-chall:latest", "ports": [8080]}, "redis": {"image": "redis:7-alpine", "ports": [6379]}}, "http": {"app": [[8080, "testing3.egg.gnk.sh"]]}}	f	3600	kaiphat
 \.
 
 COPY tags (challenge_id, name, is_category) FROM stdin;
