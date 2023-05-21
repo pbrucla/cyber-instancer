@@ -89,6 +89,16 @@ class ResourceUnavailableException(Exception):
 
 
 @dataclass
+class ChallengeTag:
+    """A challenge tag."""
+
+    name: str
+    "The name of the tag."
+    is_category: bool
+    "Whether the tag is a challenge category."
+
+
+@dataclass
 class ChallengeMetadata:
     """Metadata of a challenge including the challenge name, description, and author."""
 
@@ -173,33 +183,28 @@ class Challenge(ABC):
         else:
             return SharedChallenge(challenge_id, cfg, lifetime, metadata)
 
-    def tags(self) -> tuple[list[str], list[str]]:
-        """Return a tuple of a list of category tags and a list of other tags.
+    def tags(self) -> list[ChallengeTag]:
+        """Return a list of tags for the challenge.
 
-        Tags will be sorted in alphabetical order.
+        The category tags will be listed first and tags will be sorted alphabetically.
         """
 
         cache_key = f"chall_tags:{self.id}"
         cached = rclient.get(cache_key)
 
         if cached is not None:
-            categories, other_tags = json.loads(cached)
+            result = json.loads(cached)
         else:
             with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT name FROM tags WHERE challenge_id=%s AND is_category=true ORDER BY name",
+                        "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",
                         (self.id,),
                     )
-                    categories = [category for category, in cur.fetchall()]
-                    cur.execute(
-                        "SELECT name FROM tags WHERE challenge_id=%s AND is_category=false ORDER BY name",
-                        (self.id,),
-                    )
-                    other_tags = [tag for tag, in cur.fetchall()]
-            rclient.set(cache_key, json.dumps((categories, other_tags)), ex=3600)
+                    result = cur.fetchall()
+            rclient.set(cache_key, json.dumps(result), ex=3600)
 
-        return categories, other_tags
+        return [ChallengeTag(*tag) for tag in result]
 
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""
