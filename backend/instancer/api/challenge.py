@@ -62,7 +62,7 @@ def challenge_deploy():
     """
     g.chall.start()
     return {
-        "success": True,
+        "status": "ok",
         "deployment": deployment_status(g.chall),
     }
 
@@ -74,13 +74,12 @@ def cd_terminate():
     """
     if g.chall.is_shared():
         return {
-            "success": False,
+            "status": "cannot_terminate_shared_deployment",
             "msg": "You do not have permission to terminate a shared challenge deployment",
-        }, 403
+        }, 405
     g.chall.stop()
     return {
-        "success": True,
-        "id": g.chall.id,
+        "status": "ok",
         "msg": "Successfully terminated challenge",
     }
 
