@@ -38,12 +38,10 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
         cprop = snake_to_camel(prop)
         if cprop in cfg:
             kwargs[prop] = cfg[cprop]
-    if "environment" in cfg and "env" not in cfg:
-        cfg["env"] = cfg["environment"]
-    if "env" in cfg:
-        env = [kclient.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg["env"]]
-    else:
-        env = []
+    env = [
+        kclient.V1EnvVar(name=x["name"], value=x["value"])
+        for x in cfg.get("env", []) + cfg.get("environment", [])
+    ]
     if env_metadata is not None and not any(
         x.name == "INSTANCER_METADATA" for x in env
     ):
@@ -64,12 +62,12 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
             raise NotImplementedError(
                 f"{prop} container config currently not supported"
             )
+    ports = []
     if "kubePorts" in cfg:
-        kwargs["ports"] = [kclient.V1ContainerPort(**x) for x in cfg["kubePorts"]]
-    elif "ports" in cfg:
-        kwargs["ports"] = [
-            kclient.V1ContainerPort(container_port=x) for x in cfg["ports"]
-        ]
+        ports.extend(kclient.V1ContainerPort(**x) for x in cfg["kubePorts"])
+    if "ports" in cfg:
+        ports.extend(kclient.V1ContainerPort(container_port=x) for x in cfg["ports"])
+    kwargs["ports"] = ports
     if "securityContext" in cfg:
         kwargs["security_context"] = kclient.V1SecurityContext(**cfg["securityContext"])
     if "resources" in cfg:
