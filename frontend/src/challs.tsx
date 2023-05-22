@@ -5,17 +5,12 @@ import "./styles/challs.css";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 
 function ChallInfo({ id, name, tags, category, deployed }: challProp) {
-    let title = name.toUpperCase();
-
-    let newTags:string[] =[];
-    for(let i = 0; i < tags.length; i++) {
-        newTags.push("#".concat(tags[i].concat(" ").toString()))
-    }
+    const title = name.toUpperCase();
 
     let status="inactive";
     let statusCSS="stat OFF";
 
-    let path="../chall/".concat(id.toString());
+    const path="../chall/".concat(id.toString());
 
     if (deployed) { status = "active"; statusCSS="stat ON"}
     return (
@@ -24,7 +19,11 @@ function ChallInfo({ id, name, tags, category, deployed }: challProp) {
             <div className="text">
                 <span className="cat">{category}</span>
                 <span className="title">{title}</span>
-                <span className="tag">{newTags}</span>
+                <span className="tag">{ tags.map(tag => {
+                    return (
+                        <a>{("#".concat(tag.replaceAll(" ", "_").concat(" ").toString()))}</a>
+                    )
+                }) }</span>
                 <div className={statusCSS}>{status}</div>
             </div>            
         </button>
