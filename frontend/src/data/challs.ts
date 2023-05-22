@@ -7,6 +7,11 @@ export type challProp = {
     deployed: boolean
 }
 
+export type portObject = {
+    ip: string,
+    port: string
+}
+
 const challData: challProp[] = [
     {
         id: "1",
