@@ -3,7 +3,8 @@ export type challProp = {
     name: string,
     tags: string[],
     category: string,
-    deployed: boolean,
+    description: string,
+    deployed: boolean
 }
 
 const challData: challProp[] = [
@@ -12,49 +13,56 @@ const challData: challProp[] = [
         name: "checking",
         tags: ["demo", "beginner"],
         category: "web",
-        deployed: false,
+        description: "description for chall1",
+        deployed: false
     },
     {
         id: "test",
         name: "Test chall",
         tags: ["demo", "beginner"],
         category: "web",
-        deployed: false,
+        description: "description for test",
+        deployed: false
     },
     {
         id: "test2",
         name: "Test chall 2",
         tags: ["demo", "advanced"],
         category: "pwn",
-        deployed: true,
+        description: "description for test2",
+        deployed: true
     },
     {
         id: "test3",
         name: "Test chall 3",
         tags: ["demo", "la ctf 2023"],
         category: "misc",
-        deployed: false,
+        description: "description for test3",
+        deployed: false
     },
     {
         id: "test4",
         name: "Test chall 4",
         tags: ["demo", "beginner"],
         category: "web",
-        deployed: false,
+        description: "description for test4",
+        deployed: false
     },
     {
         id: "test5",
         name: "Test chall 5",
         tags: ["demo", "advanced"],
         category: "pwn",
-        deployed: true,
+        description: "description for test5",
+        deployed: true
     },
     {
         id: "test 6",
         name: "Test chall 6",
         tags: ["demo", "la ctf 2023"],
         category: "misc",
-        deployed: false,
+        description: "description for test6",
+        deployed: false
     },
 ];
 

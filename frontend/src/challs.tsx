@@ -5,7 +5,7 @@ import "./styles/challs.css";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 
 function ChallInfo({ id, name, tags, category, deployed }: challProp) {
-    const title = name.toUpperCase();
+    let title = name.toUpperCase();
 
     let status="inactive";
     let statusCSS="stat OFF";
@@ -42,6 +42,7 @@ const HomePage = () => {
                     name={chall.name}
                     tags={chall.tags}
                     category={chall.category}
+                    description={chall.description}
                     deployed={chall.deployed}                    
                     />
                 ))}
