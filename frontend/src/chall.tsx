@@ -2,6 +2,9 @@ import "./styles/index.css";
 import "./styles/chall.css";
 import { useParams } from "react-router-dom";
 import challenges from "./data/challs.ts"
+import {ReactComponent as Timer} from "./images/timer.svg";
+import {ReactComponent as Stop} from "./images/stop.svg";
+
 
 const Chall = () => {
     const { ID } = useParams() as { ID: string };
@@ -38,7 +41,13 @@ const Chall = () => {
         );
 
         if (deployed) {
-            buttons = <button className="deploy ON">time</button>;
+            buttons = (
+                <button className="deploy ON">
+                    <Timer className="svg l" />
+                    <span style={{marginLeft: "0"}}>time</span>
+                    <Stop className="svg r" />
+                </button>
+            );
         }
         else {
             buttons = <button className="deploy OFF">DEPLOY NOW</button>;

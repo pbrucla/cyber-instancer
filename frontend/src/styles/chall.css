@@ -38,6 +38,9 @@
 .deploy.ON {
     background-color: #d0d0d0;
     color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .deploy.ON:active {
@@ -46,4 +49,17 @@
        -moz-box-shadow: inset 0px 0px 5px #A4A4A8;
             box-shadow: inset 0px 0px 5px #A4A4A8;
      outline: none;
+}
+  
+.svg {
+    height: 2rem; /* Adjust the height as needed */
+}
+
+
+.svg.l {
+    margin-right: 4vw;
+}
+
+.svg.r {
+    margin-left: 4vw;
 }
