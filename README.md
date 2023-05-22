@@ -109,13 +109,268 @@ spec:
     secretName: wildcard-domain
 ```
 
+- If running the instancer on the cluster (recommended), create a namespace for it, a service account, a cluster role for the service account, and a cluster role binding to bind the role to the service account:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: cyber-instancer
+  name: cyber-instancer
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cyber-instancer
+  namespace: cyber-instancer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cyber-instancer
+  namespace: cyber-instancer
+rules:
+- apiGroups: [""]
+  resources: ["services", "namespaces"]
+  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses", "networkpolicies"]
+  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["traefik.containo.us"]
+  resources: ["ingressroutes"]
+  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cyber-instancer-binding
+  namespace: cyber-instancer
+subjects:
+- kind: ServiceAccount
+  name: cyber-instancer
+  namespace: cyber-instancer
+roleRef:
+  kind: ClusterRole
+  name: cyber-instancer
+  apiGroup: rbac.authorization.k8s.io
+```
+
+- Create a secret with the config file contents that can be mounted into the image:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: instancer-config
+  namespace: cyber-instancer
+type: Opaque
+stringData:
+  config: |-
+    secret_key: asdf
+    foo: bar
+```
+
+- Create a deployment for the instancer, a service for that deployment, and a Traefik ingress route for that service (a normal Kubernetes ingress works too), as well as a deployment for the worker, a deployment for redis, and a service for that deployment (make sure to edit `YOUR_DOCKER_REGISTRY` and `YOUR_DOMAIN` accordingly, keeping in mind that the domain has to match the certificate domain in order for https to work properly):
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyber-instancer
+  namespace: cyber-instancer
+  labels:
+    app.kubernetes.io/name: cyber-instancer
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cyber-instancer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cyber-instancer
+    spec:
+      serviceAccountName: cyber-instancer
+      containers:
+        - name: app
+          image: YOUR_DOCKER_REGISTRY/cyber-instancer:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+          - name: config
+            mountPath: "/app/config.yml"
+            readOnly: true
+            subPath: "config.yml"
+      volumes:
+      - name: config
+        secret:
+          secretName: instancer-config
+          items:
+          - key: config
+            path: config.yml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: cyber-instancer
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cyber-instancer-worker
+  namespace: cyber-instancer
+  labels:
+    app.kubernetes.io/name: cyber-instancer-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cyber-instancer-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cyber-instancer-worker
+    spec:
+      serviceAccountName: cyber-instancer
+      containers:
+        - name: app
+          image: YOUR_DOCKER_REGISTRY/cyber-instancer:latest
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          command: ["python", "worker.py"]
+          volumeMounts:
+          - name: config
+            mountPath: "/app/config.yml"
+            readOnly: true
+            subPath: "config.yml"
+      volumes:
+      - name: config
+        secret:
+          secretName: instancer-config
+          items:
+          - key: config
+            path: config.yml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cyber-instancer-service
+  namespace: cyber-instancer
+  labels:
+    app.kubernetes.io/name: cyber-instancer-service
+spec:
+  selector:
+    app.kubernetes.io/name: cyber-instancer
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 31337
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: cyber-instancer
+  labels:
+    app.kubernetes.io/name: redis-service
+spec:
+  selector:
+    app.kubernetes.io/name: redis
+  ports:
+    - protocol: TCP
+      port: 6379
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: cyber-instancer-ingress
+  namespace: cyber-instancer
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`YOUR_DOMAIN`)
+    kind: Rule
+    services:
+    - name: cyber-instancer-service
+      port: 8080
+```
+
 ## Database Setup
 
 Create a table for the database:
 
 ```sql
-CREATE TABLE IF NOT EXISTS challenges(id varchar(256), name varchar(256), description text, author text, cfg json, per_team boolean, lifetime integer);
-CREATE TABLE IF NOT EXISTS tags(challenge_id varchar(256), name varchar(64), is_category boolean);
+CREATE TABLE public.challenges (
+    id character varying(256) NOT NULL,
+    name character varying(256) NOT NULL,
+    description text NOT NULL,
+    cfg json NOT NULL,
+    per_team boolean NOT NULL,
+    lifetime integer NOT NULL,
+    author text NOT NULL,
+    CONSTRAINT challenges_lifetime_check CHECK ((lifetime >= 0))
+);
+CREATE TABLE public.tags (
+    challenge_id character varying(256) NOT NULL,
+    name character varying(64) NOT NULL,
+    is_category boolean NOT NULL
+);
+
+ALTER TABLE ONLY public.challenges
+    ADD CONSTRAINT challenges_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_pkey PRIMARY KEY (challenge_id, name);
+
+ALTER TABLE ONLY public.tags
+    ADD CONSTRAINT tags_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id);
 ```
 
 # Available Development Commands
