@@ -43,9 +43,9 @@ const Chall = () => {
         if (deployed) {
             buttons = (
                 <button className="deploy ON">
-                    <Timer className="svg l" />
+                    <Timer className="buttonsvg l" />
                     <span style={{marginLeft: "0"}}>time</span>
-                    <Stop className="svg r" />
+                    <Stop className="buttonsvg r" />
                 </button>
             );
         }

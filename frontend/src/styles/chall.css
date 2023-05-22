@@ -51,15 +51,15 @@
      outline: none;
 }
   
-.svg {
+.buttonsvg {
     height: 2rem; /* Adjust the height as needed */
 }
 
 
-.svg.l {
+.buttonsvg.l {
     margin-right: 4vw;
 }
 
-.svg.r {
+.buttonsvg.r {
     margin-left: 4vw;
 }
