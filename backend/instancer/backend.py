@@ -688,7 +688,9 @@ class Challenge(ABC):
         cache_entry = {}
         for (cont, cport), port in ret.items():
             cache_entry[f"{cont}:{cport}"] = port
-        rclient.set(cache_key, json.dumps(cache_entry), ex=exp - int(time()))
+        t = time()
+        if exp > t:
+            rclient.set(cache_key, json.dumps(cache_entry), ex=exp - t)
 
         return ret
 
