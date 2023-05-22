@@ -26,12 +26,15 @@ Please note: setup for this application is done in 3 stages: deploying a kuberne
 redis:
   host: redis-service
 ```
+
 - `login_secret_key` can be created by running the following in a python3 interpreter:
+
 ```python
 import base64
 import secrets
 base64.b64encode(secrets.token_bytes(32))
 ```
+
 Do NOT share this, or else an attacker will be able to login as whomever they wish!
 
 - `k3s.yaml`: If running this app outside of the kubernetes cluster, copy kubernetes authentication config into this file. For k3s, this file can be found at `/etc/rancher/k3s/k3s.yaml`, and modify `clusters[0].cluster.server` or similar to be the actual remote ip address and not `127.0.0.1`.
