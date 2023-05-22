@@ -88,7 +88,7 @@ def validate_email(email: str) -> bool:
     )
 
 
-def validate_team_id(team_id: str) -> bool:
+def validate_team_username(team_id: str) -> bool:
     return 3 <= len(team_id) <= 100
 
 
@@ -101,34 +101,36 @@ def register():
     try:
         team_username = request.form["username"]
     except KeyError:
-        return {"success": False, "msg": "missing team_username"}
+        return {"success": False, "msg": "missing team_username"}, 400
     try:
         email = request.form["email"]
     except KeyError:
-        return {"success": False, "msg": "missing email"}
-    if not validate_team_id(team_username):
+        return {"success": False, "msg": "missing email"}, 400
+    if not validate_team_username(team_username):
         return {
             "success": False,
             "msg": "invalid team_username: must be between 3 and 100 characters",
         }
     if not validate_email(email):
-        return {"success": False, "msg": "invalid email"}
+        return {"success": False, "msg": "invalid email"}, 400
     team_id = uuid4()
 
     with connect_pg() as conn:
         with conn.cursor() as cur:
             try:
-                r = cur.execute(
+                cur.execute(
                     "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, %s, %s)",
                     (team_id, team_username, email),
                 )
             except IntegrityError as e:
+                conn.rollback()
                 return {
                     "success": False,
                     "msg": "{} already taken.".format(
                         re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
                     ),
                 }
+            conn.commit()
             return {"success": True, "token": authentication.new_session(str(team_id))}
 
 
@@ -143,10 +145,52 @@ def profile():
                 "SELECT team_username, team_email from teams where team_id = %s",
                 (g.session["team_id"],),
             )
-            username, email = cur.fetchone()
+            res = cur.fetchone()
+            if res is None:
+                cur.execute(
+                    "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, NULL, NULL)",
+                    (g.session["team_id"],),
+                )
+                username = None
+                email = None
+            else:
+                username, email = res
+            conn.commit()
 
     t = LoginToken(g.session["team_id"])
-    return {"username": username, "email": email, "login_url": t.get_login_url()}
+    return {
+        "success": True,
+        "username": username,
+        "email": email,
+        "login_url": t.get_login_url(),
+    }
+
+
+@blueprint.route("/profile", methods=["PATCH"])
+def update_profile():
+    """Updates information in the profile (email, team name)"""
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            if "username" in request.form:
+                if validate_team_username(request.form["username"]):
+                    cur.execute(
+                        "UPDATE teams SET team_username = %s WHERE team_id = %s",
+                        (request.form["username"], g.session["team_id"]),
+                    )
+                else:
+                    conn.rollback()
+                    return {"success": False, "msg": "Invalid new username"}, 400
+            if "email" in request.form:
+                if validate_email(request.form["email"]):
+                    cur.execute(
+                        "UPDATE teams SET team_email = %s WHERE team_id = %s",
+                        (request.form["email"], g.session["team_id"]),
+                    )
+                else:
+                    conn.rollback()
+                    return {"success": False, "msg": "Invalid new username"}, 400
+            conn.commit()
+    return {"success": True, "msg": "Successfully updated profile"}
 
 
 @blueprint.route("/login", methods=["POST"])
@@ -173,7 +217,8 @@ if config.dev:
     def dev_login():
         """Force login as specific team_id
 
-        For development only. Use /register instead for all normal usage.
+        For development only; passing in non-uuids may cause unintended behavior.
+        Use /register instead for all normal usage.
         """
 
         try:
