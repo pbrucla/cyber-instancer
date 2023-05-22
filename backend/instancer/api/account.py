@@ -171,24 +171,43 @@ def update_profile():
     """Updates information in the profile (email, team name)"""
     with connect_pg() as conn:
         with conn.cursor() as cur:
-            if "username" in request.form:
-                if validate_team_username(request.form["username"]):
-                    cur.execute(
-                        "UPDATE teams SET team_username = %s WHERE team_id = %s",
-                        (request.form["username"], g.session["team_id"]),
-                    )
-                else:
-                    conn.rollback()
-                    return {"success": False, "msg": "Invalid new username"}, 400
-            if "email" in request.form:
-                if validate_email(request.form["email"]):
-                    cur.execute(
-                        "UPDATE teams SET team_email = %s WHERE team_id = %s",
-                        (request.form["email"], g.session["team_id"]),
-                    )
-                else:
-                    conn.rollback()
-                    return {"success": False, "msg": "Invalid new username"}, 400
+            # Verify user exists, and if not, create it
+            cur.execute(
+                "SELECT team_username, team_email from teams where team_id = %s",
+                (g.session["team_id"],),
+            )
+            if cur.fetchone() is None:
+                cur.execute(
+                    "INSERT into teams (team_id, team_username, team_email) VALUES (%s, NULL NULL)",
+                    (g.session["team_id"],),
+                )
+            try:
+                if "username" in request.form:
+                    if validate_team_username(request.form["username"]):
+                        cur.execute(
+                            "UPDATE teams SET team_username = %s WHERE team_id = %s",
+                            (request.form["username"], g.session["team_id"]),
+                        )
+                    else:
+                        conn.rollback()
+                        return {"success": False, "msg": "Invalid new username"}, 400
+                if "email" in request.form:
+                    if validate_email(request.form["email"]):
+                        cur.execute(
+                            "UPDATE teams SET team_email = %s WHERE team_id = %s",
+                            (request.form["email"], g.session["team_id"]),
+                        )
+                    else:
+                        conn.rollback()
+                        return {"success": False, "msg": "Invalid new email"}, 400
+            except IntegrityError as e:
+                conn.rollback()
+                return {
+                    "success": False,
+                    "msg": "{} already taken.".format(
+                        re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
+                    ),
+                }
             conn.commit()
     return {"success": True, "msg": "Successfully updated profile"}
 
