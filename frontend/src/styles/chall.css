@@ -8,8 +8,15 @@
     padding-top:10vh;
 }
 
-.deploy {
+.deployment-info {
     margin-top:5vh;
+    display:flex;
+    align-items:left;
+    justify-content:flex-start;
+}
+
+.deploy {
+    height: 7vh;
     padding: 10px;
     border-radius: 25px;
     text-align: center;
@@ -52,7 +59,7 @@
 }
   
 .buttonsvg {
-    height: 2rem; /* Adjust the height as needed */
+    height: 2rem;
 }
 
 
@@ -62,4 +69,15 @@
 
 .buttonsvg.r {
     margin-left: 4vw;
+}
+
+.IP-port-box {
+    width: 25vh; /* Set the width of the rectangle */
+    height: 7vh; /* Set the height of the rectangle */
+    border: 2px solid #ffe81a; /* Set the border style of the rectangle */
+    margin-left: 7vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align: center;
 }

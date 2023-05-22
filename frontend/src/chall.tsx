@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import challenges from "./data/challs.ts"
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
-
+import { portObject } from "./data/challs.ts"
 
 const Chall = () => {
     const { ID } = useParams() as { ID: string };
@@ -12,6 +12,8 @@ const Chall = () => {
 
     let challInfo;
     let buttons;
+
+    let ports: portObject[] = [{ip:"127.0.0.1", port:"1337"}, {ip:"192.168.1.1", port:"55555"}, {ip:"8.8.8.8", port:"40000"}];
 
     if (chall === undefined) {
         challInfo = (
@@ -42,11 +44,16 @@ const Chall = () => {
 
         if (deployed) {
             buttons = (
-                <button className="deploy ON">
-                    <Timer className="buttonsvg l" />
-                    <span style={{marginLeft: "0"}}>time</span>
-                    <Stop className="buttonsvg r" />
-                </button>
+                <div className="deployment-info">
+                    <button className="deploy ON">
+                        <Timer className="buttonsvg l" />
+                        <span style={{marginLeft: "0"}}>time</span>
+                        <Stop className="buttonsvg r" />
+                    </button>
+                    {ports.map((p: portObject) => (
+                    <div className="IP-port-box">{p.ip}: {p.port}</div>
+                    ))}
+                </div>
             );
         }
         else {
