@@ -8,6 +8,7 @@ const Chall = () => {
     const chall = challenges.find(element => element["id"] == ID);
 
     let challInfo;
+    let buttons;
 
     if (chall === undefined) {
         challInfo = (
@@ -15,6 +16,7 @@ const Chall = () => {
         );
     }
     else {
+        
         const cat = chall["category"];
         const title = chall["name"].toUpperCase();
         const description = chall["description"];
@@ -24,6 +26,7 @@ const Chall = () => {
             newTags.push("#".concat(tags[i].concat(" ").toString()))
         }
 
+        const deployed = chall["deployed"];
 
         challInfo = (
             <>
@@ -31,15 +34,22 @@ const Chall = () => {
             <h1 style={{color: "white"}}>{ title }</h1>
             <h3 style={{color: "#ff8c4c"}}>{ newTags }</h3>
             <p style={{whiteSpace: "pre", color: "white"}}>{ description }</p>
-            <button className="round-button">DEPLOY NOW</button>
             </>
         );
+
+        if (deployed) {
+            buttons = <button className="deploy ON">time</button>;
+        }
+        else {
+            buttons = <button className="deploy OFF">DEPLOY NOW</button>;
+        }
     }
 
 
     return  (
         <div className="content-div">
             {challInfo}
+            {buttons}
         </div>    
     );
 };
