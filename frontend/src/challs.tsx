@@ -4,7 +4,7 @@ import challenges, { challProp } from "./data/challs.ts"
 import "./styles/challs.css";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 
-function ChallInfo({ id, name, tags, category, deployed }: challProp) {
+function ChallInfo({ id, name, tags, category, description, deployed }: challProp) {
     let title = name.toUpperCase();
 
     let newTags:string[] =[];
@@ -43,6 +43,7 @@ const HomePage = () => {
                     name={chall.name}
                     tags={chall.tags}
                     category={chall.category}
+                    description={chall.description}
                     deployed={chall.deployed}                    
                     />
                 ))}
