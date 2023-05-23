@@ -17,9 +17,11 @@ import secrets
 
 
 class LoginToken:
-    def __init__(self, team_id: str, timestamp=time.time(), forceUUID=True):
+    def __init__(self, team_id: str, timestamp=None, forceUUID=True):
         """Initialize a LoginToken given decoded parameters"""
 
+        if timestamp is None:
+            timestamp = time.time()
         # Unless forceUUID is disabled, all team_ids should be UUIDs
         if (
             re.match(
@@ -35,10 +37,21 @@ class LoginToken:
 
     @classmethod
     def decode(cls, token, onlyAllowType8=True):
+        """Decodes a token
+
+        May throw a ValueError if the key format is invalid"""
         decoded = json.loads(LoginToken.decrypt(token))
-        if decoded["j"] != 8:
-            raise ValueError("Token was an invalid type (type {})".format(decoded["j"]))
-        return cls(decoded["d"], timestamp=decoded["t"])
+
+        try:
+            if decoded["k"] != 8 and onlyAllowType8:
+                raise ValueError(
+                    "Token was an invalid type (type {})".format(decoded["k"])
+                )
+            return cls(decoded["d"], timestamp=decoded["t"])
+        except KeyError:
+            raise ValueError(
+                "Invalid key - either it failed to decrypt or was not of the required format or key type"
+            )
 
     def get_login_url(self, currentTime=True) -> str:
         return "{}/login?token={}".format(
