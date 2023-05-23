@@ -109,7 +109,7 @@ def validate_team_username(team_id: str) -> bool:
 def register():
     """Register an account
 
-    Requires team_username, email body parameters
+    Requires username, email body parameters
     """
     try:
         team_username = request.form["username"]
@@ -181,7 +181,9 @@ def profile():
 
 @blueprint.route("/profile", methods=["PATCH"])
 def update_profile():
-    """Updates information in the profile (email, team name)"""
+    """Updates information in the profile (email, team name)
+
+    Body fields: neither, one, or both of username, email"""
     with connect_pg() as conn:
         with conn.cursor() as cur:
             # Verify user exists, and if not, create it
@@ -227,7 +229,9 @@ def update_profile():
 
 @blueprint.route("/login", methods=["POST"])
 def login():
-    """Allows users to login using login urls"""
+    """Allows users to login using login urls
+
+    Requires body param login_token"""
     try:
         token = request.form["login_token"]
     except KeyError:
