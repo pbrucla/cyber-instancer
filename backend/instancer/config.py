@@ -4,6 +4,7 @@ from typing import Any, IO, Callable
 import yaml
 import jsonschema
 import redis
+from base64 import b64decode
 import psycopg
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
@@ -55,6 +56,8 @@ class Config:
     postgres_database: str = "postgres"
     redis_resync_interval: int = 60
     dev: bool = False
+    login_secret_key: bytes = None
+    url: str = "http://localhost:8080"
 
 
 config = Config()
@@ -88,6 +91,7 @@ def apply_config(c: dict):
             "type": "object",
             "properties": {
                 "secret_key": {"type": "string"},
+                "login_secret_key": {"type": "string"},
                 "in_cluster": {"type": "boolean"},
                 "redis": {
                     "type": "object",
@@ -109,11 +113,13 @@ def apply_config(c: dict):
                 },
                 "redis_resync_interval": {"type": "number"},
                 "dev": {"type": "boolean"},
+                "url": {"type": "string"},
             },
         },
     )
 
     apply_dict(c, "secret_key", "secret_key", func=lambda x: x.encode())
+    apply_dict(c, "login_secret_key", "login_secret_key", func=lambda x: x.encode())
     apply_dict(c, "in_cluster", "in_cluster")
     apply_dict(c, "redis_host", "redis", "host")
     apply_dict(c, "redis_port", "redis", "port")
@@ -125,6 +131,7 @@ def apply_config(c: dict):
     apply_dict(c, "postgres_password", "postgres", "password")
     apply_dict(c, "redis_resync_interval", "redis_resync_interval")
     apply_dict(c, "dev", "dev")
+    apply_dict(c, "url", "url")
 
 
 try:
@@ -148,6 +155,12 @@ apply_env("INSTANCER_DEV", "dev", func=parse_bool)
 
 if config.secret_key is None:
     raise ValueError("No secret key was supplied in configuration")
+if config.login_secret_key is None:
+    raise ValueError("No login secret key was supplied in configuration")
+if len(b64decode(config.login_secret_key)) != 32:
+    raise ValueError(
+        "Invalid secret login key. Secret login key must be exactly 32 bytes long, base64 encoded"
+    )
 
 rclient = redis.Redis(
     host=config.redis_host, port=config.redis_port, password=config.redis_password

@@ -14,7 +14,13 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
         if expiration is None
         else {
             "expiration": expiration,
-            "port_mappings": list(chall.port_mappings().items()),
+            "port_mappings": {
+                f"{container}:{internal}": external
+                for (
+                    container,
+                    internal,
+                ), external in chall.port_mappings().items()
+            },
         }
     )
 

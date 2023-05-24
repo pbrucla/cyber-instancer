@@ -1,4 +1,5 @@
 secret_key: abcd
+login_secret_key: "+jRCqBlpa4Mqo558EVWfioZAIfiFEHgQvN6BxD7qBgQ="
 redis:
   host: localhost
   port: 6379
@@ -12,3 +13,4 @@ postgres:
 in_cluster: false
 redis_resync_interval: 60
 dev: false
+url: "https://example.com"
