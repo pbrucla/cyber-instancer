@@ -51,13 +51,13 @@ const Chall = () => {
                         <Stop className="buttonsvg r" />
                     </button>
                     {ports.map((p: portObject) => (
-                    <div className="IP-port-box">{p.ip}: {p.port}</div>
+                    <div className="IP-port-box">{p.ip}:{p.port}</div>
                     ))}
                 </div>
             );
         }
         else {
-            buttons = <button className="deploy OFF">DEPLOY NOW</button>;
+            buttons = <button className="deploy OFF" onClick={() => fetchData(ID)}>DEPLOY NOW</button>;
         }
     }
 
@@ -68,6 +68,16 @@ const Chall = () => {
             {buttons}
         </div>    
     );
+};
+
+const fetchData = async (id: string) => {
+    const res = await fetch("/api/challenge/" + id + "/deployment");
+    if (res.status !== 200) {
+        return;
+    }
+    const data = await res.json();
+    console.log(data);
+    return;
 };
 
 export default Chall;
