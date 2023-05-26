@@ -3,19 +3,8 @@ body {
     color: #ffffff;
 }
 
-.filter {
-    display:block;
-
-    background-color: transparent;
-    border:none;
-
-    margin: 1rem 5vw 4vw;
-    aspect-ratio : 1 / 1;
-    height:2rem;
-}
-
-.svg {
-    height: 100%;
+.grid {
+    display: grid;
 }
 
 .card {

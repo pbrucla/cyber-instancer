@@ -2,7 +2,7 @@ import React from "react";
 import {Link} from "react-router-dom";
 import challenges, { challProp } from "./data/challs.ts"
 import "./styles/challs.css";
-import {ReactComponent as FilterBtn} from "./images/filter.svg";
+import Filterbar from './filterbar';
 
 function ChallInfo({ id, name, tags, category, deployed }: challProp) {
     let title = name.toUpperCase();
@@ -34,18 +34,20 @@ function ChallInfo({ id, name, tags, category, deployed }: challProp) {
 const HomePage = () => {
     return (
         <React.StrictMode>   
-            <button className="filter"><FilterBtn className="svg" /></button> 
-            <div>
-                {challenges.map((chall: challProp) => (
-                    <ChallInfo
-                    id={chall.id}
-                    name={chall.name}
-                    tags={chall.tags}
-                    category={chall.category}
-                    description={chall.description}
-                    deployed={chall.deployed}                    
-                    />
-                ))}
+            <div className="full-extend"><Filterbar /></div>
+            <div className="grid"> 
+                <div>
+                    {challenges.map((chall: challProp) => (
+                        <ChallInfo
+                        id={chall.id}
+                        name={chall.name}
+                        tags={chall.tags}
+                        category={chall.category}
+                        description={chall.description}
+                        deployed={chall.deployed}                    
+                        />
+                    ))}
+                </div>
             </div>         
         </React.StrictMode>
     )
