@@ -70,5 +70,4 @@ const challData: challProp[] = [
         deployed: false
     },
 ];
-
 export default challData;
