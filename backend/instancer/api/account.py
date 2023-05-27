@@ -114,7 +114,7 @@ def register():
     try:
         team_username = request.form["username"]
     except KeyError:
-        return {"success": False, "msg": "missing team_username"}, 400
+        return {"success": False, "msg": "missing username"}, 400
     try:
         email = request.form["email"]
     except KeyError:
@@ -123,7 +123,7 @@ def register():
         return {
             "success": False,
             "msg": "invalid team_username: must be between 3 and 100 characters",
-        }
+        }, 400
     if not validate_email(email):
         return {"success": False, "msg": "invalid email"}, 400
     team_id = uuid4()
@@ -142,7 +142,7 @@ def register():
                     "msg": "{} already taken.".format(
                         re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
                     ),
-                }
+                }, 400
             conn.commit()
             return {"success": True, "token": authentication.new_session(str(team_id))}
 
@@ -222,7 +222,7 @@ def update_profile():
                     "msg": "{} already taken.".format(
                         re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
                     ),
-                }
+                }, 400
             conn.commit()
     return {"success": True, "msg": "Successfully updated profile"}
 
