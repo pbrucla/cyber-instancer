@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 import "./styles/filterbar.css";
 
