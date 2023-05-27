@@ -8,12 +8,12 @@ import { portObject } from "./data/challs.ts"
 
 const Chall = () => {
     const { ID } = useParams() as { ID: string };
-    const chall = challenges.find(element => element["id"] == ID);
+    const chall = challenges.find(element => element["id"] === ID);
 
     let challInfo;
     let buttons;
 
-    let ports: portObject[] = [{ip:"127.0.0.1", port:"1337"}, {ip:"192.168.1.1", port:"55555"}, {ip:"8.8.8.8", port:"40000"}];
+    const ports: portObject[] = [{ip:"127.0.0.1", port:"1337"}, {ip:"192.168.1.1", port:"55555"}, {ip:"8.8.8.8", port:"40000"}];
 
     if (chall === undefined) {
         challInfo = (
@@ -26,7 +26,7 @@ const Chall = () => {
         const title = chall["name"].toUpperCase();
         const description = chall["description"];
         const tags = chall["tags"];
-        let newTags:string[] =[];
+        const newTags:string[] =[];
         for(let i = 0; i < tags.length; i++) {
             newTags.push("#".concat(tags[i].concat(" ").toString()))
         }
@@ -61,14 +61,14 @@ const Chall = () => {
         }
     }
 
-
-    return  (
+    return (
         <div className="content-div">
             {challInfo}
             {buttons}
         </div>    
     );
 };
+export default Chall;
 
 const fetchData = async (id: string) => {
     const res = await fetch("/api/challenge/" + id + "/deployment");
@@ -79,5 +79,3 @@ const fetchData = async (id: string) => {
     console.log(data);
     return;
 };
-
-export default Chall;

@@ -5,9 +5,9 @@ import dropdowns from "./data/filter-tags.ts";
 import "./styles/challs.css";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 
-var include = new Set<string>([]);
-var exclude = new Set<string>([]);
-var show = challenges.map((chall) => {return {challenge: chall, display: true}});
+const include = new Set<string>([]);
+const exclude = new Set<string>([]);
+const show = challenges.map((chall) => {return {challenge: chall, display: true}});
 
 /* sidebar label */
 function Title({value}:{value:number}) { 
@@ -76,17 +76,17 @@ const ChallPage = () => {
 
     function ApplyFilter() {
         show.forEach((chall) => {
-            let all = new Set<string>([...chall.challenge.category, ...chall.challenge.tags]);
+            const all = new Set<string>([...chall.challenge.category, ...chall.challenge.tags]);
             if (chall.challenge.deployed) {all.add("active")} 
             else {all.add("inactive")}
 
             let i = true; let e = false;
             if (include.size !== 0) {
-                let overlap = new Set([...include].filter((x) => all.has(x)));
+                const overlap = new Set([...include].filter((x) => all.has(x)));
                 i = (overlap.size !== 0);
             }
             if (exclude.size !== 0) {
-                let overlap = new Set([...exclude].filter((x) => all.has(x)))
+                const overlap = new Set([...exclude].filter((x) => all.has(x)))
                 e = (overlap.size !== 0);
             }
 
@@ -117,9 +117,9 @@ const ChallPage = () => {
                     </div>
                     
                     {dropdowns.map((elm) => {
-                        let val = elm.value;
+                        const val = elm.value;
                         return(                               
-                            <div className="block">
+                            <div className="block" key={elm.id}>
                             <Title value={val}></Title>
                             <button 
                                 className={(expand[val])?"menu open":"menu close"} 
@@ -130,7 +130,8 @@ const ChallPage = () => {
                                 <div className="drop">
                                 {elm.data.map((cat, idx) => {
                                     return(
-                                        <div className={(idx === elm.data.length - 1)?"dropdown last":"dropdown"}>
+                                        <div key={val.toString()+cat}
+                                            className={(idx === elm.data.length - 1)?"dropdown last":"dropdown"}>
                                             <label className="select">
                                                 <input type="checkbox"
                                                     onChange={(e) => 
@@ -157,7 +158,7 @@ const ChallPage = () => {
                 {show.map((chall) => {
                     if (chall.display) {
                         return (
-                            <ChallInfo
+                            <ChallInfo key={chall.challenge.id}
                             id={chall.challenge.id}
                             name={chall.challenge.name}
                             tags={chall.challenge.tags}
@@ -166,7 +167,7 @@ const ChallPage = () => {
                             deployed={chall.challenge.deployed} />
                         )
                     }
-                    else {return;}            
+                    else {return null;}            
                 })}
             </div>
         </div>   
