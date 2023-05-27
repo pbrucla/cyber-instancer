@@ -1,55 +1,177 @@
-import React from "react";
+import React, {useState} from "react";
 import {Link} from "react-router-dom";
 import challenges, { challProp } from "./data/challs.ts"
+import dropdowns from "./data/filter-tags.ts";
 import "./styles/challs.css";
-import Filterbar from './filterbar';
+import {ReactComponent as FilterBtn} from "./images/filter.svg";
 
+var include = new Set<string>([]);
+var exclude = new Set<string>([]);
+var show = challenges.map((chall) => {return {challenge: chall, display: true}});
+
+/* sidebar label */
+function Title({value}:{value:number}) { 
+    if (value === 0) {
+        return (<div className="boolean"><span 
+            className="dot inc"></span>include</div>);
+    }
+    else if(value === 2){
+        return (<div className="boolean"><span 
+            className="dot exc"></span>exclude</div>);
+    }
+    return (<div className="hide"></div>)
+}
+
+/* card format */
 function ChallInfo({ id, name, tags, category, deployed }: challProp) {
-    let title = name.toUpperCase();
-
-    let status="inactive";
-    let statusCSS="stat OFF";
-
-    const path="../chall/".concat(id.toString());
-
-    if (deployed) { status = "active"; statusCSS="stat ON"}
     return (
-        <Link to={path}>
+        <Link to={"../chall/".concat(id.toString())}>
         <button className="card">
             <div className="text">
-                <span className="cat">{category}</span>
-                <span className="title">{title}</span>
-                <span className="tag">{ tags.map(tag => {
+                <span className="cat">{category.map(cat => {
                     return (
-                        <a>{("#".concat(tag.replaceAll(" ", "_").concat(" ").toString()))}</a>
+                        <>{cat.concat(" ").toString()}</>
+                    )
+                }) }</span>   
+                <span className="title">{name.toUpperCase()}</span>
+                <span className="tag">{tags.map(tag => {
+                    return (
+                        <>{("#".concat(tag.replaceAll(" ", "_").concat(" ").toString()))}</>
                     )
                 }) }</span>
-                <div className={statusCSS}>{status}</div>
+                <div className={deployed?"stat ON":"stat OFF"}
+                    >{deployed?"active":"inactive"}</div>
             </div>            
         </button>
         </Link>
     );
 }
 
-const HomePage = () => {
+const ChallPage = () => {
+    /* expand toggles: sidebar, menus */
+    const [open, setOpen] = useState(false); 
+    const toggle = () => { setOpen(!open); };
+
+    const [expand, setExpand] = useState(Array(5).fill(false));
+    const newExpand = expand.slice();
+
+    function drop(i:number) {
+        newExpand[i] = !expand[i];
+        setExpand(newExpand);
+    }    
+
+    /* filter system */
+    const [, setShowOnly] = useState(show);
+
+    function handleChange(checked:boolean, inc:boolean, cat:string){
+        if (checked) { (inc?include.add(cat):exclude.add(cat)) }
+        else { (inc?include.delete(cat):exclude.delete(cat)) }
+        ApplyFilter();
+    } 
+    
+    function checkCheck(included:boolean, category:string) {
+        if (included) { return include.has(category); }
+        return exclude.has(category);
+    }
+
+    function ApplyFilter() {
+        show.forEach((chall) => {
+            let all = new Set<string>([...chall.challenge.category, ...chall.challenge.tags]);
+            if (chall.challenge.deployed) {all.add("active")} 
+            else {all.add("inactive")}
+
+            let i = true; let e = false;
+            if (include.size !== 0) {
+                let overlap = new Set([...include].filter((x) => all.has(x)));
+                i = (overlap.size !== 0);
+            }
+            if (exclude.size !== 0) {
+                let overlap = new Set([...exclude].filter((x) => all.has(x)))
+                e = (overlap.size !== 0);
+            }
+
+            if (i && !e) {chall.display = true;}
+            else {chall.display = false;}
+        })
+        setShowOnly([...show]);
+    }
+
+    /* content */
     return (
-        <React.StrictMode>   
-            <div className="full-extend"><Filterbar /></div>
-            <div className="grid"> 
-                <div>
-                    {challenges.map((chall: challProp) => (
-                        <ChallInfo
-                        id={chall.id}
-                        name={chall.name}
-                        tags={chall.tags}
-                        category={chall.category}
-                        description={chall.description}
-                        deployed={chall.deployed}                    
-                        />
-                    ))}
-                </div>
-            </div>         
-        </React.StrictMode>
+        <React.StrictMode> <div className="fullpage"> 
+            {/*FILTERBAR: begin*/} 
+            <div className={open?'sideOpen':'sideClose'}>
+                <button onClick={toggle}
+                    className={(open)?"hide":"filterbtn close"}><FilterBtn 
+                    className="svg" /></button> 
+
+                {(open) && (<div>
+                    <div className="block">
+                        <button onClick={toggle}
+                        className="filterbtn open" ><FilterBtn 
+                        className="svg" /></button>
+                    </div>
+
+                    <div className="block">
+                            <input placeholder="Search name..."></input>
+                    </div>
+                    
+                    {dropdowns.map((elm) => {
+                        let val = elm.value;
+                        return(                               
+                            <div className="block">
+                            <Title value={val}></Title>
+                            <button 
+                                className={(expand[val])?"menu open":"menu close"} 
+                                onClick={() => {drop(val);}}><span 
+                                className={(expand[val])?"arrow pointS":"arrow pointE"}></span>{elm.id}</button>
+
+                            {(expand[val]) && (
+                                <div className="drop">
+                                {elm.data.map((cat, idx) => {
+                                    return(
+                                        <div className={(idx === elm.data.length - 1)?"dropdown last":"dropdown"}>
+                                            <label className="select">
+                                                <input type="checkbox"
+                                                    onChange={(e) => 
+                                                        handleChange(e.target.checked, elm.include, cat)}
+                                                    defaultChecked=
+                                                        {checkCheck(elm.include, cat)}></input>{cat}
+                                            </label>
+                                        </div>
+                                    )
+                                })}
+                                </div>
+                            )}                            
+                            </div>
+                        )
+                    })}                                    
+                </div>               
+            )} 
+            </div>
+        {/*FILTERBAR: end*/}
+
+        {/*CARDS: begin*/}
+        <div className={open?"cards contract":"cards full"}> 
+            <div>
+                {show.map((chall) => {
+                    if (chall.display) {
+                        return (
+                            <ChallInfo
+                            id={chall.challenge.id}
+                            name={chall.challenge.name}
+                            tags={chall.challenge.tags}
+                            category={chall.challenge.category}
+                            description={chall.challenge.description}
+                            deployed={chall.challenge.deployed} />
+                        )
+                    }
+                    else {return;}            
+                })}
+            </div>
+        </div>   
+        {/*CARDS: end*/}      
+        </div></React.StrictMode>
     )
 };
-export default HomePage;
+export default ChallPage;
