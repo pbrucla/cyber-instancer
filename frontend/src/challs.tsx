@@ -4,10 +4,13 @@ import challenges, { challProp } from "./data/challs.ts"
 import dropdowns from "./data/filter-tags.ts";
 import "./styles/challs.css";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
+import {ReactComponent as SearchBtn} from "./images/search.svg";
+import {ReactComponent as ClearBtn} from "./images/clear.svg";
 
 const include = new Set<string>([]);
 const exclude = new Set<string>([]);
 const show = challenges.map((chall) => {return {challenge: chall, display: true}});
+let userInput = "";
 
 /* sidebar label */
 function Title({value}:{value:number}) { 
@@ -60,6 +63,18 @@ const ChallPage = () => {
         setExpand(newExpand);
     }    
 
+    /* search bar */
+    const [keyphrase, setKeyphrase] = useState<string>(userInput);
+    function handleInput(keyphrase:string) {
+        userInput = keyphrase.toLowerCase();
+        setKeyphrase(userInput);
+    }
+    function ClearInput() {
+        userInput="";
+        setKeyphrase("");
+        ApplyFilter();
+    }
+
     /* filter system */
     const [, setShowOnly] = useState(show);
 
@@ -90,8 +105,17 @@ const ChallPage = () => {
                 e = (overlap.size !== 0);
             }
 
-            if (i && !e) {chall.display = true;}
-            else {chall.display = false;}
+            if (userInput.length !== 0) {
+                if (!chall.challenge.name.toLowerCase().includes(userInput)) {
+                    chall.display = false;
+                }
+                else if (i && !e) {chall.display = true;}
+                if (!(i&&!e)) {chall.display = false;}
+            }
+            else {
+                if (i && !e) {chall.display = true;}
+                else {chall.display = false;}
+            }     
         })
         setShowOnly([...show]);
     }
@@ -112,8 +136,15 @@ const ChallPage = () => {
                         className="svg" /></button>
                     </div>
 
-                    <div className="block">
-                            <input placeholder="Search name..."></input>
+                    <div className="search">
+                            <input className="searchbar"
+                                type="text"
+                                placeholder="Search name..."
+                                value={keyphrase}
+                                onChange={(e) => handleInput(e.target.value)}
+                                ></input>
+                            <button className="searchbtn" onClick={() => ClearInput()}><ClearBtn className="svg"/></button>
+                            <button className="searchbtn" onClick={() => ApplyFilter()}><SearchBtn className="svg"/></button>
                     </div>
                     
                     {dropdowns.map((elm) => {
