@@ -131,18 +131,18 @@ metadata:
   name: cyber-instancer
   namespace: cyber-instancer
 rules:
-- apiGroups: [""]
-  resources: ["services", "namespaces"]
-  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ["networking.k8s.io"]
-  resources: ["ingresses", "networkpolicies"]
-  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ["traefik.containo.us"]
-  resources: ["ingressroutes"]
-  verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services", "namespaces"]
+    verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["traefik.containo.us"]
+    resources: ["ingressroutes"]
+    verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -150,9 +150,9 @@ metadata:
   name: cyber-instancer-binding
   namespace: cyber-instancer
 subjects:
-- kind: ServiceAccount
-  name: cyber-instancer
-  namespace: cyber-instancer
+  - kind: ServiceAccount
+    name: cyber-instancer
+    namespace: cyber-instancer
 roleRef:
   kind: ClusterRole
   name: cyber-instancer
@@ -208,17 +208,17 @@ spec:
               cpu: 50m
               memory: 64Mi
           volumeMounts:
-          - name: config
-            mountPath: "/app/config.yml"
-            readOnly: true
-            subPath: "config.yml"
+            - name: config
+              mountPath: "/app/config.yml"
+              readOnly: true
+              subPath: "config.yml"
       volumes:
-      - name: config
-        secret:
-          secretName: instancer-config
-          items:
-          - key: config
-            path: config.yml
+        - name: config
+          secret:
+            secretName: instancer-config
+            items:
+              - key: config
+                path: config.yml
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -282,17 +282,17 @@ spec:
               memory: 64Mi
           command: ["python", "worker.py"]
           volumeMounts:
-          - name: config
-            mountPath: "/app/config.yml"
-            readOnly: true
-            subPath: "config.yml"
+            - name: config
+              mountPath: "/app/config.yml"
+              readOnly: true
+              subPath: "config.yml"
       volumes:
-      - name: config
-        secret:
-          secretName: instancer-config
-          items:
-          - key: config
-            path: config.yml
+        - name: config
+          secret:
+            secretName: instancer-config
+            items:
+              - key: config
+                path: config.yml
 ---
 apiVersion: v1
 kind: Service
@@ -335,11 +335,11 @@ spec:
     - web
     - websecure
   routes:
-  - match: Host(`YOUR_DOMAIN`)
-    kind: Rule
-    services:
-    - name: cyber-instancer-service
-      port: 8080
+    - match: Host(`YOUR_DOMAIN`)
+      kind: Rule
+      services:
+        - name: cyber-instancer-service
+          port: 8080
 ```
 
 ## Database Setup

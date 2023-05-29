@@ -1,0 +1,56 @@
+* {
+    font-family: "Roboto Mono", monospace;
+}
+
+body {
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+    background-color: #101010;
+}
+
+nav {
+    display: inline-block;
+    position: sticky;
+
+    background-color: rgb(16, 16, 16);
+    color: white;
+
+    top: 0px;
+    height: 5rem;
+    width: 100%;
+    z-index: 9999;
+}
+
+.left {
+    float: left;
+
+    background-color: transparent;
+    border: none;
+
+    margin: 0.5rem 1.5rem;
+    aspect-ratio: 1 / 1;
+    min-width: 4rem;
+    height: 80%;
+}
+
+.right {
+    float: right;
+
+    background-color: #ffba44;
+    border: none;
+    color: #101010;
+    font-weight: 600;
+
+    margin: 1.25rem 3rem 1.25rem 0rem;
+    min-width: 5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+}
+
+.svg {
+    height: 100%;
+}
