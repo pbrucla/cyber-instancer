@@ -1,9 +1,14 @@
 import json
 import re
+import secrets
 import time
 import urllib.parse
+
+# Login token handling
+from base64 import b64decode, b64encode
 from uuid import uuid4
 
+from Crypto.Cipher import AES
 from flask import Blueprint, g, request
 from psycopg.errors import IntegrityError
 
@@ -12,13 +17,6 @@ from instancer.config import config, connect_pg
 from . import authentication
 
 blueprint = Blueprint("account", __name__, url_prefix="/accounts")
-
-import secrets
-
-# Login token handling
-from base64 import b64decode, b64encode
-
-from Crypto.Cipher import AES
 
 
 class LoginToken:
