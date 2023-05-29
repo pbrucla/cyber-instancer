@@ -1,11 +1,12 @@
-from dataclasses import dataclass
 import os
-from typing import Any, IO, Callable
-import yaml
-import jsonschema
-import redis
 from base64 import b64decode
+from dataclasses import dataclass
+from typing import IO, Any, Callable
+
+import jsonschema
 import psycopg
+import redis
+import yaml
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 

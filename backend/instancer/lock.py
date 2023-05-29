@@ -1,6 +1,7 @@
-from instancer.config import rclient
 from dataclasses import dataclass, field
 from random import randbytes
+
+from instancer.config import rclient
 
 
 class LockException(Exception):
