@@ -33,6 +33,7 @@ const useAccountManagement = () => {
         });
         if (res.status !== 200) {
             setIsLoggedIn(false);
+            setAccountToken(null);
             return null;
         }
         console.log("hi");

@@ -25,7 +25,7 @@ const Profile = () => {
         };
 
         updateProfileData().catch(console.error);
-    }, [navigate]);
+    }, []);
 
     return (
         <>

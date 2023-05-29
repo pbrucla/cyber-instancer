@@ -7,7 +7,7 @@ import {useNavigate, useSearchParams} from "react-router-dom";
 const Login = () => {
     const navigate = useNavigate();
 
-    const {setAccountToken} = useAccountManagement();
+    const {setAccountToken, validateAccountToken} = useAccountManagement();
 
     const [formStatus, setFormStatus] = useState("");
     const [token, setToken] = useState("");
@@ -18,7 +18,15 @@ const Login = () => {
         if (token !== null) {
             setToken(token);
         }
-    }, []);
+
+        /* Redirect if logged in */
+        const checkLoggedIn = async () => {
+            if (await validateAccountToken()) {
+                navigate("/challs");
+            }
+        };
+        checkLoggedIn().catch(console.error);
+    }, [searchParams]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page

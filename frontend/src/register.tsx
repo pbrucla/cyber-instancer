@@ -1,6 +1,6 @@
 import "./styles/index.css";
 import "./styles/info-box.css";
-import {FormEvent, useState} from "react";
+import {FormEvent, useState, useEffect} from "react";
 import useAccountManagement from "./data/account";
 import {useNavigate} from "react-router-dom";
 
@@ -8,7 +8,17 @@ const Register = () => {
     const navigate = useNavigate();
 
     const [formStatus, setFormStatus] = useState("");
-    const {setAccountToken} = useAccountManagement();
+    const {setAccountToken, validateAccountToken} = useAccountManagement();
+
+    /* Redirect if logged in */
+    useEffect(() => {
+        const checkLoggedIn = async () => {
+            if (await validateAccountToken()) {
+                navigate("/challs");
+            }
+        };
+        checkLoggedIn().catch(console.error);
+    }, [navigate, validateAccountToken]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
