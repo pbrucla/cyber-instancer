@@ -1,14 +1,24 @@
 import "./styles/index.css";
 import "./styles/info-box.css";
-import {FormEvent, useState} from "react";
+import {FormEvent, useState, useEffect} from "react";
 import useAccountManagement from "./data/account";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useSearchParams} from "react-router-dom";
 
-const Register = () => {
+const Login = () => {
     const navigate = useNavigate();
 
-    const [formStatus, setFormStatus] = useState("");
     const {setAccountToken} = useAccountManagement();
+
+    const [formStatus, setFormStatus] = useState("");
+    const [token, setToken] = useState("");
+    const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        const token = searchParams.get("token");
+        if (token !== null) {
+            setToken(token);
+        }
+    }, []);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
@@ -18,7 +28,7 @@ const Register = () => {
         const form = e.currentTarget;
         const formData = new FormData(form);
 
-        await fetch("/api/accounts/register", {
+        await fetch("/api/accounts/login", {
             method: "POST",
             body: formData,
         })
@@ -45,25 +55,25 @@ const Register = () => {
 
     return (
         <>
-            <div className="Profile-Register-div">
-                <div className="Profile-Register-div-inner">
-                    <h1 className="Profile-Register-heading"> REGISTER </h1>
+            <div className="Profile-Login-div">
+                <div className="Profile-Login-div-inner">
+                    <h1 className="Profile-Login-heading"> LOGIN </h1>
                     <form className="container" method="post" onSubmit={handleSubmit}>
                         <div className="row">
                             <div className="column" style={{borderRadius: "5px 0 0 0"}}>
-                                USERNAME
+                                TOKEN
                             </div>
-                            <input type="text" name="username" className="column" style={{borderRadius: "0 5px 0 0"}} />
+                            <input
+                                type="text"
+                                name="login_token"
+                                className="column"
+                                defaultValue={token}
+                                style={{borderRadius: "0 5px 0 0"}}
+                            />
                         </div>
                         <div className="row">
-                            <div className="column" style={{borderRadius: "0 0 0 5px"}}>
-                                EMAIL
-                            </div>
-                            <input type="text" name="email" className="column" style={{borderRadius: "0 0 5px 0"}} />
-                        </div>
-                        <div className="row">
-                            <button className="button" type="submit">
-                                Register
+                            <button type="submit" className="button">
+                                Submit
                             </button>
                         </div>
                         <div className="status">
@@ -76,4 +86,4 @@ const Register = () => {
     );
 };
 
-export default Register;
+export default Login;
