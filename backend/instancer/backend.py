@@ -12,6 +12,7 @@ from typing import Any
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 from kubernetes.client.exceptions import ApiException
+from psycopg.types.json import Jsonb
 
 from instancer.config import config, connect_pg, rclient
 from instancer.lock import Lock, LockException
@@ -196,6 +197,38 @@ class Challenge(ABC):
 
     def is_running(self):
         return self.expiration() is not None
+
+    @staticmethod
+    def create(
+        chall_id: str,
+        per_team: bool,
+        cfg: dict[str, Any],
+        lifetime: int,
+        metadata: ChallengeMetadata,
+        tags: list[ChallengeTag],
+    ):
+        """Create a new challenge and insert it into the database."""
+
+        with connect_pg() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO challenges (id, cfg, per_team, lifetime, name, description, author) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        chall_id,
+                        Jsonb(cfg),
+                        per_team,
+                        lifetime,
+                        metadata.name,
+                        metadata.description,
+                        metadata.author,
+                    ),
+                )
+                with cur.copy(
+                    "COPY tags (challenge_id, name, is_category) FROM STDIN"
+                ) as copy:
+                    for tag in tags:
+                        copy.write_row((chall_id, tag.name, tag.is_category))
+        rclient.delete("all_challs")
 
     @classmethod
     def fetchall(cls, team_id: str) -> list[tuple[Challenge, list[ChallengeTag]]]:
