@@ -142,6 +142,7 @@ except FileNotFoundError:
     pass
 
 apply_env("INSTANCER_SECRET_KEY", "secret_key", func=lambda x: x.encode())
+apply_env("INSTANCER_LOGIN_SECRET_KEY", "login_secret_key", func=lambda x: x.encode())
 apply_env("INSTANCER_REDIS_HOST", "redis_host")
 apply_env("INSTANCER_REDIS_PORT", "redis_port", func=int)
 apply_env("INSTANCER_REDIS_PASSWORD", "redis_password")
