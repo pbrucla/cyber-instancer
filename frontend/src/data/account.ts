@@ -7,7 +7,7 @@ const useAccountManagement = () => {
         return localStorage.getItem("auth_token");
     }
 
-    function setAccountToken(token: string | null): undefined {
+    function setAccountToken(token: string | null): void {
         if (token === null) {
             setIsLoggedIn(false);
             localStorage.removeItem("auth_token");
