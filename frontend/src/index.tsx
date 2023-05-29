@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import {BrowserRouter} from "react-router-dom";
 import {Routes, Route} from "react-router-dom";
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 
 import App from "./home";
 import Challs from "./challs";
@@ -30,16 +30,25 @@ export const GlobalContext = createContext({
 export const useGlobalContext = () => useContext(GlobalContext);
 
 function NavComponents({showLoggedIn}: {showLoggedIn: boolean}) {
+    const {setAccountToken} = useAccountManagement();
+    const navgiate = useNavigate();
+
+    const logout = () => {
+        setAccountToken(null);
+        navgiate("/");
+    };
+
     if (showLoggedIn === true) {
         return (
             <>
-                <Link to="challs">
-                    <button className="left">
-                        <HomeBtn className="svg" />
-                    </button>
-                </Link>
+                <button className="right" onClick={() => logout()}>
+                    LOG OUT
+                </button>
                 <Link to="profile">
                     <button className="right">PROFILE</button>
+                </Link>
+                <Link to="challs">
+                    <button className="right">CHALLS</button>
                 </Link>
             </>
         );
@@ -67,6 +76,11 @@ function IndexComponent() {
                 <BrowserRouter>
                     <nav>
                         <div>
+                            <Link to="/">
+                                <button className="left">
+                                    <HomeBtn className="svg" />
+                                </button>
+                            </Link>
                             <NavComponents showLoggedIn={isLoggedIn} />
                         </div>
                     </nav>
