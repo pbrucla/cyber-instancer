@@ -114,18 +114,18 @@ def register():
     try:
         team_username = request.form["username"]
     except KeyError:
-        return {"success": False, "msg": "missing username"}, 400
+        return {"status": "missing_username", "msg": "missing username"}, 400
     try:
         email = request.form["email"]
     except KeyError:
-        return {"success": False, "msg": "missing email"}, 400
+        return {"status": "missing_email", "msg": "missing email"}, 400
     if not validate_team_username(team_username):
         return {
-            "success": False,
+            "status": "invalid_username",
             "msg": "invalid team_username: must be between 3 and 100 characters",
         }, 400
     if not validate_email(email):
-        return {"success": False, "msg": "invalid email"}, 400
+        return {"status": "invalid_email", "msg": "invalid email"}, 400
     team_id = uuid4()
 
     with connect_pg() as conn:
@@ -138,7 +138,9 @@ def register():
             except IntegrityError as e:
                 conn.rollback()
                 return {
-                    "success": False,
+                    "status": "{}_already_taken".format(
+                        re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
+                    ),
                     "msg": "{} already taken.".format(
                         re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
                     ),
@@ -172,7 +174,7 @@ def profile():
 
     t = LoginToken(g.session["team_id"])
     return {
-        "success": True,
+        "status": "ok",
         "username": username,
         "email": email,
         "login_url": t.get_login_url(),
@@ -205,7 +207,10 @@ def update_profile():
                         )
                     else:
                         conn.rollback()
-                        return {"success": False, "msg": "Invalid new username"}, 400
+                        return {
+                            "status": "invalid_username",
+                            "msg": "Invalid new username",
+                        }, 400
                 if "email" in request.form:
                     if validate_email(request.form["email"]):
                         cur.execute(
@@ -214,17 +219,22 @@ def update_profile():
                         )
                     else:
                         conn.rollback()
-                        return {"success": False, "msg": "Invalid new email"}, 400
+                        return {
+                            "status": "invalid_email",
+                            "msg": "Invalid new email",
+                        }, 400
             except IntegrityError as e:
                 conn.rollback()
                 return {
-                    "success": False,
+                    "status": "{}_already_taken".format(
+                        re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
+                    ),
                     "msg": "{} already taken.".format(
                         re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
                     ),
                 }, 400
             conn.commit()
-    return {"success": True, "msg": "Successfully updated profile"}
+    return {"status": "ok", "msg": "Successfully updated profile"}
 
 
 @blueprint.route("/login", methods=["POST"])
@@ -235,13 +245,13 @@ def login():
     try:
         token = request.form["login_token"]
     except KeyError:
-        return {"success": False, "msg": "Missing login token"}, 401
+        return {"status": "missing_login_token", "msg": "Missing login token"}, 401
     try:
         account = LoginToken.decode(token)
     except ValueError:
-        return {"success": False, "msg": "Invalid token"}, 401
+        return {"status": "invalid_login_token", "msg": "Invalid login token"}, 401
     return {
-        "success": True,
+        "status": "ok",
         "token": authentication.new_session(account.team_id),
         "msg": "Successfully logged in",
     }

@@ -4,15 +4,15 @@
     flex-direction: column;
     justify-content: left;
     align-items: left;
-    padding-left:10vh;
-    padding-top:10vh;
+    padding-left: 10vh;
+    padding-top: 10vh;
 }
 
 .deployment-info {
-    margin-top:5vh;
-    display:flex;
-    align-items:left;
-    justify-content:flex-start;
+    margin-top: 5vh;
+    display: flex;
+    align-items: left;
+    justify-content: flex-start;
 }
 
 .deploy {
@@ -23,23 +23,23 @@
     text-decoration: none;
     cursor: pointer;
     border: none;
-    width:20vw;
-    font-size:large;
+    width: 20vw;
+    font-size: large;
     transition: box-shadow 0.3s ease;
 }
 
 .deploy.OFF {
     background-color: #f44d8a;
     color: white;
-    font-weight:bold;
+    font-weight: bold;
 }
 
 .deploy.OFF:active {
     background: #e43d7a;
-    -webkit-box-shadow: inset 0px 0px 5px #C82162;
-       -moz-box-shadow: inset 0px 0px 5px #C82162;
-            box-shadow: inset 0px 0px 5px #C82162;
-     outline: none;
+    -webkit-box-shadow: inset 0px 0px 5px #c82162;
+    -moz-box-shadow: inset 0px 0px 5px #c82162;
+    box-shadow: inset 0px 0px 5px #c82162;
+    outline: none;
 }
 
 .deploy.ON {
@@ -52,16 +52,15 @@
 
 .deploy.ON:active {
     background: #c0c0c0;
-    -webkit-box-shadow: inset 0px 0px 5px #A4A4A8;
-       -moz-box-shadow: inset 0px 0px 5px #A4A4A8;
-            box-shadow: inset 0px 0px 5px #A4A4A8;
-     outline: none;
+    -webkit-box-shadow: inset 0px 0px 5px #a4a4a8;
+    -moz-box-shadow: inset 0px 0px 5px #a4a4a8;
+    box-shadow: inset 0px 0px 5px #a4a4a8;
+    outline: none;
 }
-  
+
 .buttonsvg {
     height: 2rem;
 }
-
 
 .buttonsvg.l {
     margin-right: 4vw;
@@ -76,9 +75,8 @@
     height: 7vh; /* Set the height of the rectangle */
     border: 2px solid #ffe81a; /* Set the border style of the rectangle */
     margin-left: 7vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    
 }
