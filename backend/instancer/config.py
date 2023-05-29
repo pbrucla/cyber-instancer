@@ -44,7 +44,7 @@ class ChallengeConfig:
 
 @dataclass
 class Config:
-    secret_key: bytes = None
+    secret_key: bytes | None = None
     in_cluster: bool = False
     redis_host: str = "localhost"
     redis_port: int = 6379
@@ -56,7 +56,7 @@ class Config:
     postgres_database: str = "postgres"
     redis_resync_interval: int = 60
     dev: bool = False
-    login_secret_key: bytes = None
+    login_secret_key: bytes | None = None
     url: str = "http://localhost:8080"
 
 
