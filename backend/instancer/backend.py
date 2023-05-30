@@ -212,7 +212,10 @@ class Challenge(ABC):
         with connect_pg() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO challenges (id, cfg, per_team, lifetime, name, description, author) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        "INSERT INTO challenges (id, cfg, per_team, lifetime, name, description, author) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                    ),
                     (
                         chall_id,
                         Jsonb(cfg),
