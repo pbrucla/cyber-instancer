@@ -71,7 +71,7 @@
 }
 
 .IP-port-box {
-    width: 28vh; /* Set the width of the rectangle */
+    width: 14vw; /* Set the width of the rectangle */
     height: 7vh; /* Set the height of the rectangle */
     border: 2px solid #ffe81a; /* Set the border style of the rectangle */
     margin-left: 7vh;
