@@ -16,6 +16,8 @@ def check_admin_team():
 
 @blueprint.route("/challenges/upload", methods=["POST"])
 def challenge_upload():
+    """Create a new challenge."""
+
     try:
         chall_id = request.form["chall_id"]
         per_team = "per_team" in request.form
