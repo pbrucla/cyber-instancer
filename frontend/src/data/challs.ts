@@ -34,8 +34,7 @@ export type ChallPropType = {
     category: string[];
     description: string;
     deployed: boolean;
-}
-
+};
 
 const challData: ChallPropType[] = [
     {

@@ -45,13 +45,8 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="row">
-                            <div className="column" >
-                                REGISTERED EMAIL
-                            </div>
-                            <div
-                                className="column"
-                                style={{wordBreak: "break-all", whiteSpace: "normal"}}
-                            >
+                            <div className="column">REGISTERED EMAIL</div>
+                            <div className="column" style={{wordBreak: "break-all", whiteSpace: "normal"}}>
                                 {email}
                             </div>
                         </div>

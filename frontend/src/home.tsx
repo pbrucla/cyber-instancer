@@ -32,7 +32,9 @@ const Home = () => {
                     <p>now with vite B)</p>
 
                     <p>Test API request</p>
-                    <button className="button" onClick={getData}>Click me</button>
+                    <button className="button" onClick={getData}>
+                        Click me
+                    </button>
                     {profileName && (
                         <div>
                             <p>Name: {profileName}</p>
