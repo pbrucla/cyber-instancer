@@ -73,7 +73,7 @@ const ChallPage = () => {
         if (getAccountToken() === null) {
             navigate("/login");
         }
-    }, [navigate]);
+    }, [navigate, getAccountToken]);
 
     function drop(i: number) {
         newExpand[i] = !expand[i];

@@ -14,7 +14,7 @@ const Profile = () => {
 
     useEffect(() => {
         const updateProfileData = async () => {
-            const profileData = await getAccountData();
+            const profileData = (await getAccountData()) as {username: string; email: string; login_url: string};
             if (profileData === null) {
                 navigate("/login");
             } else {
@@ -25,7 +25,7 @@ const Profile = () => {
         };
 
         updateProfileData().catch(console.error);
-    }, []);
+    }, [getAccountData, navigate]);
 
     return (
         <>

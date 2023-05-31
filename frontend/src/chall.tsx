@@ -51,7 +51,7 @@ const Chall = () => {
                         <Stop className="buttonsvg r" />
                     </button>
                     {ports.map((p: portObject) => (
-                        <div className="IP-port-box">
+                        <div className="IP-port-box" key={`${p.ip}:${p.port}`}>
                             {p.ip}:{p.port}
                         </div>
                     ))}
@@ -59,7 +59,12 @@ const Chall = () => {
             );
         } else {
             buttons = (
-                <button className="deploy OFF" onClick={() => fetchData(ID)}>
+                <button
+                    className="deploy OFF"
+                    onClick={() => {
+                        void fetchData(ID);
+                    }}
+                >
                     DEPLOY NOW
                 </button>
             );
@@ -80,7 +85,7 @@ const fetchData = async (id: string) => {
     if (res.status !== 200) {
         return;
     }
-    const data = await res.json();
+    const data: unknown = await res.json();
     console.log(data);
     return;
 };

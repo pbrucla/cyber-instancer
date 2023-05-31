@@ -26,7 +26,7 @@ const Login = () => {
             }
         };
         checkLoggedIn().catch(console.error);
-    }, [searchParams]);
+    }, [searchParams, navigate, validateAccountToken]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
@@ -44,14 +44,14 @@ const Login = () => {
                 if (res.status === 200) {
                     console.log("success!");
                     res.json()
-                        .then((data) => data.token)
+                        .then((data) => (data as {token: string}).token)
                         .then((token) => setAccountToken(token))
                         .then(() => navigate("/challs"))
                         .catch(() => console.log("An unexpected error occurred"));
                 } else {
                     console.log("failed");
                     res.json()
-                        .then((data) => data.msg)
+                        .then((data) => (data as {msg: string}).msg)
                         .then((errmsg) => setFormStatus(errmsg))
                         .catch(() => console.log("An unexpected error occurred"));
                 }
@@ -66,7 +66,13 @@ const Login = () => {
             <div className="Profile-Login-div">
                 <div className="Profile-Login-div-inner">
                     <h1 className="Profile-Login-heading"> LOGIN </h1>
-                    <form className="container" method="post" onSubmit={handleSubmit}>
+                    <form
+                        className="container"
+                        method="post"
+                        onSubmit={(e) => {
+                            void handleSubmit(e);
+                        }}
+                    >
                         <div className="row">
                             <div className="column" style={{borderRadius: "5px 0 0 0"}}>
                                 TOKEN

@@ -1,10 +1,10 @@
+import re
+
+import jsonschema
 from flask import Blueprint, g, json, request
 
 from instancer.backend import Challenge, ChallengeMetadata, ChallengeTag
 from instancer.config import config
-
-import jsonschema
-import re
 
 blueprint = Blueprint("admin", __name__, url_prefix="/admin")
 

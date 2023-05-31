@@ -36,14 +36,14 @@ const Register = () => {
                 if (res.status === 200) {
                     console.log("success!");
                     res.json()
-                        .then((data) => data.token)
+                        .then((data: {token: string}) => data.token)
                         .then((token) => setAccountToken(token))
                         .then(() => navigate("/challs"))
                         .catch(() => console.log("An unexpected error occurred"));
                 } else {
                     console.log("failed");
                     res.json()
-                        .then((data) => data.msg)
+                        .then((data: {msg: string}) => data.msg)
                         .then((errmsg) => setFormStatus(errmsg))
                         .catch(() => console.log("An unexpected error occurred"));
                 }
@@ -58,7 +58,13 @@ const Register = () => {
             <div className="Profile-Register-div">
                 <div className="Profile-Register-div-inner">
                     <h1 className="Profile-Register-heading"> REGISTER </h1>
-                    <form className="container" method="post" onSubmit={handleSubmit}>
+                    <form
+                        className="container"
+                        method="post"
+                        onSubmit={(e) => {
+                            void handleSubmit(e);
+                        }}
+                    >
                         <div className="row">
                             <div className="column" style={{borderRadius: "5px 0 0 0"}}>
                                 USERNAME
