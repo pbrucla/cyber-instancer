@@ -45,12 +45,12 @@ const Profile = () => {
                             </div>
                         </div>
                         <div className="row">
-                            <div className="column" style={{borderRadius: "5px 0 0 0"}}>
+                            <div className="column" >
                                 REGISTERED EMAIL
                             </div>
                             <div
                                 className="column"
-                                style={{borderRadius: "0 5px 0 0", wordBreak: "break-all", whiteSpace: "normal"}}
+                                style={{wordBreak: "break-all", whiteSpace: "normal"}}
                             >
                                 {email}
                             </div>
@@ -61,7 +61,7 @@ const Profile = () => {
                             </div>
                             <div
                                 className="column"
-                                style={{borderRadius: "0 5px 0 0", wordBreak: "break-all", whiteSpace: "normal"}}
+                                style={{borderRadius: "0 0 5px 0", wordBreak: "break-all", whiteSpace: "normal"}}
                             >
                                 {loginURL}
                             </div>

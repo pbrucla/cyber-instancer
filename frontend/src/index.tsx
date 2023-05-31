@@ -1,4 +1,5 @@
-import React from "react";
+import "./styles/index.css";
+import React, {useState, createContext, useContext} from "react";
 import ReactDOM from "react-dom/client";
 import {BrowserRouter} from "react-router-dom";
 import {Routes, Route} from "react-router-dom";
@@ -11,11 +12,7 @@ import Register from "./register";
 import Chall from "./chall";
 import Login from "./login";
 import useAccountManagement from "./data/account";
-
-import "./styles/index.css";
 import {ReactComponent as HomeBtn} from "./images/home.svg";
-
-import {useState, createContext, useContext} from "react";
 
 export type GlobalContent = {
     isLoggedIn: boolean;
@@ -41,14 +38,14 @@ function NavComponents({showLoggedIn}: {showLoggedIn: boolean}) {
     if (showLoggedIn === true) {
         return (
             <>
-                <button className="right" onClick={() => logout()}>
+                <button className="button right" onClick={() => logout()}>
                     LOG OUT
                 </button>
                 <Link to="profile">
-                    <button className="right">PROFILE</button>
+                    <button className="button right">PROFILE</button>
                 </Link>
                 <Link to="challs">
-                    <button className="right">CHALLS</button>
+                    <button className="button right">CHALLS</button>
                 </Link>
             </>
         );
@@ -56,10 +53,10 @@ function NavComponents({showLoggedIn}: {showLoggedIn: boolean}) {
         return (
             <>
                 <Link to="register">
-                    <button className="right">REGISTER</button>
+                    <button className="button right">REGISTER</button>
                 </Link>
                 <Link to="login">
-                    <button className="right">LOGIN</button>
+                    <button className="button right">LOGIN</button>
                 </Link>
             </>
         );
@@ -77,7 +74,7 @@ function IndexComponent() {
                     <nav>
                         <div>
                             <Link to="/">
-                                <button className="left">
+                                <button className="homeButton">
                                     <HomeBtn className="svg" />
                                 </button>
                             </Link>

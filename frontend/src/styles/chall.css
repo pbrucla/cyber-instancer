@@ -15,6 +15,15 @@
     justify-content: flex-start;
 }
 
+.stat.ON {
+    color: #101010;
+    background-color: #ffe81a;
+}
+.stat.OFF {
+    color: #ffffff;
+    background-color: #f44d8a;
+}
+
 .deploy {
     height: 7vh;
     padding: 10px;
@@ -23,25 +32,16 @@
     text-decoration: none;
     cursor: pointer;
     border: none;
-    width: 20vw;
     font-size: large;
     transition: box-shadow 0.3s ease;
-}
 
+    width:15rem;
+}
 .deploy.OFF {
     background-color: #f44d8a;
     color: white;
     font-weight: bold;
 }
-
-.deploy.OFF:active {
-    background: #e43d7a;
-    -webkit-box-shadow: inset 0px 0px 5px #c82162;
-    -moz-box-shadow: inset 0px 0px 5px #c82162;
-    box-shadow: inset 0px 0px 5px #c82162;
-    outline: none;
-}
-
 .deploy.ON {
     background-color: #d0d0d0;
     color: black;
@@ -50,33 +50,25 @@
     justify-content: center;
 }
 
-.deploy.ON:active {
-    background: #c0c0c0;
-    -webkit-box-shadow: inset 0px 0px 5px #a4a4a8;
-    -moz-box-shadow: inset 0px 0px 5px #a4a4a8;
-    box-shadow: inset 0px 0px 5px #a4a4a8;
-    outline: none;
-}
-
 .buttonsvg {
     height: 2rem;
 }
 
 .buttonsvg.l {
-    margin-right: 4vw;
+    margin-right: 2rem;
 }
 
 .buttonsvg.r {
-    margin-left: 4vw;
+    margin-left: 2rem;
 }
 
 .IP-port-box {
-    width: 14vw; /* Set the width of the rectangle */
-    height: 7vh; /* Set the height of the rectangle */
+    min-width: 12rem; /* Set the width of the rectangle */
+    height: 3rem; /* Set the height of the rectangle */
     border: 2px solid #ffe81a; /* Set the border style of the rectangle */
-    margin-left: 7vh;
+    margin: 0 0 2rem 2rem;
+    
     display: flex;
-    align-items: center;
     justify-content: center;
-    text-align: center;
+    align-items: center;
 }

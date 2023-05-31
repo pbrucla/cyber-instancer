@@ -1,8 +1,10 @@
+import "./styles/index.css";
+import "./styles/challs.css";
 import React, {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {ChallengeType, TagType} from "./data/challs.ts";
 import dropdowns from "./data/filter-tags.ts";
-import "./styles/challs.css";
+
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 import {ReactComponent as ClearBtn} from "./images/clear.svg";
 import useAccountManagement from "./data/account";
@@ -54,7 +56,7 @@ function ChallInfo({challProp}: {challProp: ChallengeType}) {
     return (
         <Link to={"../chall/".concat(challProp.challenge_info.id.toString())}>
             <button className="card">
-                <div className="text">
+                <div style={{position: "relative"}}>
                     <span className="cat">
                         {categories.map((cat) => {
                             return <>{cat.concat(" ").toString()}</>;
@@ -74,14 +76,6 @@ function ChallInfo({challProp}: {challProp: ChallengeType}) {
 }
 
 const ChallPage = () => {
-    /* expand toggles: sidebar, menus */
-    const [open, setOpen] = useState(false);
-    const toggle = () => {
-        setOpen(!open);
-    };
-
-    const [expand, setExpand] = useState(Array(5).fill(false));
-    const newExpand = expand.slice();
 
     /* Redirect if not logged in */
     const {getAccountToken} = useAccountManagement();
@@ -92,6 +86,14 @@ const ChallPage = () => {
         }
     }, [navigate, getAccountToken]);
 
+    /* expand toggles: sidebar, menus */
+    const [open, setOpen] = useState(false);
+    const toggle = () => {
+        setOpen(!open);
+    };
+
+    const [expand, setExpand] = useState(Array(5).fill(false));
+    const newExpand = expand.slice();
     function drop(i: number) {
         newExpand[i] = !expand[i];
         setExpand(newExpand);
@@ -199,7 +201,7 @@ const ChallPage = () => {
     return (
         <React.StrictMode>
             {" "}
-            <div className="fullpage">
+            <div style={{width:"100%", height:"100%"}}>
                 {/*FILTERBAR: begin*/}
                 <div className={open ? "sideOpen" : "sideClose"}>
                     <button onClick={toggle} className={open ? "hide" : "filterbtn close"}>
