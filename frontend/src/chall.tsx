@@ -22,11 +22,12 @@ const Chall = () => {
     if (chall === undefined) {
         challInfo = <h1 style={{color: "#d0d0d0"}}>ERROR: CHALLENGE NOT FOUND</h1>;
     } else {
-        const cat = chall["category"].map((category) => {return category.concat(" ").toString()});
+        const cat = chall["category"].map((category) => {
+            return category.concat(" ").toString();
+        });
         const title = chall["name"].toUpperCase();
         const description = chall["description"];
         const tags = chall["tags"];
-        const newCat: string[] = [];
         const newTags: string[] = [];
 
         for (let i = 0; i < tags.length; i++) {
@@ -38,10 +39,16 @@ const Chall = () => {
         challInfo = (
             <>
                 <div style={{position: "relative", width: "90%"}}>
-                    <div style={{overflowWrap:"break-word", color: "#d0d0d0", fontSize: "30px"}}>{newCat}</div><br></br>
-                    <div style={{overflowWrap:"break-word", color: "#ffffff", fontSize: "45px", fontWeight: "bold"}}>{title.toUpperCase()}</div><br></br>
-                    <div style={{overflowWrap:"break-word", color: "#ff8c4c", fontSize: "30px"}}>{newTags}</div><br></br>
-                    <div style={{overflowWrap:"break-word", color: "#f0f0f0", fontSize: "20px"}}>{description}</div><br></br>
+                    <div style={{overflowWrap: "break-word", color: "#d0d0d0", fontSize: "30px"}}>{cat}</div>
+                    <br></br>
+                    <div style={{overflowWrap: "break-word", color: "#ffffff", fontSize: "45px", fontWeight: "bold"}}>
+                        {title.toUpperCase()}
+                    </div>
+                    <br></br>
+                    <div style={{overflowWrap: "break-word", color: "#ff8c4c", fontSize: "30px"}}>{newTags}</div>
+                    <br></br>
+                    <div style={{overflowWrap: "break-word", color: "#f0f0f0", fontSize: "20px"}}>{description}</div>
+                    <br></br>
                 </div>
             </>
         );

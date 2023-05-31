@@ -12,14 +12,11 @@ import useAccountManagement from "./data/account";
 type ShowType = {
     challenge: ChallengeType;
     display: boolean;
-  }
+};
 
-//let challenges: ChallengeType[] = [];
 const include = new Set<string>([]);
 const exclude = new Set<string>([]);
-/*const show = challenges.map((chall) => {
-    return {challenge: chall, display: true};
-}); */
+
 let userInput = "";
 
 /* sidebar label */
@@ -42,11 +39,13 @@ function Title({value}: {value: number}) {
 
 /* card format */
 function getCategories(chall: ChallengeType) {
-    return chall.challenge_info.tags.filter((tag:TagType) => tag.is_category).map((tag:TagType) => tag.name);''
+    return chall.challenge_info.tags.filter((tag: TagType) => tag.is_category).map((tag: TagType) => tag.name);
+    ("");
 }
 
 function getTags(chall: ChallengeType) {
-    return chall.challenge_info.tags.filter((tag:TagType) => !tag.is_category).map((tag:TagType) => tag.name);''
+    return chall.challenge_info.tags.filter((tag: TagType) => !tag.is_category).map((tag: TagType) => tag.name);
+    ("");
 }
 
 function ChallInfo({challProp}: {challProp: ChallengeType}) {
@@ -68,7 +67,9 @@ function ChallInfo({challProp}: {challProp: ChallengeType}) {
                             return <>{"#".concat(tag.replaceAll(" ", "_").concat(" ").toString())}</>;
                         })}
                     </span>
-                    <div className={deployed === null ? "stat OFF" : "stat ON"}>{deployed === null ? "inactive" : "active"}</div>
+                    <div className={deployed === null ? "stat OFF" : "stat ON"}>
+                        {deployed === null ? "inactive" : "active"}
+                    </div>
                 </div>
             </button>
         </Link>
@@ -76,7 +77,6 @@ function ChallInfo({challProp}: {challProp: ChallengeType}) {
 }
 
 const ChallPage = () => {
-
     /* Redirect if not logged in */
     const {getAccountToken} = useAccountManagement();
     const navigate = useNavigate();
@@ -98,7 +98,6 @@ const ChallPage = () => {
         newExpand[i] = !expand[i];
         setExpand(newExpand);
     }
-
 
     /* search bar */
     const [keyphrase, setKeyphrase] = useState<string>(userInput);
@@ -178,30 +177,32 @@ const ChallPage = () => {
     useEffect(() => {
         if (getAccountToken() === null) {
             navigate("/login");
-        }
-        else {
+        } else {
             const getChalls = async () => {
-                const challenges = await (await fetch("/api/challenges", {
-                    headers: {Authorization: `Bearer ${getAccountToken()}`},
-                })).json();
+                const challenges = await (
+                    await fetch("/api/challenges", {
+                        headers: {Authorization: `Bearer ${getAccountToken()}`},
+                    })
+                ).json();
                 if (challenges.status === "ok") {
-                    setShow(challenges.challenges.map((chall: ChallengeType) => {return {challenge: chall, display: true};}));
-                }
-                else {
+                    setShow(
+                        challenges.challenges.map((chall: ChallengeType) => {
+                            return {challenge: chall, display: true};
+                        })
+                    );
+                } else {
                     navigate("/login");
                 }
             };
             getChalls();
-    
         }
-
     }, []);
 
     /* content */
     return (
         <React.StrictMode>
             {" "}
-            <div style={{width:"100%", height:"100%"}}>
+            <div style={{width: "100%", height: "100%"}}>
                 {/*FILTERBAR: begin*/}
                 <div className={open ? "sideOpen" : "sideClose"}>
                     <button onClick={toggle} className={open ? "hide" : "filterbtn close"}>
@@ -284,9 +285,7 @@ const ChallPage = () => {
                     <div>
                         {show.map((chall) => {
                             if (chall.display) {
-                                return (
-                                    <ChallInfo challProp={chall.challenge}/>
-                                );
+                                return <ChallInfo challProp={chall.challenge} />;
                             } else {
                                 return null;
                             }

@@ -11,6 +11,8 @@
 .deployment-info {
     margin-top: 5vh;
     display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: left;
     justify-content: flex-start;
 }
@@ -25,7 +27,7 @@
 }
 
 .deploy {
-    height: 7vh;
+    height: 3rem;
     padding: 10px;
     border-radius: 25px;
     text-align: center;
@@ -35,7 +37,7 @@
     font-size: large;
     transition: box-shadow 0.3s ease;
 
-    width:15rem;
+    width: 15rem;
 }
 .deploy.OFF {
     background-color: #f44d8a;
@@ -63,11 +65,11 @@
 }
 
 .IP-port-box {
-    min-width: 12rem; /* Set the width of the rectangle */
-    height: 3rem; /* Set the height of the rectangle */
-    border: 2px solid #ffe81a; /* Set the border style of the rectangle */
+    min-width: 12rem;
+    height: 3rem;
+    border: 2px solid #ffe81a;
     margin: 0 0 2rem 2rem;
-    
+
     display: flex;
     justify-content: center;
     align-items: center;
