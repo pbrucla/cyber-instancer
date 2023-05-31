@@ -1,19 +1,22 @@
-from psycopg.errors import IntegrityError
-from flask import Blueprint, request, g
-import re
-from . import authentication
-from instancer.config import config, connect_pg
-from uuid import uuid4
-import time
 import json
+import re
+import secrets
+import time
 import urllib.parse
-
-blueprint = Blueprint("account", __name__, url_prefix="/accounts")
 
 # Login token handling
 from base64 import b64decode, b64encode
+from uuid import uuid4
+
 from Crypto.Cipher import AES
-import secrets
+from flask import Blueprint, g, request
+from psycopg.errors import IntegrityError
+
+from instancer.config import config, connect_pg
+
+from . import authentication
+
+blueprint = Blueprint("account", __name__, url_prefix="/accounts")
 
 
 class LoginToken:

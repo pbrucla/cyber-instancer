@@ -1,9 +1,9 @@
-import challData, {challProp} from "./challs.ts";
+import challData, {ChallPropType} from "./challs.ts";
 
 const challCat = new Set<string>();
 const challTag = new Set<string>();
 
-const getAll = (challData: challProp[]) => {
+const getAll = (challData: ChallPropType[]) => {
     challData.forEach((elm) => {
         elm.category.forEach((tag) => challCat.add(tag));
         elm.tags.forEach((tag) => challTag.add(tag));

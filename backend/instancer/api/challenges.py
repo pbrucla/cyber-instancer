@@ -1,5 +1,6 @@
 import flask
 from flask import Blueprint, g
+
 from instancer.backend import Challenge
 
 from .challenge import challenge_info, deployment_status

@@ -2,19 +2,24 @@ import "./styles/index.css";
 import "./styles/challs.css";
 import React, {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import challenges, {challProp} from "./data/challs.ts";
+import {ChallengeType, TagType} from "./data/challs.ts";
 import dropdowns from "./data/filter-tags.ts";
 
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
-import {ReactComponent as SearchBtn} from "./images/search.svg";
 import {ReactComponent as ClearBtn} from "./images/clear.svg";
 import useAccountManagement from "./data/account";
 
+type ShowType = {
+    challenge: ChallengeType;
+    display: boolean;
+  }
+
+//let challenges: ChallengeType[] = [];
 const include = new Set<string>([]);
 const exclude = new Set<string>([]);
-const show = challenges.map((chall) => {
+/*const show = challenges.map((chall) => {
     return {challenge: chall, display: true};
-});
+}); */
 let userInput = "";
 
 /* sidebar label */
@@ -36,23 +41,34 @@ function Title({value}: {value: number}) {
 }
 
 /* card format */
-function ChallInfo({id, name, tags, category, deployed}: challProp) {
+function getCategories(chall: ChallengeType) {
+    return chall.challenge_info.tags.filter((tag:TagType) => tag.is_category).map((tag:TagType) => tag.name);''
+}
+
+function getTags(chall: ChallengeType) {
+    return chall.challenge_info.tags.filter((tag:TagType) => !tag.is_category).map((tag:TagType) => tag.name);''
+}
+
+function ChallInfo({challProp}: {challProp: ChallengeType}) {
+    const categories = getCategories(challProp);
+    const otherTags = getTags(challProp);
+    const deployed = challProp.deployment;
     return (
-        <Link to={"../chall/".concat(id.toString())}>
+        <Link to={"../chall/".concat(challProp.challenge_info.id.toString())}>
             <button className="card">
                 <div style={{position: "relative"}}>
                     <span className="cat">
-                        {category.map((cat) => {
+                        {categories.map((cat) => {
                             return <>{cat.concat(" ").toString()}</>;
                         })}
                     </span>
-                    <span className="title">{name.toUpperCase()}</span>
+                    <span className="title">{challProp.challenge_info.name.toUpperCase()}</span>
                     <span className="tag">
-                        {tags.map((tag) => {
+                        {otherTags.map((tag) => {
                             return <>{"#".concat(tag.replaceAll(" ", "_").concat(" ").toString())}</>;
                         })}
                     </span>
-                    <div className={deployed ? "stat ON" : "stat OFF"}>{deployed ? "active" : "inactive"}</div>
+                    <div className={deployed === null ? "stat OFF" : "stat ON"}>{deployed === null ? "inactive" : "active"}</div>
                 </div>
             </button>
         </Link>
@@ -68,7 +84,7 @@ const ChallPage = () => {
         if (getAccountToken() === null) {
             navigate("/login");
         }
-    }, [navigate]);
+    }, [navigate, getAccountToken]);
 
     /* expand toggles: sidebar, menus */
     const [open, setOpen] = useState(false);
@@ -83,11 +99,13 @@ const ChallPage = () => {
         setExpand(newExpand);
     }
 
+
     /* search bar */
     const [keyphrase, setKeyphrase] = useState<string>(userInput);
     function handleInput(keyphrase: string) {
         userInput = keyphrase.toLowerCase();
         setKeyphrase(userInput);
+        ApplyFilter();
     }
     function ClearInput() {
         userInput = "";
@@ -96,8 +114,8 @@ const ChallPage = () => {
     }
 
     /* filter system */
-    const [, setShowOnly] = useState(show);
 
+    const [show, setShow] = useState<ShowType[]>([]);
     function handleChange(checked: boolean, inc: boolean, cat: string) {
         if (checked) {
             inc ? include.add(cat) : exclude.add(cat);
@@ -116,8 +134,10 @@ const ChallPage = () => {
 
     function ApplyFilter() {
         show.forEach((chall) => {
-            const all = new Set<string>([...chall.challenge.category, ...chall.challenge.tags]);
-            if (chall.challenge.deployed) {
+            const categories = getCategories(chall.challenge);
+            const tags = getTags(chall.challenge);
+            const all = new Set<string>([...categories, ...tags]);
+            if (chall.challenge.deployment !== null) {
                 all.add("active");
             } else {
                 all.add("inactive");
@@ -135,7 +155,7 @@ const ChallPage = () => {
             }
 
             if (userInput.length !== 0) {
-                if (!chall.challenge.name.toLowerCase().includes(userInput)) {
+                if (!chall.challenge.challenge_info.name.toLowerCase().includes(userInput)) {
                     chall.display = false;
                 } else if (i && !e) {
                     chall.display = true;
@@ -151,8 +171,31 @@ const ChallPage = () => {
                 }
             }
         });
-        setShowOnly([...show]);
+        setShow([...show]);
     }
+
+    /* load challenges */
+    useEffect(() => {
+        if (getAccountToken() === null) {
+            navigate("/login");
+        }
+        else {
+            const getChalls = async () => {
+                const challenges = await (await fetch("/api/challenges", {
+                    headers: {Authorization: `Bearer ${getAccountToken()}`},
+                })).json();
+                if (challenges.status === "ok") {
+                    setShow(challenges.challenges.map((chall: ChallengeType) => {return {challenge: chall, display: true};}));
+                }
+                else {
+                    navigate("/login");
+                }
+            };
+            getChalls();
+    
+        }
+
+    }, []);
 
     /* content */
     return (
@@ -183,9 +226,6 @@ const ChallPage = () => {
                                 ></input>
                                 <button className="searchbtn" onClick={() => ClearInput()}>
                                     <ClearBtn className="svg" />
-                                </button>
-                                <button className="searchbtn" onClick={() => ApplyFilter()}>
-                                    <SearchBtn className="svg" />
                                 </button>
                             </div>
 
@@ -245,15 +285,7 @@ const ChallPage = () => {
                         {show.map((chall) => {
                             if (chall.display) {
                                 return (
-                                    <ChallInfo
-                                        key={chall.challenge.id}
-                                        id={chall.challenge.id}
-                                        name={chall.challenge.name}
-                                        tags={chall.challenge.tags}
-                                        category={chall.challenge.category}
-                                        description={chall.challenge.description}
-                                        deployed={chall.challenge.deployed}
-                                    />
+                                    <ChallInfo challProp={chall.challenge}/>
                                 );
                             } else {
                                 return null;

@@ -22,7 +22,7 @@ const useAccountManagement = () => {
         return (await getAccountData()) !== null;
     }
 
-    async function getAccountData() {
+    async function getAccountData(): Promise<unknown> {
         const token = getAccountToken();
         if (token === null) {
             setIsLoggedIn(false);
@@ -38,7 +38,7 @@ const useAccountManagement = () => {
         }
         console.log("hi");
         setIsLoggedIn(true);
-        return await res.json();
+        return (await res.json()) as unknown;
     }
 
     return {getAccountData, validateAccountToken, setAccountToken, getAccountToken};

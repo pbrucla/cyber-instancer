@@ -1,11 +1,13 @@
-from dataclasses import dataclass
 import os
-from typing import Any, IO, Callable
-import yaml
-import jsonschema
-import redis
 from base64 import b64decode
+from dataclasses import dataclass
+from typing import IO, Any, Callable
+from uuid import UUID
+
+import jsonschema
 import psycopg
+import redis
+import yaml
 
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 
@@ -44,7 +46,9 @@ class ChallengeConfig:
 
 @dataclass
 class Config:
-    secret_key: bytes = None
+    secret_key: bytes | None = None
+    login_secret_key: bytes | None = None
+    admin_team_id: UUID | None = None
     in_cluster: bool = False
     redis_host: str = "localhost"
     redis_port: int = 6379
@@ -56,7 +60,6 @@ class Config:
     postgres_database: str = "postgres"
     redis_resync_interval: int = 60
     dev: bool = False
-    login_secret_key: bytes = None
     url: str = "http://localhost:8080"
 
 
@@ -92,6 +95,7 @@ def apply_config(c: dict):
             "properties": {
                 "secret_key": {"type": "string"},
                 "login_secret_key": {"type": "string"},
+                "admin_team_id": {"type": "string"},
                 "in_cluster": {"type": "boolean"},
                 "redis": {
                     "type": "object",
@@ -120,6 +124,7 @@ def apply_config(c: dict):
 
     apply_dict(c, "secret_key", "secret_key", func=lambda x: x.encode())
     apply_dict(c, "login_secret_key", "login_secret_key", func=lambda x: x.encode())
+    apply_dict(c, "admin_team_id", "admin_team_id", func=UUID)
     apply_dict(c, "in_cluster", "in_cluster")
     apply_dict(c, "redis_host", "redis", "host")
     apply_dict(c, "redis_port", "redis", "port")
@@ -141,6 +146,8 @@ except FileNotFoundError:
     pass
 
 apply_env("INSTANCER_SECRET_KEY", "secret_key", func=lambda x: x.encode())
+apply_env("INSTANCER_LOGIN_SECRET_KEY", "login_secret_key", func=lambda x: x.encode())
+apply_env("INSTANCER_ADMIN_TEAM_ID", "admin_team_id", func=UUID)
 apply_env("INSTANCER_REDIS_HOST", "redis_host")
 apply_env("INSTANCER_REDIS_PORT", "redis_port", func=int)
 apply_env("INSTANCER_REDIS_PASSWORD", "redis_password")

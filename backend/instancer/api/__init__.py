@@ -1,14 +1,12 @@
-from flask import Blueprint, request, g
+from flask import Blueprint, g, request
 
-from . import account
-from . import authentication
-from . import challenge
-from . import challenges
+from . import account, admin, authentication, challenge, challenges
 
 blueprint = Blueprint("api", __name__, url_prefix="/api")
 blueprint.register_blueprint(account.blueprint)
 blueprint.register_blueprint(challenge.blueprint)
 blueprint.register_blueprint(challenges.blueprint)
+blueprint.register_blueprint(admin.blueprint)
 
 
 @blueprint.before_request

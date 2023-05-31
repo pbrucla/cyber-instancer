@@ -4,7 +4,7 @@ import {useParams} from "react-router-dom";
 import challenges from "./data/challs.ts";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
-import {portObject} from "./data/challs.ts";
+import {PortObject} from "./data/challs.ts";
 
 const Chall = () => {
     const {ID} = useParams() as {ID: string};
@@ -13,7 +13,7 @@ const Chall = () => {
     let challInfo;
     let buttons;
 
-    const ports: portObject[] = [
+    const ports: PortObject[] = [
         {ip: "127.0.0.1", port: "1337"},
         {ip: "192.168.1.1", port: "55555"},
         {ip: "8.8.8.8", port: "40000"},
@@ -22,7 +22,7 @@ const Chall = () => {
     if (chall === undefined) {
         challInfo = <h1 style={{color: "#d0d0d0"}}>ERROR: CHALLENGE NOT FOUND</h1>;
     } else {
-        const cat = chall["category"];
+        const cat = chall["category"].map((category) => {return category.concat(" ").toString()});
         const title = chall["name"].toUpperCase();
         const description = chall["description"];
         const tags = chall["tags"];
@@ -30,7 +30,6 @@ const Chall = () => {
         const newTags: string[] = [];
 
         for (let i = 0; i < tags.length; i++) {
-            newCat.push(cat[i].concat(" ").toString());
             newTags.push("#".concat(tags[i].replaceAll(" ", "_").concat(" ").toString()));
         }
 
@@ -55,18 +54,21 @@ const Chall = () => {
                         <span style={{marginLeft: "0"}}>time</span>
                         <Stop className="buttonsvg r" />
                     </button>
-                    <div style={{display:"flex",flexDirection:"row", flexWrap:"wrap"}}>
-                        {ports.map((p: portObject) => (
-                            <div className="IP-port-box">
-                                {p.ip}:{p.port}
-                            </div>
-                        ))}
-                    </div>  
+                    {ports.map((p: PortObject) => (
+                        <div className="IP-port-box" key={`${p.ip}:${p.port}`}>
+                            {p.ip}:{p.port}
+                        </div>
+                    ))}
                 </div>
             );
         } else {
             buttons = (
-                <button className="deploy OFF" onClick={() => fetchData(ID)}>
+                <button
+                    className="deploy OFF"
+                    onClick={() => {
+                        void fetchData(ID);
+                    }}
+                >
                     DEPLOY NOW
                 </button>
             );
@@ -87,7 +89,7 @@ const fetchData = async (id: string) => {
     if (res.status !== 200) {
         return;
     }
-    const data = await res.json();
+    const data: unknown = await res.json();
     console.log(data);
     return;
 };

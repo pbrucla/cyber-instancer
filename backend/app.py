@@ -1,9 +1,11 @@
-from flask import Flask, send_from_directory, request
-from instancer import api
 import os
+
 import redis
-from instancer import backend
-from instancer.config import config, rclient as r, connect_pg
+from flask import Flask, request, send_from_directory
+
+from instancer import api, backend
+from instancer.config import config, connect_pg
+from instancer.config import rclient as r
 
 app = Flask(__name__, static_folder="static", static_url_path="/")
 

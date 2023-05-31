@@ -190,7 +190,7 @@ span {
 
     height: 2rem;
     padding: 0 0.75rem;
-    width: calc(24vw - 8rem);
+    width: calc(24vw - 4rem);
     margin: 0.25rem;
 }
 .searchbtn {
