@@ -1,3 +1,13 @@
+export type ChallengesType = {
+    challenges: ChallengeType[];
+    status: string;
+};
+
+export type DisplayType = {
+    challenge: ChallengeType;
+    display: boolean;
+};
+
 export type ChallengeType = {
     challenge_info: ChallengeInfoType;
     deployment: DeploymentType;

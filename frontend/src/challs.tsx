@@ -2,17 +2,12 @@ import "./styles/index.css";
 import "./styles/challs.css";
 import React, {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {ChallengeType, TagType} from "./data/challs.ts";
+import {ChallengeType, TagType, ChallengesType, DisplayType} from "./data/challs.ts";
 import dropdowns from "./data/filter-tags.ts";
 
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 import {ReactComponent as ClearBtn} from "./images/clear.svg";
 import useAccountManagement from "./data/account";
-
-type ShowType = {
-    challenge: ChallengeType;
-    display: boolean;
-};
 
 const include = new Set<string>([]);
 const exclude = new Set<string>([]);
@@ -40,12 +35,10 @@ function Title({value}: {value: number}) {
 /* card format */
 function getCategories(chall: ChallengeType) {
     return chall.challenge_info.tags.filter((tag: TagType) => tag.is_category).map((tag: TagType) => tag.name);
-    ("");
 }
 
 function getTags(chall: ChallengeType) {
     return chall.challenge_info.tags.filter((tag: TagType) => !tag.is_category).map((tag: TagType) => tag.name);
-    ("");
 }
 
 function ChallInfo({challProp}: {challProp: ChallengeType}) {
@@ -114,7 +107,7 @@ const ChallPage = () => {
 
     /* filter system */
 
-    const [show, setShow] = useState<ShowType[]>([]);
+    const [show, setShow] = useState<DisplayType[]>([]);
     function handleChange(checked: boolean, inc: boolean, cat: string) {
         if (checked) {
             inc ? include.add(cat) : exclude.add(cat);
@@ -179,7 +172,7 @@ const ChallPage = () => {
             navigate("/login");
         } else {
             const getChalls = async () => {
-                const challenges = await (
+                const challenges: ChallengesType = await (
                     await fetch("/api/challenges", {
                         headers: {Authorization: `Bearer ${getAccountToken()}`},
                     })
@@ -196,7 +189,7 @@ const ChallPage = () => {
             };
             getChalls();
         }
-    }, []);
+    }, [navigate, getAccountToken]);
 
     /* content */
     return (
