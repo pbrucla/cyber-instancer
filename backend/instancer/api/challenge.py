@@ -33,7 +33,7 @@ def challenge_info(chall: Challenge, tags: list[ChallengeTag]) -> dict[str, Any]
         "name": chall.metadata.name,
         "author": chall.metadata.author,
         "description": chall.metadata.description,
-        "tags": [(tag.name, tag.is_category) for tag in tags],
+        "tags": [{"name": tag.name, "is_category": tag.is_category} for tag in tags],
         "is_shared": chall.is_shared(),
     }
 
