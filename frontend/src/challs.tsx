@@ -4,7 +4,6 @@ import challenges, {challProp} from "./data/challs.ts";
 import dropdowns from "./data/filter-tags.ts";
 import "./styles/challs.css";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
-import {ReactComponent as SearchBtn} from "./images/search.svg";
 import {ReactComponent as ClearBtn} from "./images/clear.svg";
 import useAccountManagement from "./data/account";
 
@@ -86,6 +85,7 @@ const ChallPage = () => {
     function handleInput(keyphrase: string) {
         userInput = keyphrase.toLowerCase();
         setKeyphrase(userInput);
+        ApplyFilter();
     }
     function ClearInput() {
         userInput = "";
@@ -181,9 +181,6 @@ const ChallPage = () => {
                                 ></input>
                                 <button className="searchbtn" onClick={() => ClearInput()}>
                                     <ClearBtn className="svg" />
-                                </button>
-                                <button className="searchbtn" onClick={() => ApplyFilter()}>
-                                    <SearchBtn className="svg" />
                                 </button>
                             </div>
 
