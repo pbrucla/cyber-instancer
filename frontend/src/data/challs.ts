@@ -1,18 +1,43 @@
-export type challProp = {
+export type ChallengeType = {
+    challenge_info: ChallengeInfoType;
+    deployment: DeploymentType;
+};
+
+export type ChallengeInfoType = {
+    author: string;
+    description: string;
+    id: string;
+    is_shared: boolean;
+    name: string;
+    tags: TagType[];
+};
+
+export type TagType = {
+    name: string;
+    is_category: boolean;
+};
+
+export type DeploymentType = {
+    expiration: number;
+    port_mappings: Record<string, string | number>;
+};
+
+export type PortObject = {
+    ip: string;
+    port: string;
+};
+
+export type ChallPropType = {
     id: string;
     name: string;
     tags: string[];
     category: string[];
     description: string;
     deployed: boolean;
-};
+}
 
-export type portObject = {
-    ip: string;
-    port: string;
-};
 
-const challData: challProp[] = [
+const challData: ChallPropType[] = [
     {
         id: "1",
         name: "checking",
@@ -67,6 +92,14 @@ const challData: challProp[] = [
         tags: ["demo", "la ctf 2023"],
         category: ["crypto", "misc"],
         description: "description for test6",
+        deployed: false,
+    },
+    {
+        id: "test 7",
+        name: "Test chall 7",
+        tags: ["demo", "revrevrev"],
+        category: ["rev", "misc"],
+        description: "description for test7",
         deployed: false,
     },
 ];
