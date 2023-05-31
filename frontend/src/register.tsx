@@ -63,17 +63,19 @@ const Register = () => {
                             <div className="column" style={{borderRadius: "5px 0 0 0"}}>
                                 USERNAME
                             </div>
-                            <input type="text" name="username" className="column" style={{borderRadius: "0 5px 0 0"}} />
+                            <input type="text" className="column" placeholder="Enter here..."
+                                name="username" style={{borderRadius: "0 5px 0 0"}} />
                         </div>
                         <div className="row">
                             <div className="column" style={{borderRadius: "0 0 0 5px"}}>
                                 EMAIL
                             </div>
-                            <input type="text" name="email" className="column" style={{borderRadius: "0 0 5px 0"}} />
+                            <input type="text" className="column" placeholder="Enter here..."
+                                name="email" style={{borderRadius: "0 0 5px 0"}} />
                         </div>
                         <div className="row">
                             <button className="button" type="submit">
-                                Register
+                                REGISTER
                             </button>
                         </div>
                         <div className="status">

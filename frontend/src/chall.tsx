@@ -26,19 +26,24 @@ const Chall = () => {
         const title = chall["name"].toUpperCase();
         const description = chall["description"];
         const tags = chall["tags"];
+        const newCat: string[] = [];
         const newTags: string[] = [];
+
         for (let i = 0; i < tags.length; i++) {
-            newTags.push("#".concat(tags[i].concat(" ").toString()));
+            newCat.push(cat[i].concat(" ").toString());
+            newTags.push("#".concat(tags[i].replaceAll(" ", "_").concat(" ").toString()));
         }
 
         const deployed = chall["deployed"];
 
         challInfo = (
             <>
-                <h2 style={{color: "#d0d0d0"}}>{cat}</h2>
-                <h1 style={{color: "white"}}>{title}</h1>
-                <h3 style={{color: "#ff8c4c"}}>{newTags}</h3>
-                <p style={{whiteSpace: "pre", color: "white"}}>{description}</p>
+                <div style={{position: "relative", width: "90%"}}>
+                    <div style={{overflowWrap:"break-word", color: "#d0d0d0", fontSize: "30px"}}>{newCat}</div><br></br>
+                    <div style={{overflowWrap:"break-word", color: "#ffffff", fontSize: "45px", fontWeight: "bold"}}>{title.toUpperCase()}</div><br></br>
+                    <div style={{overflowWrap:"break-word", color: "#ff8c4c", fontSize: "30px"}}>{newTags}</div><br></br>
+                    <div style={{overflowWrap:"break-word", color: "#f0f0f0", fontSize: "20px"}}>{description}</div><br></br>
+                </div>
             </>
         );
 
@@ -50,11 +55,13 @@ const Chall = () => {
                         <span style={{marginLeft: "0"}}>time</span>
                         <Stop className="buttonsvg r" />
                     </button>
-                    {ports.map((p: portObject) => (
-                        <div className="IP-port-box">
-                            {p.ip}:{p.port}
-                        </div>
-                    ))}
+                    <div style={{display:"flex",flexDirection:"row", flexWrap:"wrap"}}>
+                        {ports.map((p: portObject) => (
+                            <div className="IP-port-box">
+                                {p.ip}:{p.port}
+                            </div>
+                        ))}
+                    </div>  
                 </div>
             );
         } else {

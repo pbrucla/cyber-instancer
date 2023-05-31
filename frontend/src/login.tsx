@@ -68,20 +68,21 @@ const Login = () => {
                     <h1 className="Profile-Login-heading"> LOGIN </h1>
                     <form className="container" method="post" onSubmit={handleSubmit}>
                         <div className="row">
-                            <div className="column" style={{borderRadius: "5px 0 0 0"}}>
+                            <div className="column" style={{borderRadius: "5px 0 0 5px"}}>
                                 TOKEN
                             </div>
                             <input
                                 type="text"
+                                placeholder="Enter here..."
                                 name="login_token"
                                 className="column"
                                 defaultValue={token}
-                                style={{borderRadius: "0 5px 0 0"}}
+                                style={{borderRadius: "0 5px 5px 0"}}
                             />
                         </div>
                         <div className="row">
                             <button type="submit" className="button">
-                                Submit
+                                SUBMIT
                             </button>
                         </div>
                         <div className="status">

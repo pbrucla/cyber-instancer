@@ -45,36 +45,28 @@
 }
 
 .column {
-    white-space: nowrap;
-    overflow: auto;
     padding: 10px;
     padding-left: 20px;
-    display: flex;
     align-items: center;
+    display:block;
 }
 
 .column:nth-child(1) {
     background-color: #404040;
     color: #f0f0f0;
     font-weight: 600;
-    flex-basis: 35%;
+    width: 35%;
     gap: 0;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .column:nth-child(2) {
     background-color: #d0d0d0;
-    flex-basis: 65%;
-}
-
-.button {
-    background-color: #ffba44;
-    border: none;
-    color: #101010;
-    font-weight: 600;
-
-    margin: 1.25rem 3rem 1.25rem 0rem;
-    min-width: 5rem;
-    height: 2.25rem;
-    border-radius: 0.5rem;
-    font-size: larger;
+    width: 65%;
+    border-style: none;
+    color:#101010;
+    font-weight:lighter;
 }

@@ -1,24 +1,10 @@
-body {
-    background-color: #101010;
-    color: #ffffff;
-}
-
 /* PAGE LAYOUT */
-.fullpage {
-    width: 100%;
-    height: 100%;
-}
-
 .sideOpen {
     background-color: #101010;
     display: inline-block;
     width: 25%;
     height: 100%;
 }
-.sideClose {
-    background-color: #101010;
-}
-
 .cards {
     display: inline-flex;
     float: right;
@@ -44,9 +30,6 @@ body {
     color: white;
 }
 
-.text {
-    position: relative;
-}
 span {
     margin-left: 1.25vw;
     display: block;
@@ -87,32 +70,11 @@ span {
     background-color: #f44d8a;
 }
 
-/*.stat.ON:active {
-    background-color: #EFD80A;
-    -webkit-box-shadow: inset 0px 0px 5px #D3BB00;
-       -moz-box-shadow: inset 0px 0px 5px #D3BB00;
-            box-shadow: inset 0px 0px 5px #D3BB00;
-     outline: none;
-}
-
-.stat.OFF:active {
-    background-color: #e43d7a;
-    -webkit-box-shadow: inset 0px 0px 5px #C82162;
-       -moz-box-shadow: inset 0px 0px 5px #C82162;
-            box-shadow: inset 0px 0px 5px #C82162;
-     outline: none;
-}*/
-
 /* SIDEBAR FORMAT */
-
 .block {
     display: flex;
     flex-direction: column;
     padding: 0.5rem 1rem 0.5rem;
-}
-
-.svg {
-    height: 100%;
 }
 
 .filterbtn {
@@ -240,7 +202,4 @@ span {
     width: 2.5rem;
     padding: 0.5rem;
     margin: 0.25rem;
-}
-.searchbtn:hover {
-    background-color: #ffe81a;
 }

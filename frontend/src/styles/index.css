@@ -4,19 +4,21 @@
 
 body {
     margin: 0;
+    background-color: #101010;
+    color:#ffffff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-    background-color: #101010;
+.svg {
+    height: 100%;
 }
 
 nav {
     display: inline-block;
     position: sticky;
 
-    background-color: rgb(16, 16, 16);
+    background-color: #101010;
     color: white;
 
     top: 0px;
@@ -25,7 +27,23 @@ nav {
     z-index: 9999;
 }
 
-.left {
+.button {
+    background-color: #ffba44;
+    border: none;
+    color: #101010;
+    font-weight: 600;
+    font-size: 1rem;
+    font-size: 0.9rem;
+
+    margin: 1rem 2rem 1rem 0rem;
+    min-width: 5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+}
+.button.right {
+    float: right;
+}
+.homeButton {
     float: left;
 
     background-color: transparent;
@@ -37,20 +55,7 @@ nav {
     height: 80%;
 }
 
-.right {
-    float: right;
-
-    background-color: #ffba44;
-    border: none;
-    color: #101010;
-    font-weight: 600;
-
-    margin: 1.25rem 3rem 1.25rem 0rem;
-    min-width: 5rem;
-    height: 2.5rem;
-    border-radius: 0.5rem;
+button:hover {
+    opacity: 80%;
 }
 
-.svg {
-    height: 100%;
-}
