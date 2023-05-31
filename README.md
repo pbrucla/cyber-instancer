@@ -346,32 +346,7 @@ spec:
 
 Create a table for the database:
 
-```sql
-CREATE TABLE public.challenges (
-    id character varying(256) NOT NULL,
-    name character varying(256) NOT NULL,
-    description text NOT NULL,
-    cfg json NOT NULL,
-    per_team boolean NOT NULL,
-    lifetime integer NOT NULL,
-    author text NOT NULL,
-    CONSTRAINT challenges_lifetime_check CHECK ((lifetime >= 0))
-);
-CREATE TABLE public.tags (
-    challenge_id character varying(256) NOT NULL,
-    name character varying(64) NOT NULL,
-    is_category boolean NOT NULL
-);
-
-ALTER TABLE ONLY public.challenges
-    ADD CONSTRAINT challenges_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY public.tags
-    ADD CONSTRAINT tags_pkey PRIMARY KEY (challenge_id, name);
-
-ALTER TABLE ONLY public.tags
-    ADD CONSTRAINT tags_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id);
-```
+- copy-paste and run all of the commands in `fixture.sql`. If using docker compose, on first run, docker compose will automatically build the database.
 
 # Available Development Commands
 
