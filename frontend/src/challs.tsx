@@ -62,13 +62,13 @@ function ChallInfo({challProp}: {challProp: ChallengeType}) {
 
 const ChallPage = () => {
     /* Redirect if not logged in */
-    const {getAccountToken} = useAccountManagement();
+    const {accountToken} = useAccountManagement();
     const navigate = useNavigate();
     useEffect(() => {
-        if (getAccountToken() === null) {
+        if (accountToken === null) {
             navigate("/login");
         }
-    }, [navigate, getAccountToken]);
+    }, [navigate, accountToken]);
 
     /* expand toggles: sidebar, menus */
     const [open, setOpen] = useState(false);
@@ -197,13 +197,13 @@ const ChallPage = () => {
 
     /* load challenges */
     useEffect(() => {
-        if (getAccountToken() === null) {
+        if (accountToken === null) {
             navigate("/login");
         } else {
             const getChalls = async () => {
                 const challenges: ChallengesType = (await (
                     await fetch("/api/challenges", {
-                        headers: {Authorization: `Bearer ${getAccountToken() as string}`},
+                        headers: {Authorization: `Bearer ${accountToken}`},
                     })
                 ).json()) as ChallengesType;
                 if (challenges.status === "ok") {
@@ -218,8 +218,7 @@ const ChallPage = () => {
             };
             getChalls().catch((err) => console.log(err));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [navigate]);
+    }, [navigate, accountToken]);
 
     /* content */
     return (

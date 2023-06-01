@@ -1,47 +1,24 @@
-import {useGlobalContext} from "../index";
+import useLocalStorageState from "use-local-storage-state";
 
 const useAccountManagement = () => {
-    const {setIsLoggedIn} = useGlobalContext();
-
-    function getAccountToken(): string | null {
-        return localStorage.getItem("auth_token");
-    }
-
-    function setAccountToken(token: string | null): void {
-        if (token === null) {
-            setIsLoggedIn(false);
-            localStorage.removeItem("auth_token");
-        } else {
-            setIsLoggedIn(true);
-            localStorage.setItem("auth_token", token);
-            console.log("hi2");
+    const [accountToken, setAccountToken, {removeItem: unsetAccountToken}] = useLocalStorageState<string | null>(
+        "auth_token",
+        {
+            defaultValue: null,
         }
-    }
+    );
 
     async function validateAccountToken(): Promise<boolean> {
-        return (await getAccountData()) !== null;
-    }
-
-    async function getAccountData(): Promise<unknown> {
-        const token = getAccountToken();
-        if (token === null) {
-            setIsLoggedIn(false);
-            return null;
+        if (accountToken === null) {
+            return false;
         }
         const res = await fetch("/api/accounts/profile", {
-            headers: {Authorization: `Bearer ${token}`},
+            headers: {Authorization: `Bearer ${accountToken}`},
         });
-        if (res.status !== 200) {
-            setIsLoggedIn(false);
-            setAccountToken(null);
-            return null;
-        }
-        console.log("hi");
-        setIsLoggedIn(true);
-        return (await res.json()) as unknown;
+        return res.status === 200;
     }
 
-    return {getAccountData, validateAccountToken, setAccountToken, getAccountToken};
+    return {validateAccountToken, setAccountToken, accountToken, unsetAccountToken};
 };
 
 export default useAccountManagement;

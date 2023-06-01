@@ -29,13 +29,13 @@ function createLink(host: string) {
 
 const Chall = () => {
     /* Redirect if not logged in */
-    const {getAccountToken} = useAccountManagement();
+    const {accountToken} = useAccountManagement();
     const navigate = useNavigate();
     useEffect(() => {
-        if (getAccountToken() === null) {
+        if (accountToken === null) {
             navigate("/login");
         }
-    }, [navigate, getAccountToken]);
+    }, [navigate, accountToken]);
 
     const {ID} = useParams() as {ID: string};
 
@@ -48,7 +48,7 @@ const Chall = () => {
     async function getDeployment() {
         const challengeDeployment: ChallengeDeploymentType = (await (
             await fetch("/api/challenge/" + ID + "/deployment", {
-                headers: {Authorization: `Bearer ${getAccountToken() as string}`},
+                headers: {Authorization: `Bearer ${accountToken as string}`},
             })
         ).json()) as ChallengeDeploymentType;
         if (challengeDeployment.status === "ok") {
@@ -60,13 +60,13 @@ const Chall = () => {
     }
 
     useEffect(() => {
-        if (getAccountToken() === null) {
+        if (accountToken === null) {
             navigate("/login");
         } else if (timer < 0) {
             const getChall = async () => {
                 const challenge: SingleChallengeType = (await (
                     await fetch("/api/challenge/" + ID, {
-                        headers: {Authorization: `Bearer ${getAccountToken() as string}`},
+                        headers: {Authorization: `Bearer ${accountToken}`},
                     })
                 ).json()) as SingleChallengeType;
                 if (challenge.status === "ok") {
@@ -89,7 +89,7 @@ const Chall = () => {
     async function deployChallenge() {
         const challengeDeployment: ChallengeDeploymentType = (await (
             await fetch("/api/challenge/" + ID + "/deploy", {
-                headers: {Authorization: `Bearer ${getAccountToken() as string}`},
+                headers: {Authorization: `Bearer ${accountToken as string}`},
                 method: "POST",
             })
         ).json()) as ChallengeDeploymentType;
@@ -109,7 +109,7 @@ const Chall = () => {
     async function terminateChallenge() {
         const status: TerminationType = (await (
             await fetch("/api/challenge/" + ID + "/deployment", {
-                headers: {Authorization: `Bearer ${getAccountToken() as string}`},
+                headers: {Authorization: `Bearer ${accountToken as string}`},
                 method: "DELETE",
             })
         ).json()) as TerminationType;

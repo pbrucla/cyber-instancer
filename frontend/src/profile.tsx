@@ -3,10 +3,11 @@ import "./styles/info-box.css";
 import useAccountManagement from "./data/account";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
+import {ProfileType} from "./data/types.ts";
 
 const Profile = () => {
     const navigate = useNavigate();
-    const {getAccountData} = useAccountManagement();
+    const {accountToken} = useAccountManagement();
 
     const [username, setUsername] = useState("Loading...");
     const [email, setEmail] = useState("Loading...");
@@ -14,7 +15,16 @@ const Profile = () => {
 
     useEffect(() => {
         const updateProfileData = async () => {
-            const profileData = (await getAccountData()) as {username: string; email: string; login_url: string};
+            if (accountToken === null) {
+                return null;
+            }
+            const res = await fetch("/api/accounts/profile", {
+                headers: {Authorization: `Bearer ${accountToken}`},
+            });
+            if (res.status !== 200) {
+                return null;
+            }
+            const profileData = (await res.json()) as ProfileType;
             if (profileData === null) {
                 navigate("/login");
             } else {
@@ -25,8 +35,7 @@ const Profile = () => {
         };
 
         updateProfileData().catch(console.error);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [navigate, accountToken]);
 
     return (
         <>

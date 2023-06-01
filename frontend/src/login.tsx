@@ -26,8 +26,7 @@ const Login = () => {
             }
         };
         checkLoggedIn().catch(console.error);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [searchParams, validateAccountToken, setAccountToken, navigate]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page

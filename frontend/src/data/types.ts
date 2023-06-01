@@ -56,3 +56,9 @@ export type TerminationType = {
     msg: string;
     status: string;
 };
+
+export type ProfileType = {
+    username: string;
+    email: string;
+    login_url: string;
+};
