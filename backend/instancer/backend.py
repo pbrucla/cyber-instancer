@@ -6,9 +6,9 @@ import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
+from hashlib import sha256
 from time import time
 from typing import Any
-from hashlib import sha256
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
