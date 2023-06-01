@@ -209,7 +209,12 @@ const Chall = () => {
                             <div className="IP-port-box"> SHARED CHALLENGE </div>
                         </>
                     ) : (
-                        <button className="deploy ON" onClick={terminateChallenge}>
+                        <button
+                            className="deploy ON"
+                            onClick={() => {
+                                terminateChallenge().catch((err) => console.log(err));
+                            }}
+                        >
                             <Timer className="buttonsvg l" />
                             <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
                             <Stop className="buttonsvg r" />
