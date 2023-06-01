@@ -107,32 +107,31 @@ const ChallPage = () => {
     };
     const [dropdown, setDropdown] = useState<option[]>([]);
 
-    function dropdowns() {
-        const challCat = new Set<string>();
-        const challTag = new Set<string>();
-
-        const getAll = (challData: DisplayType[]) => {
-            challData.forEach((elm) => {
-                const cats = getCategories(elm.challenge.challenge_info);
-                const tags = getTags(elm.challenge.challenge_info);
-                cats.forEach((cat: string) => challCat.add(cat));
-                tags.forEach((tag: string) => challTag.add(tag));
-            });
-            return [[...challCat].sort(), [...challTag].sort(), ["active", "inactive"]];
-        };
-        const all = getAll(show);
-
-        const dropdownTable: option[] = [
-            {id: "CATEGORY", data: all[0], value: 0, include: true},
-            {id: "TAG", data: all[1], value: 1, include: true},
-            {id: "CATEGORY", data: all[0], value: 2, include: false},
-            {id: "TAG", data: all[1], value: 3, include: false},
-            {id: "STATUS", data: all[2], value: 4, include: false},
-        ];
-        setDropdown(dropdownTable);
-    }
-
     useEffect(() => {
+        function dropdowns() {
+            const challCat = new Set<string>();
+            const challTag = new Set<string>();
+
+            const getAll = (challData: DisplayType[]) => {
+                challData.forEach((elm) => {
+                    const cats = getCategories(elm.challenge.challenge_info);
+                    const tags = getTags(elm.challenge.challenge_info);
+                    cats.forEach((cat: string) => challCat.add(cat));
+                    tags.forEach((tag: string) => challTag.add(tag));
+                });
+                return [[...challCat].sort(), [...challTag].sort(), ["active", "inactive"]];
+            };
+            const all = getAll(show);
+
+            const dropdownTable: option[] = [
+                {id: "CATEGORY", data: all[0], value: 0, include: true},
+                {id: "TAG", data: all[1], value: 1, include: true},
+                {id: "CATEGORY", data: all[0], value: 2, include: false},
+                {id: "TAG", data: all[1], value: 3, include: false},
+                {id: "STATUS", data: all[2], value: 4, include: false},
+            ];
+            setDropdown(dropdownTable);
+        }
         dropdowns();
     }, [show]);
 
@@ -201,11 +200,11 @@ const ChallPage = () => {
             navigate("/login");
         } else {
             const getChalls = async () => {
-                const challenges: ChallengesType = await (
+                const challenges: ChallengesType = (await (
                     await fetch("/api/challenges", {
-                        headers: {Authorization: `Bearer ${getAccountToken()}`},
+                        headers: {Authorization: `Bearer ${getAccountToken() as string}`},
                     })
-                ).json();
+                ).json()) as ChallengesType;
                 if (challenges.status === "ok") {
                     setShow(
                         challenges.challenges.map((chall: ChallengeType) => {
@@ -216,8 +215,9 @@ const ChallPage = () => {
                     navigate("/login");
                 }
             };
-            getChalls();
+            getChalls().catch((err) => console.log(err));
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [navigate]);
 
     /* content */
@@ -307,7 +307,9 @@ const ChallPage = () => {
                     <div>
                         {show.map((chall) => {
                             if (chall.display) {
-                                return <ChallInfo challProp={chall.challenge} />;
+                                return (
+                                    <ChallInfo challProp={chall.challenge} key={chall.challenge.challenge_info.id} />
+                                );
                             } else {
                                 return null;
                             }

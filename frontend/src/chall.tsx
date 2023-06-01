@@ -54,11 +54,11 @@ const Chall = () => {
     const [timer, setTimer] = useState<number>(-1);
 
     async function getDeployment() {
-        const challengeDeployment: ChallengeDeploymentType = await (
+        const challengeDeployment: ChallengeDeploymentType = (await (
             await fetch("/api/challenge/" + ID + "/deployment", {
-                headers: {Authorization: `Bearer ${getAccountToken()}`},
+                headers: {Authorization: `Bearer ${getAccountToken() as string}`},
             })
-        ).json();
+        ).json()) as ChallengeDeploymentType;
         if (challengeDeployment.status === "ok") {
             console.log(challengeDeployment);
             setDeployment(challengeDeployment.deployment);
@@ -72,11 +72,11 @@ const Chall = () => {
             navigate("/login");
         } else if (timer < 0) {
             const getChall = async () => {
-                const challenge: SingleChallengeType = await (
+                const challenge: SingleChallengeType = (await (
                     await fetch("/api/challenge/" + ID, {
-                        headers: {Authorization: `Bearer ${getAccountToken()}`},
+                        headers: {Authorization: `Bearer ${getAccountToken() as string}`},
                     })
-                ).json();
+                ).json()) as SingleChallengeType;
                 if (challenge.status === "ok") {
                     console.log(challenge);
                     setChall(challenge.challenge_info);
@@ -85,21 +85,22 @@ const Chall = () => {
                     navigate("/login");
                 }
             };
-            getChall();
+            getChall().catch((err) => console.log(err));
         }
-    }, [navigate, timer]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [navigate, timer, ID]);
 
     let challInfo;
     let buttons;
 
     /* Deploy challenge */
     async function deployChallenge() {
-        const challengeDeployment: ChallengeDeploymentType = await (
+        const challengeDeployment: ChallengeDeploymentType = (await (
             await fetch("/api/challenge/" + ID + "/deploy", {
-                headers: {Authorization: `Bearer ${getAccountToken()}`},
+                headers: {Authorization: `Bearer ${getAccountToken() as string}`},
                 method: "POST",
             })
-        ).json();
+        ).json()) as ChallengeDeploymentType;
         if (challengeDeployment.status === "ok") {
             console.log(challengeDeployment);
             setDeployment(challengeDeployment.deployment);
@@ -114,7 +115,7 @@ const Chall = () => {
 
     /* Timer */
     useEffect(() => {
-        let interval: number = 0;
+        let interval = 0;
 
         if (deployed) {
             if (timer === -1 && deployment) {
@@ -128,7 +129,7 @@ const Chall = () => {
             clearInterval(interval);
         }
         return () => clearInterval(interval);
-    }, [deployed, timer]);
+    }, [deployed, deployment, timer]);
 
     /* hosts and ports */
     const [ports, setPorts] = useState<(string | JSX.Element)[]>([]);
@@ -140,11 +141,11 @@ const Chall = () => {
                 if (key === "app:8080") {
                     outPorts.push(createLink(portmap[key] as string));
                 } else {
-                    outPorts.push(("nc " + deployment.host + " " + portmap[key]) as string);
+                    outPorts.push("nc " + deployment.host + " " + (portmap[key] as string));
                 }
             });
+            console.log(outPorts);
             setPorts(outPorts);
-        } else {
         }
     }, [deployment, deployed]);
 
@@ -188,7 +189,9 @@ const Chall = () => {
                         <Stop className="buttonsvg r" />
                     </button>
                     {ports.map((p: string | JSX.Element) => (
-                        <div className="IP-port-box">{p}</div>
+                        <div className="IP-port-box" key={p as string}>
+                            {p}
+                        </div>
                     ))}
                 </div>
             );
@@ -197,7 +200,7 @@ const Chall = () => {
                 <button
                     className="deploy OFF"
                     onClick={() => {
-                        deployChallenge();
+                        deployChallenge().catch((err) => console.log(err));
                     }}
                 >
                     DEPLOY NOW
