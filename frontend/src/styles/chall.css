@@ -51,6 +51,10 @@
     align-items: center;
     justify-content: center;
 }
+.deploy.ON.shared:hover {
+    opacity: 100%;
+    cursor: not-allowed;
+}
 
 .buttonsvg {
     height: 2rem;

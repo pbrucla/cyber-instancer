@@ -5,7 +5,7 @@ import {useParams} from "react-router-dom";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
 import {ChallengeInfoType, DeploymentType} from "./data/challs.ts";
-import {getCategories, getTags, SingleChallengeType, ChallengeDeploymentType} from "./data/challs.ts";
+import {getCategories, getTags, SingleChallengeType, ChallengeDeploymentType, TerminationType} from "./data/challs.ts";
 import useAccountManagement from "./data/account";
 import {useNavigate} from "react-router-dom";
 
@@ -113,6 +113,23 @@ const Chall = () => {
         setDeployed(deployment !== null && deployment !== undefined);
     }, [deployment]);
 
+    /* Terminate challenge */
+    async function terminateChallenge() {
+        const status: TerminationType = (await (
+            await fetch("/api/challenge/" + ID + "/deployment", {
+                headers: {Authorization: `Bearer ${getAccountToken() as string}`},
+                method: "DELETE",
+            })
+        ).json()) as TerminationType;
+        if (status.status === "ok") {
+            console.log(status.msg);
+            setDeployment(undefined);
+        } else {
+            console.log("error");
+            console.log(status);
+        }
+    }
+
     /* Timer */
     useEffect(() => {
         let interval = 0;
@@ -183,11 +200,21 @@ const Chall = () => {
         if (deployed) {
             buttons = (
                 <div className="deployment-info">
-                    <button className="deploy ON">
-                        <Timer className="buttonsvg l" />
-                        <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
-                        <Stop className="buttonsvg r" />
-                    </button>
+                    {chall.is_shared ? (
+                        <>
+                            <button className="deploy ON shared">
+                                <Timer className="buttonsvg l" />
+                                <span style={{marginLeft: "0", marginRight: "4rem"}}>{prettyTime(timer)}</span>
+                            </button>
+                            <div className="IP-port-box"> SHARED CHALLENGE </div>
+                        </>
+                    ) : (
+                        <button className="deploy ON" onClick={terminateChallenge}>
+                            <Timer className="buttonsvg l" />
+                            <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
+                            <Stop className="buttonsvg r" />
+                        </button>
+                    )}
                     {ports.map((p: string | JSX.Element) => (
                         <div className="IP-port-box" key={p as string}>
                             {p}

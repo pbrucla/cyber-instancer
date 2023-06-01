@@ -52,6 +52,11 @@ export type ChallPropType = {
     deployed: boolean;
 };
 
+export type TerminationType = {
+    msg: string;
+    status: string;
+};
+
 const challData: ChallPropType[] = [
     {
         id: "1",
