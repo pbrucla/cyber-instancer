@@ -1,14 +1,47 @@
 import "./styles/index.css";
 import "./styles/chall.css";
+import {useState, useEffect} from "react";
 import {useParams} from "react-router-dom";
-import challenges from "./data/challs.ts";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
 import {PortObject} from "./data/challs.ts";
+import {ChallengeType, ChallengesType, getCategories, getTags} from "./data/challs.ts";
+import useAccountManagement from "./data/account";
+import {useNavigate} from "react-router-dom";
 
 const Chall = () => {
+    /* Redirect if not logged in */
+    const {getAccountToken} = useAccountManagement();
+    const navigate = useNavigate();
+    useEffect(() => {
+        if (getAccountToken() === null) {
+            navigate("/login");
+        }
+    }, [navigate, getAccountToken]);
+
     const {ID} = useParams() as {ID: string};
-    const chall = challenges.find((element) => element["id"] === ID);
+
+    /* Load challenge */
+    const [chall, setChall] = useState<ChallengeType | undefined>();
+    useEffect(() => {
+        if (getAccountToken() === null) {
+            navigate("/login");
+        } else {
+            const getChalls = async () => {
+                const challenges: ChallengesType = await (
+                    await fetch("/api/challenges", {
+                        headers: {Authorization: `Bearer ${getAccountToken()}`},
+                    })
+                ).json();
+                if (challenges.status === "ok") {
+                    setChall(challenges.challenges.find((element: ChallengeType) => element.challenge_info.id === ID));
+                } else {
+                    navigate("/login");
+                }
+            };
+            getChalls();
+        }
+    }, [navigate, getAccountToken]);
 
     let challInfo;
     let buttons;
@@ -22,19 +55,17 @@ const Chall = () => {
     if (chall === undefined) {
         challInfo = <h1 style={{color: "#d0d0d0"}}>ERROR: CHALLENGE NOT FOUND</h1>;
     } else {
-        const cat = chall["category"].map((category) => {
-            return category.concat(" ").toString();
-        });
-        const title = chall["name"].toUpperCase();
-        const description = chall["description"];
-        const tags = chall["tags"];
+        const cat = getCategories(chall);
+        const title = chall.challenge_info.name.toUpperCase();
+        const description = chall.challenge_info.description;
+        const tags = getTags(chall);
         const newTags: string[] = [];
 
         for (let i = 0; i < tags.length; i++) {
             newTags.push("#".concat(tags[i].replaceAll(" ", "_").concat(" ").toString()));
         }
 
-        const deployed = chall["deployed"];
+        const deployed = chall.deployment !== null;
 
         challInfo = (
             <>

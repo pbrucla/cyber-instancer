@@ -2,7 +2,7 @@ import "./styles/index.css";
 import "./styles/challs.css";
 import React, {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {ChallengeType, TagType, ChallengesType, DisplayType} from "./data/challs.ts";
+import {ChallengeType, ChallengesType, DisplayType, getCategories, getTags} from "./data/challs.ts";
 import dropdowns from "./data/filter-tags.ts";
 
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
@@ -33,13 +33,6 @@ function Title({value}: {value: number}) {
 }
 
 /* card format */
-function getCategories(chall: ChallengeType) {
-    return chall.challenge_info.tags.filter((tag: TagType) => tag.is_category).map((tag: TagType) => tag.name);
-}
-
-function getTags(chall: ChallengeType) {
-    return chall.challenge_info.tags.filter((tag: TagType) => !tag.is_category).map((tag: TagType) => tag.name);
-}
 
 function ChallInfo({challProp}: {challProp: ChallengeType}) {
     const categories = getCategories(challProp);

@@ -113,3 +113,11 @@ const challData: ChallPropType[] = [
     },
 ];
 export default challData;
+
+export function getCategories(chall: ChallengeType) {
+    return chall.challenge_info.tags.filter((tag: TagType) => tag.is_category).map((tag: TagType) => tag.name);
+}
+
+export function getTags(chall: ChallengeType) {
+    return chall.challenge_info.tags.filter((tag: TagType) => !tag.is_category).map((tag: TagType) => tag.name);
+}
