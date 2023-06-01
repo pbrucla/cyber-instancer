@@ -3,6 +3,7 @@ from typing import Any
 from flask import Blueprint, g
 
 from instancer.backend import Challenge, ChallengeTag
+from instancer.config import config
 
 
 def deployment_status(chall: Challenge) -> dict[str, Any] | None:
@@ -21,6 +22,7 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
                     internal,
                 ), external in chall.port_mappings().items()
             },
+            "host": config.challenge_host,
         }
     )
 

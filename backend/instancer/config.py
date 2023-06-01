@@ -61,6 +61,7 @@ class Config:
     redis_resync_interval: int = 60
     dev: bool = False
     url: str = "http://localhost:8080"
+    challenge_host: str = "localhost"
 
 
 config = Config()
@@ -137,6 +138,7 @@ def apply_config(c: dict):
     apply_dict(c, "redis_resync_interval", "redis_resync_interval")
     apply_dict(c, "dev", "dev")
     apply_dict(c, "url", "url")
+    apply_dict(c, "challenge_host", "challenge_host")
 
 
 try:
@@ -160,6 +162,7 @@ apply_env("INSTANCER_POSTGRES_PASSWORD", "postgres_password")
 apply_env("INSTANCER_REDIS_RESYNC_INTERVAL", "redis_resync_interval", func=int)
 apply_env("INSTANCER_DEV", "dev", func=parse_bool)
 apply_env("INSTANCER_URL", "url")
+apply_env("INSTANCER_CHALLENGE_HOST", "challenge_host")
 
 if config.secret_key is None:
     raise ValueError("No secret key was supplied in configuration")
