@@ -11,7 +11,7 @@ import {
     DeploymentType,
     TerminationType,
 } from "./data/types.ts";
-import {prettyTime, getCategories, getTags} from "./data/utility.ts";
+import {prettyTime, getCategories, getTags, isDeployed} from "./data/utility.ts";
 import useAccountManagement from "./data/account";
 import {useNavigate} from "react-router-dom";
 
@@ -43,23 +43,22 @@ const Chall = () => {
     const [chall, setChall] = useState<ChallengeInfoType | undefined>();
     const [deployment, setDeployment] = useState<DeploymentType | undefined>();
     const [deployed, setDeployed] = useState<boolean>(false);
-    const [timer, setTimer] = useState<number>(-1);
-
-    async function getDeployment() {
-        const challengeDeployment: ChallengeDeploymentType = (await (
-            await fetch("/api/challenge/" + ID + "/deployment", {
-                headers: {Authorization: `Bearer ${accountToken as string}`},
-            })
-        ).json()) as ChallengeDeploymentType;
-        if (challengeDeployment.status === "ok") {
-            console.log(challengeDeployment);
-            setDeployment(challengeDeployment.deployment);
-        } else {
-            navigate("/login");
-        }
-    }
+    const [timer, setTimer] = useState<number>(-100);
 
     useEffect(() => {
+        async function getDeployment() {
+            const challengeDeployment: ChallengeDeploymentType = (await (
+                await fetch("/api/challenge/" + ID + "/deployment", {
+                    headers: {Authorization: `Bearer ${accountToken as string}`},
+                })
+            ).json()) as ChallengeDeploymentType;
+            if (challengeDeployment.status === "ok") {
+                console.log(challengeDeployment);
+                setDeployment(challengeDeployment.deployment);
+            } else {
+                navigate("/login");
+            }
+        }
         if (accountToken === null) {
             navigate("/login");
         } else if (timer < 0) {
@@ -70,7 +69,6 @@ const Chall = () => {
                     })
                 ).json()) as SingleChallengeType;
                 if (challenge.status === "ok") {
-                    console.log(challenge);
                     setChall(challenge.challenge_info);
                     await getDeployment();
                 } else {
@@ -79,8 +77,7 @@ const Chall = () => {
             };
             getChall().catch((err) => console.log(err));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [navigate, timer, ID]);
+    }, [navigate, timer, ID, accountToken]);
 
     let challInfo;
     let buttons;
@@ -94,7 +91,6 @@ const Chall = () => {
             })
         ).json()) as ChallengeDeploymentType;
         if (challengeDeployment.status === "ok") {
-            console.log(challengeDeployment);
             setDeployment(challengeDeployment.deployment);
         } else {
             console.log("Deployment error");
@@ -102,7 +98,7 @@ const Chall = () => {
     }
 
     useEffect(() => {
-        setDeployed(deployment !== null && deployment !== undefined);
+        setDeployed(isDeployed(deployment));
     }, [deployment]);
 
     /* Terminate challenge */
@@ -127,8 +123,10 @@ const Chall = () => {
         let interval = 0;
 
         if (deployed) {
-            if (timer === -1 && deployment) {
+            if (timer === -100 && deployment) {
                 setTimer(Math.floor(deployment.expiration - Date.now() / 1000));
+            } else if (timer < 0) {
+                setDeployed(false);
             } else {
                 interval = setInterval(() => {
                     setTimer((prevTimer) => prevTimer - 1);
@@ -136,6 +134,7 @@ const Chall = () => {
             }
         } else if (!deployed) {
             clearInterval(interval);
+            setTimer(-100);
         }
         return () => clearInterval(interval);
     }, [deployed, deployment, timer]);
@@ -153,7 +152,6 @@ const Chall = () => {
                     outPorts.push("nc " + deployment.host + " " + (portmap[key] as string));
                 }
             });
-            console.log(outPorts);
             setPorts(outPorts);
         }
     }, [deployment, deployed]);

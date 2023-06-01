@@ -3,7 +3,7 @@ import "./styles/challs.css";
 import React, {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {ChallengeType, ChallengesType, DisplayType} from "./data/types.ts";
-import {getCategories, getTags} from "./data/utility.ts";
+import {getCategories, getTags, isDeployed} from "./data/utility.ts";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 import {ReactComponent as ClearBtn} from "./images/clear.svg";
 import useAccountManagement from "./data/account";
@@ -35,7 +35,7 @@ function Title({value}: {value: number}) {
 function ChallInfo({challProp}: {challProp: ChallengeType}) {
     const categories = getCategories(challProp.challenge_info);
     const otherTags = getTags(challProp.challenge_info);
-    const deployed = challProp.deployment;
+    const deployment = challProp.deployment;
     return (
         <Link to={"../chall/".concat(challProp.challenge_info.id.toString())}>
             <button className="card">
@@ -51,8 +51,8 @@ function ChallInfo({challProp}: {challProp: ChallengeType}) {
                             return <>{"#".concat(tag.replaceAll(" ", "_").concat(" ").toString())}</>;
                         })}
                     </span>
-                    <div className={deployed === null ? "stat OFF" : "stat ON"}>
-                        {deployed === null ? "inactive" : "active"}
+                    <div className={isDeployed(deployment) ? "stat ON" : "stat OFF"}>
+                        {isDeployed(deployment) ? "active" : "inactive"}
                     </div>
                 </div>
             </button>
@@ -158,7 +158,7 @@ const ChallPage = () => {
             const categories = getCategories(chall.challenge.challenge_info);
             const tags = getTags(chall.challenge.challenge_info);
             const all = new Set<string>([...categories, ...tags]);
-            if (chall.challenge.deployment !== null) {
+            if (isDeployed(chall.challenge.deployment)) {
                 all.add("active");
             } else {
                 all.add("inactive");

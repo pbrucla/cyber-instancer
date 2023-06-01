@@ -1,4 +1,4 @@
-import {ChallengeInfoType, TagType} from "./types.ts";
+import {ChallengeInfoType, DeploymentType, TagType} from "./types.ts";
 
 export function prettyTime(time: number) {
     return (
@@ -19,4 +19,8 @@ export function getCategories(chall: ChallengeInfoType) {
 
 export function getTags(chall: ChallengeInfoType) {
     return chall.tags.filter((tag: TagType) => !tag.is_category).map((tag: TagType) => tag.name);
+}
+
+export function isDeployed(deployment: DeploymentType | undefined) {
+    return deployment !== undefined && deployment !== null && deployment.expiration > Math.floor(Date.now() / 1000);
 }
