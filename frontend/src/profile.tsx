@@ -25,6 +25,7 @@ const Profile = () => {
         };
 
         updateProfileData().catch(console.error);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

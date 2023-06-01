@@ -18,7 +18,8 @@ const Register = () => {
             }
         };
         checkLoggedIn().catch(console.error);
-    }, [navigate, validateAccountToken]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
