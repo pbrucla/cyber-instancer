@@ -4,24 +4,16 @@ import {useState, useEffect} from "react";
 import {useParams} from "react-router-dom";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
-import {ChallengeInfoType, DeploymentType} from "./data/challs.ts";
-import {getCategories, getTags, SingleChallengeType, ChallengeDeploymentType, TerminationType} from "./data/challs.ts";
+import {
+    SingleChallengeType,
+    ChallengeInfoType,
+    ChallengeDeploymentType,
+    DeploymentType,
+    TerminationType,
+} from "./data/types.ts";
+import {prettyTime, getCategories, getTags} from "./data/utility.ts";
 import useAccountManagement from "./data/account";
 import {useNavigate} from "react-router-dom";
-
-function prettyTime(time: number) {
-    return (
-        Math.floor(time / 3600)
-            .toString()
-            .padStart(2, "0") +
-        ":" +
-        Math.floor((time % 3600) / 60)
-            .toString()
-            .padStart(2, "0") +
-        ":" +
-        (time % 60).toString().padStart(2, "0")
-    );
-}
 
 function createLink(host: string) {
     let output: string = host;
