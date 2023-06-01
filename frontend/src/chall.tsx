@@ -4,8 +4,8 @@ import {useState, useEffect} from "react";
 import {useParams} from "react-router-dom";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
-import {PortObject} from "./data/challs.ts";
-import {ChallengeType, ChallengesType, getCategories, getTags} from "./data/challs.ts";
+import {ChallengeInfoType, DeploymentType, PortObject} from "./data/challs.ts";
+import {getCategories, getTags, SingleChallengeType, ChallengeDeploymentType} from "./data/challs.ts";
 import useAccountManagement from "./data/account";
 import {useNavigate} from "react-router-dom";
 
@@ -22,26 +22,44 @@ const Chall = () => {
     const {ID} = useParams() as {ID: string};
 
     /* Load challenge */
-    const [chall, setChall] = useState<ChallengeType | undefined>();
+    const [chall, setChall] = useState<ChallengeInfoType | undefined>();
+    const [deployment, setDeployment] = useState<DeploymentType | undefined>();
+
+    async function getDeployment() {
+        const challengeDeployment: ChallengeDeploymentType = await (
+            await fetch("/api/challenge/" + ID + "/deployment", {
+                headers: {Authorization: `Bearer ${getAccountToken()}`},
+            })
+        ).json();
+        if (challengeDeployment.status === "ok") {
+            console.log(challengeDeployment);
+            setDeployment(challengeDeployment.deployment);
+        } else {
+            navigate("/login");
+        }
+    }
+
     useEffect(() => {
         if (getAccountToken() === null) {
             navigate("/login");
         } else {
-            const getChalls = async () => {
-                const challenges: ChallengesType = await (
-                    await fetch("/api/challenges", {
+            const getChall = async () => {
+                const challenge: SingleChallengeType = await (
+                    await fetch("/api/challenge/" + ID, {
                         headers: {Authorization: `Bearer ${getAccountToken()}`},
                     })
                 ).json();
-                if (challenges.status === "ok") {
-                    setChall(challenges.challenges.find((element: ChallengeType) => element.challenge_info.id === ID));
+                if (challenge.status === "ok") {
+                    console.log(challenge);
+                    setChall(challenge.challenge_info);
+                    await getDeployment();
                 } else {
                     navigate("/login");
                 }
             };
-            getChalls();
+            getChall();
         }
-    }, [navigate, getAccountToken]);
+    }, [navigate]);
 
     let challInfo;
     let buttons;
@@ -52,12 +70,30 @@ const Chall = () => {
         {ip: "8.8.8.8", port: "40000"},
     ];
 
+    /* Deploy challenge */
+    async function deployChallenge() {
+        console.log("test");
+        const challengeDeployment: ChallengeDeploymentType = await (
+            await fetch("/api/challenge/" + ID + "/deployment", {
+                headers: {Authorization: `Bearer ${getAccountToken()}`},
+                method: "POST",
+            })
+        ).json();
+        if (challengeDeployment.status === "ok") {
+            console.log(challengeDeployment);
+            setDeployment(challengeDeployment.deployment);
+        } else {
+            console.log("Deployment error");
+        }
+    }
+
+    /* Display information */
     if (chall === undefined) {
         challInfo = <h1 style={{color: "#d0d0d0"}}>ERROR: CHALLENGE NOT FOUND</h1>;
     } else {
         const cat = getCategories(chall);
-        const title = chall.challenge_info.name.toUpperCase();
-        const description = chall.challenge_info.description;
+        const title = chall.name.toUpperCase();
+        const description = chall.description;
         const tags = getTags(chall);
         const newTags: string[] = [];
 
@@ -65,7 +101,7 @@ const Chall = () => {
             newTags.push("#".concat(tags[i].replaceAll(" ", "_").concat(" ").toString()));
         }
 
-        const deployed = chall.deployment !== null;
+        const deployed = deployment !== null;
 
         challInfo = (
             <>
@@ -104,7 +140,7 @@ const Chall = () => {
                 <button
                     className="deploy OFF"
                     onClick={() => {
-                        void fetchData(ID);
+                        deployChallenge();
                     }}
                 >
                     DEPLOY NOW
@@ -121,13 +157,3 @@ const Chall = () => {
     );
 };
 export default Chall;
-
-const fetchData = async (id: string) => {
-    const res = await fetch("/api/challenge/" + id + "/deployment");
-    if (res.status !== 200) {
-        return;
-    }
-    const data: unknown = await res.json();
-    console.log(data);
-    return;
-};

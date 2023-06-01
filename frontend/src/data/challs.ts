@@ -3,6 +3,16 @@ export type ChallengesType = {
     status: string;
 };
 
+export type SingleChallengeType = {
+    challenge_info: ChallengeInfoType;
+    status: string;
+};
+
+export type ChallengeDeploymentType = {
+    deployment: DeploymentType;
+    status: string;
+};
+
 export type DisplayType = {
     challenge: ChallengeType;
     display: boolean;
@@ -114,10 +124,10 @@ const challData: ChallPropType[] = [
 ];
 export default challData;
 
-export function getCategories(chall: ChallengeType) {
-    return chall.challenge_info.tags.filter((tag: TagType) => tag.is_category).map((tag: TagType) => tag.name);
+export function getCategories(chall: ChallengeInfoType) {
+    return chall.tags.filter((tag: TagType) => tag.is_category).map((tag: TagType) => tag.name);
 }
 
-export function getTags(chall: ChallengeType) {
-    return chall.challenge_info.tags.filter((tag: TagType) => !tag.is_category).map((tag: TagType) => tag.name);
+export function getTags(chall: ChallengeInfoType) {
+    return chall.tags.filter((tag: TagType) => !tag.is_category).map((tag: TagType) => tag.name);
 }

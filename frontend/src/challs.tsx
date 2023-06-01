@@ -35,8 +35,8 @@ function Title({value}: {value: number}) {
 /* card format */
 
 function ChallInfo({challProp}: {challProp: ChallengeType}) {
-    const categories = getCategories(challProp);
-    const otherTags = getTags(challProp);
+    const categories = getCategories(challProp.challenge_info);
+    const otherTags = getTags(challProp.challenge_info);
     const deployed = challProp.deployment;
     return (
         <Link to={"../chall/".concat(challProp.challenge_info.id.toString())}>
@@ -119,8 +119,8 @@ const ChallPage = () => {
 
     function ApplyFilter() {
         show.forEach((chall) => {
-            const categories = getCategories(chall.challenge);
-            const tags = getTags(chall.challenge);
+            const categories = getCategories(chall.challenge.challenge_info);
+            const tags = getTags(chall.challenge.challenge_info);
             const all = new Set<string>([...categories, ...tags]);
             if (chall.challenge.deployment !== null) {
                 all.add("active");
