@@ -61,7 +61,7 @@ def check_challenge():
     g.chall = chall
 
 
-@blueprint.route("/deployment", methods=["POST"])
+@blueprint.route("/deploy", methods=["POST"])
 def challenge_deploy():
     """
     Starts or renews a team's challenge deployment.
