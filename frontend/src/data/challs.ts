@@ -39,12 +39,8 @@ export type TagType = {
 
 export type DeploymentType = {
     expiration: number;
+    host: string;
     port_mappings: Record<string, string | number>;
-};
-
-export type PortObject = {
-    ip: string;
-    port: string;
 };
 
 export type ChallPropType = {

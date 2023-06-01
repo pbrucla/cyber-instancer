@@ -69,8 +69,15 @@
     height: 3rem;
     border: 2px solid #ffe81a;
     margin: 0 0 2rem 2rem;
-
+    padding: 0 1rem;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.chall-link {
+    color: white;
+}
+.chall-link:hover {
+    color: #d0d0d0;
 }

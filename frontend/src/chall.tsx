@@ -4,7 +4,7 @@ import {useState, useEffect} from "react";
 import {useParams} from "react-router-dom";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
-import {ChallengeInfoType, DeploymentType, PortObject} from "./data/challs.ts";
+import {ChallengeInfoType, DeploymentType} from "./data/challs.ts";
 import {getCategories, getTags, SingleChallengeType, ChallengeDeploymentType} from "./data/challs.ts";
 import useAccountManagement from "./data/account";
 import {useNavigate} from "react-router-dom";
@@ -20,6 +20,18 @@ function prettyTime(time: number) {
             .padStart(2, "0") +
         ":" +
         (time % 60).toString().padStart(2, "0")
+    );
+}
+
+function createLink(host: string) {
+    let output: string = host;
+    if (!output.startsWith("https://")) {
+        output = "https://" + output;
+    }
+    return (
+        <a href={output} className="chall-link">
+            {output}
+        </a>
     );
 }
 
@@ -58,7 +70,7 @@ const Chall = () => {
     useEffect(() => {
         if (getAccountToken() === null) {
             navigate("/login");
-        } else {
+        } else if (timer < 0) {
             const getChall = async () => {
                 const challenge: SingleChallengeType = await (
                     await fetch("/api/challenge/" + ID, {
@@ -75,14 +87,13 @@ const Chall = () => {
             };
             getChall();
         }
-    }, [navigate]);
+    }, [navigate, timer]);
 
     let challInfo;
     let buttons;
 
     /* Deploy challenge */
     async function deployChallenge() {
-        console.log("test");
         const challengeDeployment: ChallengeDeploymentType = await (
             await fetch("/api/challenge/" + ID + "/deploy", {
                 headers: {Authorization: `Bearer ${getAccountToken()}`},
@@ -116,15 +127,26 @@ const Chall = () => {
         } else if (!deployed) {
             clearInterval(interval);
         }
-        console.log(timer);
         return () => clearInterval(interval);
     }, [deployed, timer]);
 
-    const ports: PortObject[] = [
-        {ip: "127.0.0.1", port: "1337"},
-        {ip: "192.168.1.1", port: "55555"},
-        {ip: "8.8.8.8", port: "40000"},
-    ];
+    /* hosts and ports */
+    const [ports, setPorts] = useState<(string | JSX.Element)[]>([]);
+    useEffect(() => {
+        if (deployed && deployment) {
+            const outPorts: (string | JSX.Element)[] = [];
+            const portmap = deployment.port_mappings;
+            Object.keys(portmap).forEach((key) => {
+                if (key === "app:8080") {
+                    outPorts.push(createLink(portmap[key] as string));
+                } else {
+                    outPorts.push(("nc " + deployment.host + " " + portmap[key]) as string);
+                }
+            });
+            setPorts(outPorts);
+        } else {
+        }
+    }, [deployment, deployed]);
 
     /* Display information */
     if (chall === undefined) {
@@ -165,10 +187,8 @@ const Chall = () => {
                         <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
                         <Stop className="buttonsvg r" />
                     </button>
-                    {ports.map((p: PortObject) => (
-                        <div className="IP-port-box" key={`${p.ip}:${p.port}`}>
-                            {p.ip}:{p.port}
-                        </div>
+                    {ports.map((p: string | JSX.Element) => (
+                        <div className="IP-port-box">{p}</div>
                     ))}
                 </div>
             );
