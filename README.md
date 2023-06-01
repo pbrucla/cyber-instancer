@@ -43,6 +43,10 @@ Do NOT share this, or else an attacker will be able to login as whomever they wi
 
 - Install the [Traefik Ingress Controller](https://doc.traefik.io/traefik/providers/kubernetes-ingress/) on your cluster. If using k3s, it'll already be installed and you don't have to do anything.
 - Install [cert-manager](https://cert-manager.io) on your cluster.
+
+### kubectl config files
+
+- Each of the following files can be applied using `kubectl` by running `kubectl apply -f PATH/TO/FILE` or like `kubectl apply -f -` to read from stdin.
 - Create a `Secret` with a Cloudflare API token that has permission to edit zone DNS for the domain you want to put challenges on:
 
 ```yaml
