@@ -9,6 +9,20 @@ import {getCategories, getTags, SingleChallengeType, ChallengeDeploymentType} fr
 import useAccountManagement from "./data/account";
 import {useNavigate} from "react-router-dom";
 
+function prettyTime(time: number) {
+    return (
+        Math.floor(time / 3600)
+            .toString()
+            .padStart(2, "0") +
+        ":" +
+        Math.floor((time % 3600) / 60)
+            .toString()
+            .padStart(2, "0") +
+        ":" +
+        (time % 60).toString().padStart(2, "0")
+    );
+}
+
 const Chall = () => {
     /* Redirect if not logged in */
     const {getAccountToken} = useAccountManagement();
@@ -24,6 +38,8 @@ const Chall = () => {
     /* Load challenge */
     const [chall, setChall] = useState<ChallengeInfoType | undefined>();
     const [deployment, setDeployment] = useState<DeploymentType | undefined>();
+    const [deployed, setDeployed] = useState<boolean>(false);
+    const [timer, setTimer] = useState<number>(-1);
 
     async function getDeployment() {
         const challengeDeployment: ChallengeDeploymentType = await (
@@ -64,17 +80,11 @@ const Chall = () => {
     let challInfo;
     let buttons;
 
-    const ports: PortObject[] = [
-        {ip: "127.0.0.1", port: "1337"},
-        {ip: "192.168.1.1", port: "55555"},
-        {ip: "8.8.8.8", port: "40000"},
-    ];
-
     /* Deploy challenge */
     async function deployChallenge() {
         console.log("test");
         const challengeDeployment: ChallengeDeploymentType = await (
-            await fetch("/api/challenge/" + ID + "/deployment", {
+            await fetch("/api/challenge/" + ID + "/deploy", {
                 headers: {Authorization: `Bearer ${getAccountToken()}`},
                 method: "POST",
             })
@@ -86,6 +96,35 @@ const Chall = () => {
             console.log("Deployment error");
         }
     }
+
+    useEffect(() => {
+        setDeployed(deployment !== null && deployment !== undefined);
+    }, [deployment]);
+
+    /* Timer */
+    useEffect(() => {
+        let interval: number = 0;
+
+        if (deployed) {
+            if (timer === -1 && deployment) {
+                setTimer(Math.floor(deployment.expiration - Date.now() / 1000));
+            } else {
+                interval = setInterval(() => {
+                    setTimer((prevTimer) => prevTimer - 1);
+                }, 1000);
+            }
+        } else if (!deployed) {
+            clearInterval(interval);
+        }
+        console.log(timer);
+        return () => clearInterval(interval);
+    }, [deployed, timer]);
+
+    const ports: PortObject[] = [
+        {ip: "127.0.0.1", port: "1337"},
+        {ip: "192.168.1.1", port: "55555"},
+        {ip: "8.8.8.8", port: "40000"},
+    ];
 
     /* Display information */
     if (chall === undefined) {
@@ -100,8 +139,6 @@ const Chall = () => {
         for (let i = 0; i < tags.length; i++) {
             newTags.push("#".concat(tags[i].replaceAll(" ", "_").concat(" ").toString()));
         }
-
-        const deployed = deployment !== null;
 
         challInfo = (
             <>
@@ -125,7 +162,7 @@ const Chall = () => {
                 <div className="deployment-info">
                     <button className="deploy ON">
                         <Timer className="buttonsvg l" />
-                        <span style={{marginLeft: "0"}}>time</span>
+                        <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
                         <Stop className="buttonsvg r" />
                     </button>
                     {ports.map((p: PortObject) => (
