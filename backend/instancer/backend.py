@@ -8,6 +8,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from time import time
 from typing import Any
+from hashlib import sha256
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
@@ -188,6 +189,8 @@ class Challenge(ABC):
         self.id = chall_id
         self.lifetime = lifetime
         self.metadata = metadata
+        if len(namespace) > 63:
+            namespace = sha256(namespace.encode()).hexdigest()[:63]
         self.namespace = namespace
         self.containers = cfg["containers"]
         self.exposed_ports = exposed_ports
@@ -752,7 +755,7 @@ class SharedChallenge(Challenge):
             cfg,
             lifetime,
             metadata,
-            namespace=f"chall-instance-{id}",
+            namespace=f"ci-{id}",
             exposed_ports=cfg.get("tcp", {}),
             http_ports=cfg.get("http", {}),
         )
@@ -796,7 +799,7 @@ class PerTeamChallenge(Challenge):
             cfg,
             lifetime,
             metadata,
-            namespace=f"chall-instance-{id}-team-{team_id}",
+            namespace=f"ci-{id}-t-{team_id.replace('-', '')}",
             exposed_ports=cfg.get("tcp", {}),
             http_ports=http_ports,
             additional_labels={"instancer.acmcyber.com/team-id": team_id},
