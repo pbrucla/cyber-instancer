@@ -3,8 +3,6 @@ import "./styles/challs.css";
 import React, {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {ChallengeType, ChallengesType, DisplayType, getCategories, getTags} from "./data/challs.ts";
-import dropdowns from "./data/filter-tags.ts";
-
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 import {ReactComponent as ClearBtn} from "./images/clear.svg";
 import useAccountManagement from "./data/account";
@@ -33,7 +31,6 @@ function Title({value}: {value: number}) {
 }
 
 /* card format */
-
 function ChallInfo({challProp}: {challProp: ChallengeType}) {
     const categories = getCategories(challProp.challenge_info);
     const otherTags = getTags(challProp.challenge_info);
@@ -99,8 +96,47 @@ const ChallPage = () => {
     }
 
     /* filter system */
-
     const [show, setShow] = useState<DisplayType[]>([]);
+
+    /* filter dropdown */
+    type option = {
+        id: string;
+        data: string[];
+        value: number;
+        include: boolean;
+    };
+    const [dropdown, setDropdown] = useState<option[]>([]);
+
+    function dropdowns() {
+        const challCat = new Set<string>();
+        const challTag = new Set<string>();
+
+        const getAll = (challData: DisplayType[]) => {
+            challData.forEach((elm) => {
+                const cats = getCategories(elm.challenge.challenge_info);
+                const tags = getTags(elm.challenge.challenge_info);
+                cats.forEach((cat: string) => challCat.add(cat));
+                tags.forEach((tag: string) => challTag.add(tag));
+            });
+            return [[...challCat].sort(), [...challTag].sort(), ["active", "inactive"]];
+        };
+        const all = getAll(show);
+
+        const dropdownTable: option[] = [
+            {id: "CATEGORY", data: all[0], value: 0, include: true},
+            {id: "TAG", data: all[1], value: 1, include: true},
+            {id: "CATEGORY", data: all[0], value: 2, include: false},
+            {id: "TAG", data: all[1], value: 3, include: false},
+            {id: "STATUS", data: all[2], value: 4, include: false},
+        ];
+        setDropdown(dropdownTable);
+    }
+
+    useEffect(() => {
+        dropdowns();
+    }, [show]);
+
+    /* filtering */
     function handleChange(checked: boolean, inc: boolean, cat: string) {
         if (checked) {
             inc ? include.add(cat) : exclude.add(cat);
@@ -182,7 +218,7 @@ const ChallPage = () => {
             };
             getChalls();
         }
-    }, [navigate, getAccountToken]);
+    }, [navigate]);
 
     /* content */
     return (
@@ -216,7 +252,7 @@ const ChallPage = () => {
                                 </button>
                             </div>
 
-                            {dropdowns.map((elm) => {
+                            {dropdown.map((elm) => {
                                 const val = elm.value;
                                 return (
                                     <div className="block" key={elm.id}>
