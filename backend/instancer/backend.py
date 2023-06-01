@@ -190,7 +190,7 @@ class Challenge(ABC):
         self.lifetime = lifetime
         self.metadata = metadata
         if len(namespace) > 63:
-            namespace = sha256(namespace.encode()).hexdigest()[:63]
+            namespace = "ci-" + sha256(namespace.encode()).hexdigest()[:60]
         self.namespace = namespace
         self.containers = cfg["containers"]
         self.exposed_ports = exposed_ports
