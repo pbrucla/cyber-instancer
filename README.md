@@ -385,7 +385,7 @@ Vagrant is a program that allows for automatic virtual machine deployment. It it
 
 ### Requirements
 
-- A machine with resources to run 2 virtual machines. Recommended at least 12GB RAM and 6 CPU threads.
+- A machine with resources to run 2 virtual machines. Recommended at least 12GB RAM and 6 CPU threads locally - the default VM settings is 8GB ram and 4 CPU threads.
 - `vagrant` must be installed and setup, including a virtualization software.
   1. Download and install vagrant from [https://developer.hashicorp.com/vagrant/downloads](https://developer.hashicorp.com/vagrant/downloads)
   2. Download and install [virtualbox (windows/linux)](https://www.virtualbox.org/wiki/Downloads) or [VMware Fusion (macos, intel or m1)](https://customerconnect.vmware.com/en/evalcenter?p=fusion-player-personal-13):
@@ -397,13 +397,13 @@ Vagrant is a program that allows for automatic virtual machine deployment. It it
 ### Running
 
 - In a terminal window, change to the `k3-vagrant` directory, then run `vagrant up`. This may take a while depending on your system. Note that some of the command's repsonse may be be red - this is normal.
-- Occasionally, provisioning may fail with something along the lines of "The SSH command responded with a non-zero exit status." In this case, run `vagrant provision` and then `vagrant up`.
+- Occasionally, provisioning may fail with something along the lines of "The SSH command responded with a non-zero exit status." In this case, run `vagrant provision`.
 - `vagrant suspend` will suspend the vms, `vagrant hault` will fully stop the vms. You might need to use `vagrant provision` after using `vagrant halt`
 - Once you are done, `vagrant destroy` will delete the vms.
 
 ## Inside Frontend directory
 
-These commands are more or less legacy since the react app is heavily dependent on a frontend existing. Nevertheless, they are still here.
+These commands are more or less legacy since the react app is heavily dependent on a backend existing. Nevertheless, they are still here.
 
 ### `npm run build`
 
