@@ -6,6 +6,17 @@ Challenge Instancer Project for 35L. Please do not touch unless you are part of 
 
 Please note: setup for this application is done in 3 stages: deploying a kubernetes cluster, setting up a docker container repository, and (finally) actually deploying this app into the kubernetes cluster.
 
+There are essentially 3 ways to run this application.
+
+- Production: Run the kubernetes cluster on a remote server, which will contain redis and the instancer application itself, with a separate Postgres and docker container registry service hosted locally or on another machine
+  - See the "Requirements", "Config files", "Kubernetes setup", and "Database setup" sections below
+- Partially Local: Run the kubernetes cluster on a remote server, but the cyber instancer, redis, and postgres services will run locally. This is the easiest way to run a full application without requiring large amounts of configuration for each user if a kubernetes cluster is already setup. This option also allows for subdomain provisioning to work properly.
+  - simply setup `config.yml`, `k3s.yaml`, and then use docker compose
+  - See the "Requirements", "Config files", "Kubernetes setup", and "Docker Compose" sections below
+- Fully Local: Run everything locallys. This can be done manually or by using the provided Vagrantfile.
+  - This setup does not support https and will require manual /etc/hosts editing or similar for (sub)domains to access instancer
+  - See "Config files" and "Vagrant" sections below
+
 ## Requirements:
 
 - A kubernetes cluster. For this project (and this setup tutorial), we will be using [k3s](https://k3s.io/) deployed on a linux box, so [the minimum k3s requirement](https://docs.k3s.io/installation/requirements) must be met:
@@ -20,13 +31,9 @@ Please note: setup for this application is done in 3 stages: deploying a kuberne
 
 ## Config files
 
-- `backend/config.yml`: copy `config.example.yml` and fill with credentials to redis and postgres. If using docker compose development environment, set
+### config.yml
 
-```yaml
-redis:
-  host: redis-service
-```
-
+- `secret_key`: unused
 - `login_secret_key` can be created by running the following in a python3 interpreter:
 
 ```python
@@ -37,7 +44,18 @@ base64.b64encode(secrets.token_bytes(32))
 
 Do NOT share this, or else an attacker will be able to login as whomever they wish!
 
-- `k3s.yaml`: If running this app outside of the kubernetes cluster, copy kubernetes authentication config into this file. For k3s, this file can be found at `/etc/rancher/k3s/k3s.yaml`, and modify `clusters[0].cluster.server` or similar to be the actual remote ip address and not `127.0.0.1`.
+- `admin_team_id`: UUID of admin account. Decode a login token to get an account's UUID, and then set the UUID here.
+- `redis`: connection information for redis
+- `postgres`: connection information for postgres
+- `in_cluster`: set if in cluster. If not, will use `k3s.yaml` file to authenticate with cluster
+- `redis_resync_interval`: How often to sync between active clusters and the local cache, deleting instances as necessary.
+- `dev`: Enables some developer options. Do not enable in production
+- `url`: URL to the instancer.
+- `challenge_host`: IP or hostname that points to the kube cluster. Usually same as `url` but without http(s)
+
+### k3s.yaml
+
+- If running this app outside of the kubernetes cluster, copy kubernetes authentication config into this file. For k3s, this file can be found at `/etc/rancher/k3s/k3s.yaml`, and modify `clusters[0].cluster.server` or similar to be the actual remote ip address and not `127.0.0.1`.
 
 ## Kubernetes Setup
 
@@ -354,14 +372,38 @@ Create a table for the database:
 
 # Available Development Commands
 
-## Root Project directory
+## Docker Compose
 
 Runs app in a development enviornment. Requires [Docker Compose](https://docs.docker.com/compose/install/) (and by extension docker) to be installed.
 
 - `docker compose up --build -d` (same as `npm run dev`): (re)starts images, rebuilding react and running flask server on port 8080
 - `docker compose down`: Stops flask server
 
+## Vagrant
+
+Vagrant is a program that allows for automatic virtual machine deployment. It itself does NOT run virtual machines; rather, it will hook into other software such as VMWare Workstation, Hyper-V, or VirtualBox to run the machines.
+
+### Requirements
+
+- A machine with resources to run 2 virtual machines. Recommended at least 12GB RAM and 6 CPU threads.
+- `vagrant` must be installed and setup, including a virtualization software.
+  1. Download and install vagrant from [https://developer.hashicorp.com/vagrant/downloads](https://developer.hashicorp.com/vagrant/downloads)
+  2. Download and install [virtualbox (windows/linux)](https://www.virtualbox.org/wiki/Downloads) or [VMware Fusion (macos, intel or m1)](https://customerconnect.vmware.com/en/evalcenter?p=fusion-player-personal-13):
+  - For VMWare Fusion, please follow the instructions under "Installation" here after install VMWare Fusion: [https://developer.hashicorp.com/vagrant/docs/providers/vmware/installation](https://developer.hashicorp.com/vagrant/docs/providers/vmware/installation).
+  - For virtualbox, replace all instances of "192.168.0" with "192.168.56". On linux, you can do this with `sed -i "s/192.168.0/192.168.56/g"`
+  - [For windows, you may need to disable/enable some settings to get virtualbox to work](https://superuser.com/questions/1391838/virtual-box-is-not-working-on-windows-10)
+- `rsync` must be installed. One way to do so on windows is install it via Cygwin: [https://www.cygwin.com/install.html](https://www.cygwin.com/install.html) and select both `rsync` and `ssh`
+
+### Running
+
+- In a terminal window, change to the `k3-vagrant` directory, then run `vagrant up`. This may take a while depending on your system. Note that some of the command's repsonse may be be red - this is normal.
+- Occasionally, provisioning may fail with something along the lines of "The SSH command responded with a non-zero exit status." In this case, run `vagrant provision` and then `vagrant up`.
+- `vagrant suspend` will suspend the vms, `vagrant hault` will fully stop the vms. You might need to use `vagrant provision` after using `vagrant halt`
+- Once you are done, `vagrant destroy` will delete the vms.
+
 ## Inside Frontend directory
+
+These commands are more or less legacy since the react app is heavily dependent on a frontend existing. Nevertheless, they are still here.
 
 ### `npm run build`
 
