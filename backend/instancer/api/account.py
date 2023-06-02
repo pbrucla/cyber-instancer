@@ -253,6 +253,18 @@ def login():
         account = LoginToken.decode(token)
     except ValueError:
         return {"status": "invalid_login_token", "msg": "Invalid login token"}, 401
+
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT team_username, team_email from teams where team_id = %s",
+                (account.team_id,),
+            )
+            if cur.fetchone() is None:
+                cur.execute(
+                    "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, NULL, NULL)",
+                    (account.team_id,),
+                )
     return {
         "status": "ok",
         "token": authentication.new_session(account.team_id),

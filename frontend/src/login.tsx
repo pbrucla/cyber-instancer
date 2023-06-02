@@ -47,8 +47,11 @@ const Login = () => {
                     console.log("success!");
                     res.json()
                         .then((data) => (data as {token: string}).token)
-                        .then((token) => setAccountToken(token))
-                        .then(() => navigate("/challs"))
+                        .then((token) => {
+                            setAccountToken(token);
+                            setAccountToken(token);
+                        })
+                        .then(() => navigate("/profile"))
                         .catch(() => console.log("An unexpected error occurred"));
                 } else {
                     console.log("failed");
