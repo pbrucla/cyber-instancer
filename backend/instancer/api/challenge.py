@@ -9,18 +9,18 @@ from instancer.config import config
 def deployment_status(chall: Challenge) -> dict[str, Any] | None:
     """Return a dict with the challenge deployment status or None if the challenge is not deployed."""
 
-    expiration = chall.expiration()
+    status = chall.deployment_status()
     return (
         None
-        if expiration is None
+        if status is None
         else {
-            "expiration": expiration,
+            "expiration": status.expiration,
             "port_mappings": {
                 f"{container}:{internal}": external
                 for (
                     container,
                     internal,
-                ), external in chall.port_mappings().items()
+                ), external in status.port_mappings.items()
             },
             "host": config.challenge_host,
         }

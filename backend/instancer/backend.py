@@ -134,6 +134,16 @@ class ChallengeMetadata:
     "The challenge author."
 
 
+@dataclass
+class DeploymentInfo:
+    """The expiration time and port mappings of a deployment."""
+
+    expiration: int
+    "The expiration time."
+    port_mappings: dict[tuple[str, int], int | str]
+    "Mapping from a tuple of the container name and internal port to the external port or HTTPS domain."
+
+
 def _make_challenge(
     chall_id: str,
     cfg: dict[str, Any],
@@ -706,8 +716,8 @@ class Challenge(ABC):
         """Stops a challenge if it's running."""
         self.stop_namespace(self.namespace)
 
-    def port_mappings(self) -> dict[tuple[str, int], int | str] | None:
-        """Return a mapping from (container name, port) pairs to either a TCP port or HTTP domain."""
+    def deployment_status(self) -> DeploymentInfo | None:
+        """Return the challenge deployment info, or None if the challenge isn't deployed."""
         # Exit early if the container isn't running
         # This check is cached so it should be pretty quick
         exp = self.expiration()
@@ -715,17 +725,18 @@ class Challenge(ABC):
             return None
         cache_key = f"ports:{self.namespace}"
         cached = rclient.get(cache_key)
+
+        port_mappings = {}
+
         if cached is not None:
-            ret = {}
             parsed = json.loads(cached)
             for k, port in parsed.items():
                 cont, cport = k.rsplit(":", 1)
                 if isinstance(port, float):
                     port = int(port)
-                ret[cont, int(cport)] = port
-            return ret
+                port_mappings[cont, int(cport)] = port
+            return DeploymentInfo(exp, port_mappings)
 
-        ret = {}
         capi = kclient.CoreV1Api()
         crdapi = kclient.CustomObjectsApi()
 
@@ -734,7 +745,7 @@ class Challenge(ABC):
             if serv.spec.type != "NodePort":
                 continue
             for port in serv.spec.ports:
-                ret[serv.metadata.name, port.port] = port.node_port
+                port_mappings[serv.metadata.name, port.port] = port.node_port
 
         ingresses = crdapi.list_namespaced_custom_object(
             "traefik.containo.us", "v1alpha1", self.namespace, "ingressroutes"
@@ -744,16 +755,16 @@ class Challenge(ABC):
                 ing["metadata"]["annotations"]["instancer.acmcyber.com/raw-routes"]
             )
             for port, sub in http_ports:
-                ret[ing["metadata"]["name"], port] = sub
+                port_mappings[ing["metadata"]["name"], port] = sub
 
         cache_entry = {}
-        for (cont, cport), port in ret.items():
+        for (cont, cport), port in port_mappings.items():
             cache_entry[f"{cont}:{cport}"] = port
         t = int(time())
         if exp > t:
             rclient.set(cache_key, json.dumps(cache_entry), ex=exp - t)
 
-        return ret
+        return DeploymentInfo(exp, port_mappings)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(namespace={self.namespace!r}, expiration={self.expiration()!r})"
