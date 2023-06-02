@@ -2,7 +2,7 @@ import "./styles/index.css";
 import "./styles/home.css";
 import {useState} from "react";
 import axios, {AxiosError, AxiosResponse} from "axios";
-import {Profile} from "./apiTypes";
+import {Profile} from "./util/types.ts";
 
 const Home = () => {
     const [profileName, setProfileName] = useState<string | null>(null);

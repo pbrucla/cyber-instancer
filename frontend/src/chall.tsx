@@ -10,9 +10,9 @@ import {
     ChallengeDeploymentType,
     DeploymentType,
     TerminationType,
-} from "./data/types.ts";
-import {prettyTime, getCategories, getTags, isDeployed} from "./data/utility.ts";
-import useAccountManagement from "./data/account";
+} from "./util/types.ts";
+import {prettyTime, getCategories, getTags, isDeployed} from "./util/utility.ts";
+import useAccountManagement from "./util/account";
 import {useNavigate} from "react-router-dom";
 
 function createLink(host: string) {

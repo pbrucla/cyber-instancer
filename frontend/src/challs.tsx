@@ -2,11 +2,11 @@ import "./styles/index.css";
 import "./styles/challs.css";
 import React, {useState, useEffect} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {ChallengeType, ChallengesType, DisplayType} from "./data/types.ts";
-import {getCategories, getTags, isDeployed} from "./data/utility.ts";
+import {ChallengeType, ChallengesType, DisplayType} from "./util/types.ts";
+import {getCategories, getTags, isDeployed} from "./util/utility.ts";
 import {ReactComponent as FilterBtn} from "./images/filter.svg";
 import {ReactComponent as ClearBtn} from "./images/clear.svg";
-import useAccountManagement from "./data/account";
+import useAccountManagement from "./util/account";
 
 const include = new Set<string>([]);
 const exclude = new Set<string>([]);

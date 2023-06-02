@@ -53,3 +53,7 @@ export type ProfileType = {
     email: string;
     login_url: string;
 };
+
+export interface Profile {
+    name: string;
+}

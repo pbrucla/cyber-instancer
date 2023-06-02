@@ -11,7 +11,7 @@ import Profile from "./profile";
 import Register from "./register";
 import Chall from "./chall";
 import Login from "./login";
-import useAccountManagement from "./data/account";
+import useAccountManagement from "./util/account";
 import {ReactComponent as HomeBtn} from "./images/home.svg";
 
 function NavComponents({accountToken}: {accountToken: string | null}) {

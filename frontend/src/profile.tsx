@@ -1,9 +1,9 @@
 import "./styles/index.css";
 import "./styles/info-box.css";
-import useAccountManagement from "./data/account";
+import useAccountManagement from "./util/account";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {ProfileType} from "./data/types.ts";
+import {ProfileType} from "./util/types.ts";
 
 const Profile = () => {
     const navigate = useNavigate();

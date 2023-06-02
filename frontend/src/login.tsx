@@ -1,7 +1,7 @@
 import "./styles/index.css";
 import "./styles/info-box.css";
 import {FormEvent, useState, useEffect} from "react";
-import useAccountManagement from "./data/account";
+import useAccountManagement from "./util/account";
 import {useNavigate, useSearchParams} from "react-router-dom";
 
 const Login = () => {
