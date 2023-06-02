@@ -22,5 +22,10 @@ export function getTags(chall: ChallengeInfoType) {
 }
 
 export function isDeployed(deployment: DeploymentType | undefined) {
-    return deployment !== undefined && deployment !== null && deployment.expiration > Math.floor(Date.now() / 1000);
+    return (
+        deployment !== undefined &&
+        deployment !== null &&
+        deployment.expiration > Math.floor(Date.now() / 1000) &&
+        Object.keys(deployment.port_mappings).length !== 0
+    );
 }

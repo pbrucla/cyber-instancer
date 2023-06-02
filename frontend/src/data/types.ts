@@ -43,15 +43,6 @@ export type DeploymentType = {
     port_mappings: Record<string, string | number>;
 };
 
-export type ChallPropType = {
-    id: string;
-    name: string;
-    tags: string[];
-    category: string[];
-    description: string;
-    deployed: boolean;
-};
-
 export type TerminationType = {
     msg: string;
     status: string;

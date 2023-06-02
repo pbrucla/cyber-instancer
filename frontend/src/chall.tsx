@@ -61,7 +61,7 @@ const Chall = () => {
         }
         if (accountToken === null) {
             navigate("/login");
-        } else if (timer < 0) {
+        } else if (timer <= 0) {
             const getChall = async () => {
                 const challenge: SingleChallengeType = (await (
                     await fetch("/api/challenge/" + ID, {
@@ -83,7 +83,10 @@ const Chall = () => {
     let buttons;
 
     /* Deploy challenge */
+    const [isShaking, setIsShaking] = useState(false);
+
     async function deployChallenge() {
+        setIsShaking(false);
         const challengeDeployment: ChallengeDeploymentType = (await (
             await fetch("/api/challenge/" + ID + "/deploy", {
                 headers: {Authorization: `Bearer ${accountToken as string}`},
@@ -220,9 +223,12 @@ const Chall = () => {
         } else {
             buttons = (
                 <button
-                    className="deploy OFF"
+                    className={"deploy OFF" + (isShaking ? " shake-animation" : "")}
                     onClick={() => {
-                        deployChallenge().catch((err) => console.log(err));
+                        deployChallenge().catch((err) => {
+                            console.log(err);
+                            setIsShaking(true);
+                        });
                     }}
                 >
                     DEPLOY NOW
