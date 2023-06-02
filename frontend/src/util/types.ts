@@ -43,7 +43,7 @@ export type DeploymentType = {
     port_mappings: Record<string, string | number>;
 };
 
-export type TerminationType = {
+export type MessageType = {
     msg: string;
     status: string;
 };

@@ -9,7 +9,7 @@ import {
     ChallengeInfoType,
     ChallengeDeploymentType,
     DeploymentType,
-    TerminationType,
+    MessageType,
 } from "./util/types.ts";
 import {prettyTime, getCategories, getTags, isDeployed} from "./util/utility.ts";
 import useAccountManagement from "./util/account";
@@ -106,12 +106,12 @@ const Chall = () => {
 
     /* Terminate challenge */
     async function terminateChallenge() {
-        const status: TerminationType = (await (
+        const status: MessageType = (await (
             await fetch("/api/challenge/" + ID + "/deployment", {
                 headers: {Authorization: `Bearer ${accountToken as string}`},
                 method: "DELETE",
             })
-        ).json()) as TerminationType;
+        ).json()) as MessageType;
         if (status.status === "ok") {
             console.log(status.msg);
             setDeployment(undefined);

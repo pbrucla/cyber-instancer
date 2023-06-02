@@ -3,7 +3,7 @@ import "./styles/info-box.css";
 import useAccountManagement from "./util/account";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {ProfileType} from "./util/types.ts";
+import {ProfileType, MessageType} from "./util/types.ts";
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -12,6 +12,7 @@ const Profile = () => {
     const [username, setUsername] = useState("Loading...");
     const [email, setEmail] = useState("Loading...");
     const [loginURL, setLoginURL] = useState("Loading...");
+    const [isShaking, setIsShaking] = useState([false, false]);
 
     useEffect(() => {
         const updateProfileData = async () => {
@@ -40,6 +41,32 @@ const Profile = () => {
         updateProfileData().catch(console.error);
     }, [navigate, accountToken]);
 
+    async function updateProfile(updateUsername: boolean, updateEmail: boolean) {
+        setIsShaking([false, false]);
+        if (accountToken === null) {
+            navigate("/login");
+            return null;
+        }
+        const res = await fetch("/api/accounts/profile", {
+            method: "PATCH",
+            headers: {Authorization: `Bearer ${accountToken}`, "Content-Type": "application/x-www-form-urlencoded"},
+            body:
+                (updateUsername ? `username=${encodeURIComponent(username)}` : ``) +
+                (updateUsername && updateEmail ? `&` : ``) +
+                (updateEmail ? `email=${encodeURIComponent(email)}` : ``),
+        });
+        if (res.status !== 200) {
+            setIsShaking([updateUsername, updateEmail]);
+            return null;
+        }
+        const responseMessage = (await res.json()) as MessageType;
+        console.log(responseMessage.msg);
+    }
+
+    function handleInputChange(event: React.ChangeEvent<HTMLInputElement>, setter: (arg: string) => void) {
+        setter(event.target.value);
+    }
+
     return (
         <>
             <div className="Profile-Register-div">
@@ -50,26 +77,59 @@ const Profile = () => {
                             <div className="column" style={{borderRadius: "5px 0 0 0"}}>
                                 USERNAME
                             </div>
-                            <div
-                                className="column"
-                                style={{borderRadius: "0 5px 0 0", wordBreak: "break-all", whiteSpace: "normal"}}
+                            <input
+                                className="column column1"
+                                style={{wordBreak: "break-all", whiteSpace: "normal"}}
+                                type="text"
+                                value={username}
+                                onChange={(event) => handleInputChange(event, setUsername)}
+                            />
+                            <button
+                                className={"column column1 " + (isShaking[0] ? " shake-animation" : "")}
+                                onClick={() => {
+                                    updateProfile(true, false).catch((err) => {
+                                        console.log(err);
+                                        setIsShaking([true, false]);
+                                    });
+                                }}
+                                style={{borderRadius: "0 5px 0 0"}}
                             >
-                                {username}
-                            </div>
+                                Update Username
+                            </button>
                         </div>
                         <div className="row">
                             <div className="column">REGISTERED EMAIL</div>
-                            <div className="column" style={{wordBreak: "break-all", whiteSpace: "normal"}}>
-                                {email}
-                            </div>
+                            <input
+                                className="column column1"
+                                style={{wordBreak: "break-all", whiteSpace: "normal"}}
+                                type="text"
+                                value={email}
+                                onChange={(event) => handleInputChange(event, setEmail)}
+                            />
+                            <button
+                                className={"column column1 " + (isShaking[1] ? " shake-animation" : "")}
+                                onClick={() => {
+                                    updateProfile(false, true).catch((err) => {
+                                        console.log(err);
+                                        setIsShaking([false, true]);
+                                    });
+                                }}
+                            >
+                                Update Email
+                            </button>
                         </div>
                         <div className="row">
                             <div className="column" style={{borderRadius: "0 0 0 5px"}}>
                                 LOGIN URL
                             </div>
                             <div
-                                className="column"
-                                style={{borderRadius: "0 0 5px 0", wordBreak: "break-all", whiteSpace: "normal"}}
+                                className="column column2"
+                                style={{
+                                    borderRadius: "0 0 5px 0",
+                                    wordBreak: "break-all",
+                                    whiteSpace: "normal",
+                                    marginLeft: "auto",
+                                }}
                             >
                                 {loginURL}
                             </div>

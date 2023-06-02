@@ -55,7 +55,7 @@
     background-color: #404040;
     color: #f0f0f0;
     font-weight: 600;
-    width: 35%;
+    width: 20vw;
     gap: 0;
 
     overflow: hidden;
@@ -65,8 +65,47 @@
 
 .column:nth-child(2) {
     background-color: #d0d0d0;
-    width: 65%;
     border-style: none;
     color: #101010;
     font-weight: lighter;
+}
+
+.column:nth-child(3) {
+    background-color: #ffba44;
+    border-style: none;
+    color: #101010;
+    font-weight: 600;
+}
+
+.column1:nth-child(2) {
+    width: 30vw;
+}
+
+.column1:nth-child(3) {
+    width: 15vw;
+}
+
+.column2:nth-child(2) {
+    width: 45vw;
+}
+
+.shake-animation {
+    animation: shake 0.5s;
+}
+@keyframes shake {
+    0% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    50% {
+        transform: translateX(5px);
+    }
+    75% {
+        transform: translateX(-5px);
+    }
+    100% {
+        transform: translateX(0);
+    }
 }
