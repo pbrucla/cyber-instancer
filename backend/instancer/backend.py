@@ -236,6 +236,24 @@ class Challenge(ABC):
                         copy.write_row((chall_id, tag.name, tag.is_category))
         rclient.delete("all_challs")
 
+    @staticmethod
+    def delete(chall_id: str) -> bool:
+        """Delete a challenge.
+
+        Returns True if the challenge was deleted and False if the challenge doesn't exist.
+        """
+
+        with connect_pg() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM tags WHERE challenge_id=%s", (chall_id,))
+                cur.execute("DELETE FROM challenges WHERE id=%s", (chall_id,))
+                if cur.rowcount < 1:
+                    return False
+        rclient.delete("all_challs")
+        rclient.delete(f"chall:{chall_id}")
+        rclient.delete(f"chall_tags:{chall_id}")
+        return True
+
     @classmethod
     def fetchall(cls, team_id: str) -> list[tuple[Challenge, list[ChallengeTag]]]:
         """Fetch all challenges, including categories and tags.

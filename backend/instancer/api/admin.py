@@ -197,3 +197,14 @@ def challenge_upload():
     ]
     Challenge.create(chall_id, per_team, cfg, lifetime, metadata, tags)
     return {"status": "ok"}
+
+
+@blueprint.route("/challenges/<chall_id>", methods=["DELETE"])
+def challenge_delete(chall_id: str):
+    """Delete a challenge."""
+
+    return (
+        {"status": "ok"}
+        if Challenge.delete(chall_id)
+        else ({"status": "invalid_chall_id", "msg": "invalid challenge ID"}, 400)
+    )
