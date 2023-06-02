@@ -46,7 +46,6 @@ class ChallengeConfig:
 
 @dataclass
 class Config:
-    secret_key: bytes | None = None
     login_secret_key: bytes | None = None
     admin_team_id: UUID | None = None
     in_cluster: bool = False
@@ -94,7 +93,6 @@ def apply_config(c: dict):
         {
             "type": "object",
             "properties": {
-                "secret_key": {"type": "string"},
                 "login_secret_key": {"type": "string"},
                 "admin_team_id": {"type": "string"},
                 "in_cluster": {"type": "boolean"},
@@ -123,7 +121,6 @@ def apply_config(c: dict):
         },
     )
 
-    apply_dict(c, "secret_key", "secret_key", func=lambda x: x.encode())
     apply_dict(c, "login_secret_key", "login_secret_key", func=lambda x: x.encode())
     apply_dict(c, "admin_team_id", "admin_team_id", func=UUID)
     apply_dict(c, "in_cluster", "in_cluster")
@@ -147,7 +144,6 @@ try:
 except FileNotFoundError:
     pass
 
-apply_env("INSTANCER_SECRET_KEY", "secret_key", func=lambda x: x.encode())
 apply_env("INSTANCER_LOGIN_SECRET_KEY", "login_secret_key", func=lambda x: x.encode())
 apply_env("INSTANCER_ADMIN_TEAM_ID", "admin_team_id", func=UUID)
 apply_env("INSTANCER_REDIS_HOST", "redis_host")
@@ -164,8 +160,6 @@ apply_env("INSTANCER_DEV", "dev", func=parse_bool)
 apply_env("INSTANCER_URL", "url")
 apply_env("INSTANCER_CHALLENGE_HOST", "challenge_host")
 
-if config.secret_key is None:
-    raise ValueError("No secret key was supplied in configuration")
 if config.login_secret_key is None:
     raise ValueError("No login secret key was supplied in configuration")
 if len(b64decode(config.login_secret_key)) != 32:
