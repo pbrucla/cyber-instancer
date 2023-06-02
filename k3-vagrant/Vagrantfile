@@ -24,17 +24,12 @@ Vagrant.configure("2") do |config|
     config.vm.box = 'bento/ubuntu-20.04'
   end
 
-  config.vm.define "reg" do |reg|
-    reg.vm.hostname = "reg.local"
-    reg.vm.network "private_network", ip: "192.168.0.20"
-    reg.vm.provision "docker"
-    reg.vm.synced_folder "..", "/tmp/cyber-instancer", type: "rsync",
+  config.vm.define "k3" do |k3|
+    k3.vm.provision "docker"
+    k3.vm.synced_folder "..", "/tmp/cyber-instancer", type: "rsync",
       rsync__exclude: ["k3-vagrant/",".venv","node_modules",".git", ".DS_Store",".github"],
       rsync__auto: false, sync__verbose: true
-    reg.vm.provision "file", source: "../fixture.sql", destination: "/tmp/fixture.sql"
-    reg.vm.provision "shell", path: "./init_reg.sh"
-  end
-  config.vm.define "k3" do |k3|
+    k3.vm.provision "file", source: "../fixture.sql", destination: "/tmp/fixture.sql"
     k3.vm.hostname = "k3.local"
     k3.vm.network "private_network", ip: "192.168.0.10"
     k3.vm.provision "shell", path: "./init_k3.sh"
@@ -44,14 +39,16 @@ Vagrant.configure("2") do |config|
     v.gui = true
     v.linked_clone = false
     v.vmx["ethernet0.virtualdev"] = "vmxnet3"
-    v.memory = "4096"
+    v.memory = "8192"
+    v.cpus = "4"
   end
   config.vm.provider "virtualbox" do |vb|
     # Display the VirtualBox GUI when booting the machine
     vb.gui = true
 
     # Customize the amount of memory on the VM:
-    vb.memory = "4096"
+    vb.memory = "8192"
+    vb.cpus = "4"
   end
 
 
