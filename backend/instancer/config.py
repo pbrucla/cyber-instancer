@@ -117,6 +117,7 @@ def apply_config(c: dict):
                 "redis_resync_interval": {"type": "number"},
                 "dev": {"type": "boolean"},
                 "url": {"type": "string"},
+                "challenge_host": {"type": "string"},
             },
         },
     )
