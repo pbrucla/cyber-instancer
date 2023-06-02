@@ -396,10 +396,26 @@ Vagrant is a program that allows for automatic virtual machine deployment. It it
 
 ### Running
 
-- In a terminal window, change to the `k3-vagrant` directory, then run `vagrant up`. This may take a while depending on your system. Note that some of the command's repsonse may be be red - this is normal.
+- In a terminal window, change to the `k3-vagrant` directory, then run `vagrant up`. You may need to use `--provider=virtualbox` or `--provider=vmware_desktop` if vagrant chooses the wrong virtualization software - run `vagrant destroy` if it gives an error about already deployed vms. This may take a while depending on your system. Note that some of the command's repsonse may be be red - this is normal.
 - Occasionally, provisioning may fail with something along the lines of "The SSH command responded with a non-zero exit status." In this case, run `vagrant provision`.
-- `vagrant suspend` will suspend the vms, `vagrant hault` will fully stop the vms. You might need to use `vagrant provision` after using `vagrant halt`
+- `vagrant suspend` will suspend the vms, allowing for safe resuming, `vagrant hault` will fully shutdown the vms (unsupported).
 - Once you are done, `vagrant destroy` will delete the vms.
+
+### Accessing the instancer
+
+- You can access the instancer at `192.168.0.10` (vmware), or `192.168.56.10` (virtualbox).
+- In order to access the instancer's web deployments, you must either fake your hosts header or add the challenges to your `/etc/hosts` file:
+  - Fake hosts: use an extension such as (https://addons.mozilla.org/en-US/firefox/addon/vhost-simulator/)[https://addons.mozilla.org/en-US/firefox/addon/vhost-simulator/], and add both the IP above and the host you are trying to access, like `testing.instancer.local`. Adding `instancer.local` pointing to the above IP will allow for accessing the instancer website.
+  - Add to `/etc/hosts`: Add to the bottom of `/etc/hosts` following the below format:
+
+```
+192.168.0.10  instancer.local
+192.168.0.10  testing.instancer.local
+192.168.0.10  testing2.instancer.local
+...
+```
+
+      - Adjust the IP addresses as required. Note that some browsers may ignore `/etc/hosts`, and you may need to disable secure DNS in order for the browser to use `/etc/hosts`.
 
 ## Inside Frontend directory
 
