@@ -16,13 +16,13 @@ const Profile = () => {
     useEffect(() => {
         const updateProfileData = async () => {
             if (accountToken === null) {
-                return null;
+                navigate("/login");
             }
             const res = await fetch("/api/accounts/profile", {
                 headers: {Authorization: `Bearer ${accountToken}`},
             });
             if (res.status !== 200) {
-                return null;
+                navigate("/login");
             }
             const profileData = (await res.json()) as ProfileType;
             if (profileData === null) {

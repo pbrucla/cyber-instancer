@@ -22,7 +22,9 @@ const Login = () => {
         /* Redirect if logged in */
         const checkLoggedIn = async () => {
             if (await validateAccountToken()) {
-                navigate("/challs");
+                navigate("/profile");
+            } else {
+                setAccountToken(null);
             }
         };
         checkLoggedIn().catch(console.error);

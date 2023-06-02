@@ -14,11 +14,13 @@ const Register = () => {
     useEffect(() => {
         const checkLoggedIn = async () => {
             if (await validateAccountToken()) {
-                navigate("/challs");
+                navigate("/profile");
+            } else {
+                setAccountToken(null);
             }
         };
         checkLoggedIn().catch(console.error);
-    }, [validateAccountToken, navigate]);
+    }, [validateAccountToken, navigate, setAccountToken]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
