@@ -17,16 +17,19 @@ const Profile = () => {
         const updateProfileData = async () => {
             if (accountToken === null) {
                 navigate("/login");
+                return;
             }
             const res = await fetch("/api/accounts/profile", {
                 headers: {Authorization: `Bearer ${accountToken}`},
             });
             if (res.status !== 200) {
                 navigate("/login");
+                return;
             }
             const profileData = (await res.json()) as ProfileType;
             if (profileData === null) {
                 navigate("/login");
+                return;
             } else {
                 setUsername(profileData.username);
                 setEmail(profileData.email);

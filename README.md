@@ -13,7 +13,7 @@ There are essentially 3 ways to run this application.
 - Partially Local: Run the kubernetes cluster on a remote server, but the cyber instancer, redis, and postgres services will run locally. This is the easiest way to run a full application without requiring large amounts of configuration for each user if a kubernetes cluster is already setup. This option also allows for subdomain provisioning to work properly.
   - simply setup `config.yml`, `k3s.yaml`, and then use docker compose
   - See the "Requirements", "Config files", "Kubernetes setup", and "Docker Compose" sections below
-- Fully Local: Run everything locallys. This can be done manually or by using the provided Vagrantfile.
+- Fully Local: Run everything locally. This can be done manually or by using the provided Vagrantfile.
   - This setup does not support https and will require manual /etc/hosts editing or similar for (sub)domains to access instancer
   - See "Config files" and "Vagrant" sections below
 
@@ -385,12 +385,12 @@ Vagrant is a program that allows for automatic virtual machine deployment. It it
 
 ### Requirements
 
-- A machine with resources to run 2 virtual machines. Recommended at least 12GB RAM and 6 CPU threads locally - the default VM settings is 8GB ram and 4 CPU threads.
+- A machine with resources to run a virtual machine. Recommended at least 12GB RAM and 6 CPU threads locally - the default VM settings is 8GB ram and 4 CPU threads.
 - `vagrant` must be installed and setup, including a virtualization software.
   1. Download and install vagrant from [https://developer.hashicorp.com/vagrant/downloads](https://developer.hashicorp.com/vagrant/downloads)
   2. Download and install [virtualbox (windows/linux)](https://www.virtualbox.org/wiki/Downloads) or [VMware Fusion (macos, intel or m1)](https://customerconnect.vmware.com/en/evalcenter?p=fusion-player-personal-13):
   - For VMWare Fusion, please follow the instructions under "Installation" here after install VMWare Fusion: [https://developer.hashicorp.com/vagrant/docs/providers/vmware/installation](https://developer.hashicorp.com/vagrant/docs/providers/vmware/installation).
-  - For virtualbox, replace all instances of "192.168.0" with "192.168.56". On linux, you can do this with `sed -i "s/192.168.0/192.168.56/g"`
+  - For virtualbox, replace all instances of "192.168.0" with "192.168.56". On linux, you can do this with `sed -i "s/192.168.0/192.168.56/g" *`
   - [For windows, you may need to disable/enable some settings to get virtualbox to work](https://superuser.com/questions/1391838/virtual-box-is-not-working-on-windows-10)
 - `rsync` must be installed. One way to do so on windows is install it via Cygwin: [https://www.cygwin.com/install.html](https://www.cygwin.com/install.html) and select both `rsync` and `ssh`
 
