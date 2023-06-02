@@ -1,6 +1,6 @@
 from time import sleep, time
 
-from kubernetes.client.exceptions import ApiException
+from kubernetes.client.exceptions import ApiException  # type: ignore
 
 from instancer.backend import Challenge, kclient
 from instancer.config import config, rclient

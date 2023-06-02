@@ -1,6 +1,6 @@
 import os
 from base64 import b64decode
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import IO, Any, Callable
 from uuid import UUID
 
@@ -23,7 +23,7 @@ def try_open(files: list[str], mode: str) -> IO:
     )
 
 
-def load_dict(stream: Any) -> dict:
+def load_dict(stream: IO) -> dict:
     ret = yaml.load(stream, yaml.Loader)
     if not isinstance(ret, dict):
         raise ValueError("Top-level value must be a mapping")
@@ -45,7 +45,9 @@ class ChallengeConfig:
 
 
 @dataclass
-class Config:
+class PartialConfig:
+    """A possibly incomplete config where required options might be None."""
+
     login_secret_key: bytes | None = None
     admin_team_id: UUID | None = None
     in_cluster: bool = False
@@ -63,7 +65,23 @@ class Config:
     challenge_host: str = "localhost"
 
 
-config = Config()
+@dataclass
+class Config(PartialConfig):
+    """Instancer configuration."""
+
+    login_secret_key: bytes
+
+    def __init__(self, partial_config: PartialConfig):
+        if partial_config.login_secret_key is None:
+            raise ValueError("No login secret key was supplied in configuration")
+        if len(b64decode(partial_config.login_secret_key)) != 32:
+            raise ValueError(
+                "Invalid secret login key. Secret login key must be exactly 32 bytes long, base64 encoded"
+            )
+        super().__init__(**asdict(partial_config))
+
+
+partial_config = PartialConfig()
 "Server configuration"
 
 
@@ -75,16 +93,16 @@ def apply_dict(c: dict, out_key: str, *keys: str, func: Callable | None = None):
         cur = cur[k]
     if func is not None:
         cur = func(cur)
-    setattr(config, out_key, cur)
+    setattr(partial_config, out_key, cur)
 
 
-def apply_env(var: Any, out_key: str, func: Callable | None = None):
+def apply_env(var: str, out_key: str, func: Callable | None = None):
     val = os.environ.get(var)
     if val is None:
         return
     if func is not None:
         val = func(val)
-    setattr(config, out_key, val)
+    setattr(partial_config, out_key, val)
 
 
 def apply_config(c: dict):
@@ -161,12 +179,7 @@ apply_env("INSTANCER_DEV", "dev", func=parse_bool)
 apply_env("INSTANCER_URL", "url")
 apply_env("INSTANCER_CHALLENGE_HOST", "challenge_host")
 
-if config.login_secret_key is None:
-    raise ValueError("No login secret key was supplied in configuration")
-if len(b64decode(config.login_secret_key)) != 32:
-    raise ValueError(
-        "Invalid secret login key. Secret login key must be exactly 32 bytes long, base64 encoded"
-    )
+config = Config(partial_config)
 
 rclient = redis.Redis(
     host=config.redis_host, port=config.redis_port, password=config.redis_password

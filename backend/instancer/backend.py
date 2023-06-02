@@ -8,11 +8,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from hashlib import sha256
 from time import time
-from typing import Any
+from typing import Any, cast
 
-from kubernetes import client as kclient
-from kubernetes import config as kconfig
-from kubernetes.client.exceptions import ApiException
+from kubernetes import client as kclient  # type: ignore
+from kubernetes import config as kconfig  # type: ignore
+from kubernetes.client.exceptions import ApiException  # type: ignore
 from psycopg.types.json import Jsonb
 
 from instancer.config import config, connect_pg, rclient
@@ -39,7 +39,7 @@ def keys_to_snake(d: dict[str, Any]) -> dict[str, Any]:
 
 
 def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
-    kwargs = {}
+    kwargs: dict[str, Any] = {}
     kwargs["name"] = cont_name
     kwargs["image"] = cfg["image"]
     for prop in [
@@ -80,7 +80,7 @@ def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
             raise NotImplementedError(
                 f"{prop} container config currently not supported"
             )
-    ports = []
+    ports: list[kclient.V1ContainerPort] = []
     if "kubePorts" in cfg:
         ports.extend(
             kclient.V1ContainerPort(**keys_to_snake(x)) for x in cfg["kubePorts"]
@@ -288,11 +288,13 @@ class Challenge(ABC):
                     cur.execute(
                         "SELECT id, cfg, per_team, lifetime, name, description, author FROM challenges"
                     )
-                    all_challs = cur.fetchall()
+                    all_challs: list[
+                        tuple[str, dict[str, Any], bool, int, str, str, str]
+                    ] = cur.fetchall()
                     cur.execute(
                         "SELECT challenge_id, name, is_category FROM tags ORDER BY is_category DESC, name"
                     )
-                    all_tags = cur.fetchall()
+                    all_tags: list[tuple[str, str, bool]] = cur.fetchall()
             rclient.set(
                 cache_key,
                 json.dumps([chall_id for (chall_id, *_) in all_challs]),
@@ -303,10 +305,10 @@ class Challenge(ABC):
                 tags[chall_id].append(ChallengeTag(name, is_category))
             return [
                 (
-                    _make_challenge(chall_id, *chall_data, team_id),
-                    tags.get(chall_id, []),
+                    _make_challenge(*chall_data, team_id),
+                    tags.get(chall_data[0], []),
                 )
-                for (chall_id, *chall_data) in all_challs
+                for chall_data in all_challs
             ]
 
     @staticmethod
@@ -317,7 +319,10 @@ class Challenge(ABC):
         cache_key = f"chall:{challenge_id}"
         cached = rclient.get(cache_key)
         if cached is not None:
-            result = json.loads(cached)
+            result = cast(
+                tuple[dict[str, Any], bool, int, str, str, str],
+                tuple(json.loads(cached)),
+            )
         else:
             with connect_pg() as conn:
                 with conn.cursor() as cur:
