@@ -89,7 +89,6 @@ const Profile = () => {
                                 onClick={() => {
                                     updateProfile(true, false).catch((err) => {
                                         console.log(err);
-                                        setIsShaking([true, false]);
                                     });
                                 }}
                                 style={{borderRadius: "0 5px 0 0"}}
@@ -111,7 +110,6 @@ const Profile = () => {
                                 onClick={() => {
                                     updateProfile(false, true).catch((err) => {
                                         console.log(err);
-                                        setIsShaking([false, true]);
                                     });
                                 }}
                             >
