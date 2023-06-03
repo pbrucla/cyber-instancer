@@ -126,7 +126,6 @@ const Profile = () => {
                                     borderRadius: "0 0 5px 0",
                                     wordBreak: "break-all",
                                     whiteSpace: "normal",
-                                    marginLeft: "auto",
                                 }}
                             >
                                 {loginURL}
