@@ -387,25 +387,25 @@ Vagrant is a program that allows for automatic virtual machine deployment. It it
 
 - A machine with resources to run a virtual machine. Recommended at least 12GB RAM and 6 CPU threads locally - the default VM settings is 8GB ram and 4 CPU threads.
 - `vagrant` must be installed and setup, including a virtualization software.
-  1. Download and install vagrant from [https://developer.hashicorp.com/vagrant/downloads](https://developer.hashicorp.com/vagrant/downloads)
+  1. Download and install vagrant from <https://developer.hashicorp.com/vagrant/downloads>.
   2. Download and install [virtualbox (windows/linux)](https://www.virtualbox.org/wiki/Downloads) or [VMware Fusion (macos, intel or m1)](https://customerconnect.vmware.com/en/evalcenter?p=fusion-player-personal-13):
-  - For VMWare Fusion, please follow the instructions under "Installation" here after install VMWare Fusion: [https://developer.hashicorp.com/vagrant/docs/providers/vmware/installation](https://developer.hashicorp.com/vagrant/docs/providers/vmware/installation).
+  - For VMWare Fusion, please follow the instructions under "Installation" here after install VMWare Fusion: <https://developer.hashicorp.com/vagrant/docs/providers/vmware/installation>.
   - For virtualbox, replace all instances of "192.168.0" with "192.168.56". On linux, you can do this with `sed -i "s/192.168.0/192.168.56/g" *`
   - [For windows, you may need to disable/enable some settings to get virtualbox to work](https://superuser.com/questions/1391838/virtual-box-is-not-working-on-windows-10)
-- `rsync` must be installed. One way to do so on windows is install it via Cygwin: [https://www.cygwin.com/install.html](https://www.cygwin.com/install.html) and select both `rsync` and `ssh`
+- `rsync` must be installed. One way to do so on windows is install it via [Cygwin](https://www.cygwin.com/install.html) and select both `rsync` and `ssh`
 
 ### Running
 
 - In a terminal window, change to the `k3-vagrant` directory, then run `vagrant up`. You may need to use `--provider=virtualbox` or `--provider=vmware_desktop` if vagrant chooses the wrong virtualization software - run `vagrant destroy` if it gives an error about already deployed vms. This may take a while depending on your system. Note that some of the command's repsonse may be be red - this is normal.
 - Occasionally, provisioning may fail with something along the lines of "The SSH command responded with a non-zero exit status." In this case, run `vagrant provision`.
-- `vagrant suspend` will suspend the vms, allowing for safe resuming, `vagrant hault` will fully shutdown the vms (unsupported).
+- `vagrant suspend` will suspend the vms, allowing for safe resuming, `vagrant halt` will fully shutdown the vms (unsupported).
 - Once you are done, `vagrant destroy` will delete the vms.
 
 ### Accessing the instancer
 
 - You can access the instancer at `192.168.0.10` (vmware), or `192.168.56.10` (virtualbox).
 - In order to access the instancer's web deployments, you must either fake your hosts header or add the challenges to your `/etc/hosts` file:
-  - Fake hosts: use an extension such as (https://addons.mozilla.org/en-US/firefox/addon/vhost-simulator/)[https://addons.mozilla.org/en-US/firefox/addon/vhost-simulator/], and add both the IP above and the host you are trying to access, like `testing.instancer.local`. Adding `instancer.local` pointing to the above IP will allow for accessing the instancer website.
+  - Fake hosts: use an extension such as <https://addons.mozilla.org/en-US/firefox/addon/vhost-simulator/>, and add both the IP above and the host you are trying to access, like `testing.instancer.local`. Adding `instancer.local` pointing to the above IP will allow for accessing the instancer website.
   - Add to `/etc/hosts`: Add to the bottom of `/etc/hosts` following the below format:
 
 ```
@@ -415,7 +415,7 @@ Vagrant is a program that allows for automatic virtual machine deployment. It it
 ...
 ```
 
-      - Adjust the IP addresses as required. Note that some browsers may ignore `/etc/hosts`, and you may need to disable secure DNS in order for the browser to use `/etc/hosts`.
+- Adjust the IP addresses as required. Note that some browsers may ignore `/etc/hosts`, and you may need to disable secure DNS in order for the browser to use `/etc/hosts`.
 
 ## Inside Frontend directory
 
