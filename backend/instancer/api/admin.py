@@ -2,6 +2,7 @@ import re
 
 import jsonschema
 from flask import Blueprint, g, json, request
+from flask.typing import ResponseReturnValue
 
 from instancer.backend import Challenge, ChallengeMetadata, ChallengeTag
 from instancer.config import config
@@ -115,15 +116,16 @@ config_schema = {
 
 
 @blueprint.before_request
-def check_admin_team():
+def check_admin_team() -> ResponseReturnValue | None:
     """Only allow access for the admin team."""
 
     if g.session["team_id"] != str(config.admin_team_id):
         return {"status": "not_admin", "msg": "only admins can use the admin API"}, 403
+    return None
 
 
 @blueprint.route("/challenges/upload", methods=["POST"])
-def challenge_upload():
+def challenge_upload() -> ResponseReturnValue:
     """Create a new challenge."""
 
     try:
@@ -200,7 +202,7 @@ def challenge_upload():
 
 
 @blueprint.route("/challenges/<chall_id>", methods=["DELETE"])
-def challenge_delete(chall_id: str):
+def challenge_delete(chall_id: str) -> ResponseReturnValue:
     """Delete a challenge."""
 
     return (

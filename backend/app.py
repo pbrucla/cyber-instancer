@@ -1,7 +1,9 @@
 import os
+from typing import cast
 
 import redis
 from flask import Flask, request, send_from_directory
+from flask.typing import ResponseReturnValue
 
 from instancer import api, backend
 from instancer.config import config, connect_pg
@@ -21,15 +23,15 @@ app.register_blueprint(api.blueprint)
 @app.route("/chall/<string:chall_id>")
 @app.route("/login")
 @app.route("/register")
-def react(chall_id=""):
-    return send_from_directory(app.static_folder, "index.html")
+def react(chall_id: str = "") -> ResponseReturnValue:
+    return send_from_directory(cast(str, app.static_folder), "index.html")
 
 
 # Testing
 if config.dev:
 
     @app.route("/api/test_db")
-    def test_db():
+    def test_db() -> ResponseReturnValue:
         with connect_pg() as conn:
             cursor = conn.cursor()
             cursor.execute(

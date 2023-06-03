@@ -1,6 +1,6 @@
 import json
 import secrets
-from typing import Any
+from typing import Any, cast
 
 from instancer.config import rclient
 
@@ -25,4 +25,4 @@ def get_session(token: str) -> dict[str, Any] | None:
     data = rclient.get(f"session:{token}")
     if data is None:
         return None
-    return json.loads(data)
+    return cast(dict[str, Any], json.loads(data))

@@ -14,7 +14,7 @@ repos:
     hooks:
       - id: mypy
         files: "^backend/"
-        args: []
+        args: ["--config-file", "backend/pyproject.toml"]
         additional_dependencies:
           - "Flask ~= 2.2.3"
           - "gunicorn ~= 20.1.0"

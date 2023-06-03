@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from random import randbytes
+from typing import Any
 
 from instancer.config import rclient
 
@@ -21,19 +22,19 @@ class Lock:
     lock_value: str = field(default_factory=lambda: randbytes(8).hex())
     "The value stored in the lock. Used to determine if a lock should be released."
 
-    def lock(self):
+    def lock(self) -> None:
         if not rclient.set(
             "lock:" + self.name, self.lock_value, nx=True, ex=self.max_time
         ):
             raise LockException(f"Lock {self.name} already exists")
 
-    def unlock(self):
+    def unlock(self) -> None:
         lock = "lock:" + self.name
         if rclient.get(lock) == self.lock_value.encode():
             rclient.delete(lock)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.lock()
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         self.unlock()

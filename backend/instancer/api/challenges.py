@@ -1,5 +1,6 @@
 import flask
 from flask import Blueprint, g
+from flask.typing import ResponseReturnValue
 
 from instancer.backend import Challenge
 
@@ -9,7 +10,7 @@ blueprint = Blueprint("challenges", __name__, url_prefix="/challenges")
 
 
 @blueprint.route("", methods=["GET"])
-def challenges():
+def challenges() -> ResponseReturnValue:
     return {
         "status": "ok",
         "challenges": [

@@ -1,7 +1,7 @@
 import os
 from base64 import b64decode
 from dataclasses import asdict, dataclass
-from typing import IO, Any, Callable
+from typing import Any, Callable, TextIO
 from uuid import UUID
 
 import jsonschema
@@ -12,10 +12,10 @@ import yaml
 VALID_ID_CHARS: set[str] = set("abcdefghijklmnopqrstuvwxyz0123456789-")
 
 
-def try_open(files: list[str], mode: str) -> IO:
+def try_open(files: list[str]) -> TextIO:
     for f in files:
         try:
-            return open(f, mode)
+            return open(f, "r")
         except FileNotFoundError:
             pass
     raise FileNotFoundError(
@@ -23,14 +23,14 @@ def try_open(files: list[str], mode: str) -> IO:
     )
 
 
-def load_dict(stream: IO) -> dict:
+def load_dict(stream: TextIO) -> dict[str, Any]:
     ret = yaml.load(stream, yaml.Loader)
     if not isinstance(ret, dict):
         raise ValueError("Top-level value must be a mapping")
     return ret
 
 
-def parse_bool(s: str):
+def parse_bool(s: str) -> bool:
     if s.lower() in ["y", "yes", "t", "true", "1"]:
         return True
     elif s.lower() in ["n", "no", "f", "false", "0", ""]:
@@ -85,7 +85,12 @@ partial_config = PartialConfig()
 "Server configuration"
 
 
-def apply_dict(c: dict, out_key: str, *keys: str, func: Callable | None = None):
+def apply_dict(
+    c: dict[str, Any],
+    out_key: str,
+    *keys: str,
+    func: Callable[[Any], Any] | None = None,
+) -> None:
     cur = c
     for k in keys:
         if k not in cur:
@@ -96,7 +101,7 @@ def apply_dict(c: dict, out_key: str, *keys: str, func: Callable | None = None):
     setattr(partial_config, out_key, cur)
 
 
-def apply_env(var: str, out_key: str, func: Callable | None = None):
+def apply_env(var: str, out_key: str, func: Callable[[Any], Any] | None = None) -> None:
     val = os.environ.get(var)
     if val is None:
         return
@@ -105,7 +110,7 @@ def apply_env(var: str, out_key: str, func: Callable | None = None):
     setattr(partial_config, out_key, val)
 
 
-def apply_config(c: dict):
+def apply_config(c: dict[str, Any]) -> None:
     jsonschema.validate(
         c,
         {
@@ -158,7 +163,7 @@ def apply_config(c: dict):
 
 
 try:
-    user_config = load_dict(try_open(["config.yml", "config.yaml"], "r"))
+    user_config = load_dict(try_open(["config.yml", "config.yaml"]))
     apply_config(user_config)
 except FileNotFoundError:
     pass
@@ -187,7 +192,7 @@ rclient = redis.Redis(
 "Redis client"
 
 
-def connect_pg():
+def connect_pg() -> psycopg.Connection[Any]:
     """Spawn a postgres connection."""
     return psycopg.connect(
         host=config.postgres_host,

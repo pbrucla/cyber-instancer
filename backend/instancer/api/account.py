@@ -6,10 +6,12 @@ import urllib.parse
 
 # Login token handling
 from base64 import b64decode, b64encode
+from typing import Any, cast
 from uuid import uuid4
 
 from Crypto.Cipher import AES
 from flask import Blueprint, g, request
+from flask.typing import ResponseReturnValue
 from psycopg.errors import IntegrityError
 
 from instancer.config import config, connect_pg
@@ -20,7 +22,9 @@ blueprint = Blueprint("account", __name__, url_prefix="/accounts")
 
 
 class LoginToken:
-    def __init__(self, team_id: str, timestamp=None, forceUUID=True):
+    def __init__(
+        self, team_id: str, timestamp: float | None = None, forceUUID: bool = True
+    ):
         """Initialize a LoginToken given decoded parameters"""
 
         if timestamp is None:
@@ -39,7 +43,7 @@ class LoginToken:
         self.timestamp = timestamp
 
     @classmethod
-    def decode(cls, token, onlyAllowType8=True):
+    def decode(cls, token: str, onlyAllowType8: bool = True) -> LoginToken:
         """Decodes a token
 
         May throw a ValueError if the key format is invalid"""
@@ -56,12 +60,12 @@ class LoginToken:
                 "Invalid key - either it failed to decrypt or was not of the required format or key type"
             )
 
-    def get_login_url(self, currentTime=True) -> str:
+    def get_login_url(self, currentTime: bool = True) -> str:
         return "{}/login?token={}".format(
             config.url, urllib.parse.quote_plus(self.get_token(currentTime=currentTime))
         )
 
-    def get_token(self, currentTime=True):
+    def get_token(self, currentTime: bool = True) -> str:
         login_token = {
             "k": 8,
             "t": (int(time.time()) if currentTime else self.timestamp),
@@ -109,7 +113,7 @@ def validate_team_username(team_id: str) -> bool:
 
 
 @blueprint.route("/register", methods=["POST"])
-def register():
+def register() -> ResponseReturnValue:
     """Register an account
 
     Requires username, email body parameters
@@ -141,19 +145,15 @@ def register():
             except IntegrityError as e:
                 conn.rollback()
                 return {
-                    "status": "{}_already_taken".format(
-                        re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
-                    ),
-                    "msg": "{} already taken.".format(
-                        re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
-                    ),
+                    "status": "username_or_email_already_taken",
+                    "msg": "username or email already taken",
                 }, 400
             conn.commit()
             return {"success": True, "token": authentication.new_session(str(team_id))}
 
 
 @blueprint.route("/profile", methods=["GET"])
-def profile():
+def profile() -> ResponseReturnValue:
     """Returns profile information
 
     for now, returns team username, team email, and login url"""
@@ -185,7 +185,7 @@ def profile():
 
 
 @blueprint.route("/profile", methods=["PATCH"])
-def update_profile():
+def update_profile() -> ResponseReturnValue:
     """Updates information in the profile (email, team name)
 
     Body fields: neither, one, or both of username, email"""
@@ -229,19 +229,15 @@ def update_profile():
             except IntegrityError as e:
                 conn.rollback()
                 return {
-                    "status": "{}_already_taken".format(
-                        re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
-                    ),
-                    "msg": "{} already taken.".format(
-                        re.match(r"^Key \((.+)\)=", e.diag.message_detail).group(1)
-                    ),
+                    "status": "username_or_email_already_taken",
+                    "msg": "username or email already taken",
                 }, 400
             conn.commit()
     return {"status": "ok", "msg": "Successfully updated profile"}
 
 
 @blueprint.route("/login", methods=["POST"])
-def login():
+def login() -> ResponseReturnValue:
     """Allows users to login using login urls
 
     Requires body param login_token"""
@@ -275,7 +271,7 @@ def login():
 if config.dev:
 
     @blueprint.route("/dev_login", methods=["POST"])
-    def dev_login():
+    def dev_login() -> ResponseReturnValue:
         """Force login as specific team_id
 
         For development only; passing in non-uuids may cause unintended behavior.

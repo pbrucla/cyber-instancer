@@ -10,9 +10,9 @@ from hashlib import sha256
 from time import time
 from typing import Any, cast
 
-from kubernetes import client as kclient  # type: ignore
-from kubernetes import config as kconfig  # type: ignore
-from kubernetes.client.exceptions import ApiException  # type: ignore
+from kubernetes import client as kclient
+from kubernetes import config as kconfig
+from kubernetes.client.exceptions import ApiException
 from psycopg.types.json import Jsonb
 
 from instancer.config import config, connect_pg, rclient
@@ -38,7 +38,9 @@ def keys_to_snake(d: dict[str, Any]) -> dict[str, Any]:
     return {camel_to_snake(k): v for (k, v) in d.items()}
 
 
-def config_to_container(cont_name: str, cfg: dict, env_metadata: Any = None):
+def config_to_container(
+    cont_name: str, cfg: dict[str, Any], env_metadata: Any = None
+) -> kclient.V1Container:
     kwargs: dict[str, Any] = {}
     kwargs["name"] = cont_name
     kwargs["image"] = cfg["image"]
@@ -170,7 +172,7 @@ class Challenge(ABC):
     "Challenge lifetime, in seconds"
     metadata: ChallengeMetadata
     "Challenge metadata"
-    containers: dict[str, dict]
+    containers: dict[str, dict[str, Any]]
     "Mapping from container name to container config."
     exposed_ports: dict[str, list[int]]
     "Mapping from container name to list of container ports to expose"
@@ -178,9 +180,9 @@ class Challenge(ABC):
     "Mapping from container name to list of port, subdomain pairs to expose to an HTTP proxy"
     namespace: str
     "The kubernetes namespace the challenge is running in."
-    additional_labels: dict
+    additional_labels: dict[str, Any]
     "Additional labels for the challenge deployments."
-    additional_env_metadata: dict
+    additional_env_metadata: dict[str, Any]
     "Additional metadata to put in challenge environment variables."
 
     def __init__(
@@ -208,7 +210,7 @@ class Challenge(ABC):
         self.additional_labels = additional_labels
         self.additional_env_metadata = additional_env_metadata
 
-    def is_running(self):
+    def is_running(self) -> bool:
         return self.expiration() is not None
 
     @staticmethod
@@ -219,7 +221,7 @@ class Challenge(ABC):
         lifetime: int,
         metadata: ChallengeMetadata,
         tags: list[ChallengeTag],
-    ):
+    ) -> None:
         """Create a new challenge and insert it into the database."""
 
         with connect_pg() as conn:
@@ -330,7 +332,9 @@ class Challenge(ABC):
                         "SELECT cfg, per_team, lifetime, name, description, author FROM challenges WHERE id=%s",
                         (challenge_id,),
                     )
-                    result = cur.fetchone()
+                    result = cast(
+                        tuple[dict[str, Any], bool, int, str, str, str], cur.fetchone()
+                    )
             rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
 
         if result is None:
@@ -373,7 +377,7 @@ class Challenge(ABC):
         """Returns True if challenge is shared, e.g. should not be terminatable"""
         raise NotImplementedError
 
-    def start(self):
+    def start(self) -> None:
         """Starts a challenge, or renews it if it was already running."""
         api = kclient.AppsV1Api()
         capi = kclient.CoreV1Api()
@@ -700,7 +704,7 @@ class Challenge(ABC):
             raise
 
     @staticmethod
-    def stop_namespace(namespace):
+    def stop_namespace(namespace: str) -> None:
         """Stops a challenge given the namespace of the challenge."""
         capi = kclient.CoreV1Api()
 
@@ -717,7 +721,7 @@ class Challenge(ABC):
             else:
                 print(f"[*] Could not delete namespace {namespace} due to error {e}...")
 
-    def stop(self):
+    def stop(self) -> None:
         """Stops a challenge if it's running."""
         self.stop_namespace(self.namespace)
 
@@ -778,7 +782,9 @@ class Challenge(ABC):
 class SharedChallenge(Challenge):
     """A challenge with one shared instance among all teams."""
 
-    def __init__(self, id: str, cfg: dict, lifetime: int, metadata: ChallengeMetadata):
+    def __init__(
+        self, id: str, cfg: dict[str, Any], lifetime: int, metadata: ChallengeMetadata
+    ):
         """Constructs a SharedChallenge given the challenge ID.
 
         Do not call this constructor directly; use Challenge.fetch instead.
@@ -808,7 +814,7 @@ class PerTeamChallenge(Challenge):
         self,
         id: str,
         team_id: str,
-        cfg: dict,
+        cfg: dict[str, Any],
         lifetime: int,
         metadata: ChallengeMetadata,
     ):

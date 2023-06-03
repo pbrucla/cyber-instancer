@@ -1,4 +1,5 @@
 from flask import Blueprint, g, request
+from flask.typing import ResponseReturnValue
 
 from . import account, admin, authentication, challenge, challenges
 
@@ -10,7 +11,7 @@ blueprint.register_blueprint(admin.blueprint)
 
 
 @blueprint.before_request
-def check_authorization():
+def check_authorization() -> ResponseReturnValue | None:
     """Check the client's authentication token and set g.session to the session data."""
 
     if request.endpoint in [
@@ -18,7 +19,7 @@ def check_authorization():
         "api.account.login",
         "api.account.dev_login",
     ]:
-        return
+        return None
     if request.authorization is None:
         return {
             "status": "missing_authorization",
@@ -29,7 +30,13 @@ def check_authorization():
             "status": "unsupported_authorization_type",
             "msg": 'authorization type must be "Bearer"',
         }, 401
+    if request.authorization.token is None:
+        return {
+            "status": "missing_token",
+            "msg": "missing session token",
+        }
     session = authentication.get_session(request.authorization.token)
     if session is None:
         return {"status": "invalid_token", "msg": "invalid token"}, 401
     g.session = session
+    return None
