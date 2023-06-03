@@ -6,7 +6,7 @@ import urllib.parse
 
 # Login token handling
 from base64 import b64decode, b64encode
-from typing import Any, cast
+from typing import Any, Self, cast
 from uuid import uuid4
 
 from Crypto.Cipher import AES
@@ -43,7 +43,7 @@ class LoginToken:
         self.timestamp = timestamp
 
     @classmethod
-    def decode(cls, token: str, onlyAllowType8: bool = True) -> LoginToken:
+    def decode(cls, token: str, onlyAllowType8: bool = True) -> Self:
         """Decodes a token
 
         May throw a ValueError if the key format is invalid"""
