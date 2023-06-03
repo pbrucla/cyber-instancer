@@ -1,8 +1,7 @@
 import os
-from typing import cast
 
 import redis
-from flask import Flask, request, send_from_directory
+from flask import Flask, request
 from flask.typing import ResponseReturnValue
 
 from instancer import api, backend
@@ -24,7 +23,7 @@ app.register_blueprint(api.blueprint)
 @app.route("/login")
 @app.route("/register")
 def react(chall_id: str = "") -> ResponseReturnValue:
-    return send_from_directory(cast(str, app.static_folder), "index.html")
+    return app.send_static_file("index.html")
 
 
 # Testing
