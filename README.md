@@ -34,7 +34,6 @@ There are essentially 3 ways to run this application.
 
 Copy `config.example.yml` to `config.yml` and update with your information. See below for more info:
 
-- `secret_key`: unused
 - `login_secret_key` can be created by running the following in a python3 interpreter:
 
 ```python

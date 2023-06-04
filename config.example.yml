@@ -1,4 +1,3 @@
-secret_key: abcd
 login_secret_key: "+jRCqBlpa4Mqo558EVWfioZAIfiFEHgQvN6BxD7qBgQ="
 admin_team_id: 4b45bb80-9a8b-47ca-ad0d-a995b1ffe6d6
 redis:
