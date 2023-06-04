@@ -59,8 +59,10 @@ def config_to_container(
         if cprop in cfg:
             kwargs[prop] = cfg[cprop]
     env = [
-        kclient.V1EnvVar(name=x["name"], value=x["value"])
-        for x in cfg.get("env", []) + cfg.get("environment", [])
+        kclient.V1EnvVar(name=x["name"], value=x["value"]) for x in cfg.get("env", [])
+    ] + [
+        kclient.V1EnvVar(name=k, value=v)
+        for (k, v) in cfg.get("environment", {}).items()
     ]
     if env_metadata is not None and not any(
         x.name == "INSTANCER_METADATA" for x in env

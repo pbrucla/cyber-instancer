@@ -23,7 +23,14 @@ container_schema = {
         "terminationMessagePolicy": {"type": "string"},
         "tty": {"type": "boolean"},
         "workingDir": {"type": "string"},
-        "env": {"type": "object", "additionalProperties": {"type": "string"}},
+        "env": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name", "value"],
+                "properties": {"name": {"type": "string"}, "value": {"type": "string"}},
+            },
+        },
         "environment": {"type": "object", "additionalProperties": {"type": "string"}},
         "kubePorts": {
             "type": "array",
