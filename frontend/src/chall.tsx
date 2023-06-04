@@ -149,7 +149,7 @@ const Chall = () => {
             const outPorts: (string | JSX.Element)[] = [];
             const portmap = deployment.port_mappings;
             Object.keys(portmap).forEach((key) => {
-                if (key === "app:8080") {
+                if (typeof portmap[key] === "number") {
                     outPorts.push(createLink(portmap[key] as string));
                 } else {
                     outPorts.push("nc " + deployment.host + " " + (portmap[key] as string));
