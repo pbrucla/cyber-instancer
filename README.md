@@ -45,11 +45,11 @@ base64.b64encode(secrets.token_bytes(32))
 Do NOT share this, or else an attacker will be able to login as whomever they wish!
 
 - `admin_team_id`: UUID of admin account. Decode a login token to get an account's UUID, and then set the UUID here.
-- `redis`: connection information for redis. If following the instructions below, redis will be installed in the cluster, so just have `host: redis-service` and delete the port and password options.
-- `postgres`: connection information for postgres
-- `in_cluster`: set if in cluster. If not, will use `k3s.yaml` file to authenticate with cluster
+- `redis`: connection information for redis. If using the kubernetes config files below, docker compose, or vagrant, set `host: redis-service` and delete the port and password options. If you have a separate redis host, set that here.
+- `postgres`: connection information for postgres. If using docker-compose, make sure the host is `db`, and that the username, password, and database name match the corresponding config options in `docker-compose.yml`
+- `in_cluster`: set if it will be deployed in a cluster. If not, will use a `k3s.yaml` file at the top level directory to authenticate with cluster.
 - `redis_resync_interval`: How often to sync between active clusters and the local cache, deleting instances as necessary.
-- `dev`: Enables some developer options. Do not enable in production.
+- `dev`: Enables some developer debugging api endpoints. Do not enable in production.
 - `url`: URL to the instancer.
 - `challenge_host`: IP or hostname that points to the kube cluster. Usually same as `url` but without http(s)
 
