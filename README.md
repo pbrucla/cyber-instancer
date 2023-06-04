@@ -9,10 +9,10 @@ Please note: setup for this application is done in 3 stages: deploying a kuberne
 There are essentially 3 ways to run this application.
 
 - Production: Run the kubernetes cluster on a remote server, which will contain redis and the instancer application itself, with a separate Postgres and docker container registry service hosted locally or on another machine
-  - See the "Requirements", "Config files", "Kubernetes setup", and "Database setup" sections below
+  - See the "[Requirements](#requirements)", "[Config files](#config-files)", "[Kubernetes setup](#kubernetes-setup)", and "[Database setup](#database-setup)" sections below
 - Partially Local: Run the kubernetes cluster on a remote server, but the cyber instancer, redis, and postgres services will run locally. This is the easiest way to run a full application without requiring large amounts of configuration for each user if a kubernetes cluster is already setup. This option also allows for subdomain provisioning to work properly.
   - simply setup `config.yml`, `k3s.yaml`, and then use docker compose
-  - See the "Requirements", "Config files", "Kubernetes setup", and "Docker Compose" sections below
+  - See the "[Requirements](#requirements)", "[Config files](#config-files)", "[Kubernetes setup](#kubernetes-setup)", and "[Docker Compose](#docker-compose)" sections below
 - Fully Local: Run everything locally. This can be done manually or by using the provided Vagrantfile.
   - This setup does not support https and will require manual /etc/hosts editing or similar for (sub)domains to access instancer
   - See "Config files" and "Vagrant" sections below
