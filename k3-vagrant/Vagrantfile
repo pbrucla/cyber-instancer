@@ -1,8 +1,6 @@
-# Tells us if the host system is an Apple Silicon Mac running Rosetta
 def is_arm64()
-  `uname -m` == "arm64" || `/usr/bin/arch -64 sh -c "sysctl -in sysctl.proc_translated"`.strip() == "0"
+  return false # CHANGE ME - change to true if on an m1/m2 mac
 end
-
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
