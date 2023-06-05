@@ -13,6 +13,7 @@ const Profile = () => {
     const [email, setEmail] = useState("Loading...");
     const [loginURL, setLoginURL] = useState("Loading...");
     const [isShaking, setIsShaking] = useState([false, false]);
+    const [success, setSuccess] = useState([false, false]);
 
     useEffect(() => {
         const updateProfileData = async () => {
@@ -43,6 +44,7 @@ const Profile = () => {
 
     async function updateProfile(updateUsername: boolean, updateEmail: boolean) {
         setIsShaking([false, false]);
+        setSuccess([false, false]);
         if (accountToken === null) {
             navigate("/login");
             return null;
@@ -59,6 +61,10 @@ const Profile = () => {
             setIsShaking([updateUsername, updateEmail]);
             return null;
         }
+        setSuccess([updateUsername, updateEmail]);
+        setTimeout(() => {
+            setSuccess([false, false]);
+        }, 3000);
         const responseMessage = (await res.json()) as MessageType;
         console.log(responseMessage.msg);
     }
@@ -134,6 +140,11 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
+            {(success[0] || success[1]) && (
+                <div className="success">
+                    <span className="dot"></span>Edited {success[0] ? "username" : "email"} successfully!
+                </div>
+            )}
         </>
     );
 };

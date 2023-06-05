@@ -109,3 +109,22 @@
         transform: translateX(0);
     }
 }
+
+.success {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.dot {
+    height: 0.8rem;
+    width: 0.8rem;
+    margin-left: 0rem;
+    margin-right: 0.8rem;
+
+    border-radius: 50%;
+    display: inline-block;
+    background-color: green;
+    border: 2px solid white;
+}
