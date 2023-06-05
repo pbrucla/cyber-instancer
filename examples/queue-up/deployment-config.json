@@ -1,0 +1,39 @@
+{
+  "containers": {
+    "queue": {
+      "image": "docker.acmcyber.com/queue-up-queue:latest",
+      "ports": [8080],
+      "environment": {
+        "PORT": "8080",
+        "startTime": "1674372589",
+        "POSTGRES_USER": "queue",
+        "POSTGRES_PASSWORD": "BnA6tObcPm44I7RMb1Xqajs5UYl5LWsMMC4BYpHwoPp6jc7Tk4",
+        "FLAG_SERVER_URL": "https://qu-flag.egg.gnk.sh",
+        "ADMIN_SECRET": "0wN7Q3JQC9Ae4Q9M1kXaserN5byNmvMjHDSsvmjvvh2gYUeBfZnTUNlo"
+      }
+    },
+    "db": {
+      "image": "postgres",
+      "environment": {
+        "POSTGRES_USER": "queue",
+        "POSTGRES_PASSWORD": "BnA6tObcPm44I7RMb1Xqajs5UYl5LWsMMC4BYpHwoPp6jc7Tk4"
+      },
+      "ports": [5432]
+    },
+    "flagserver": {
+      "image": "docker.acmcyber.com/queue-up-flag:latest",
+      "ports": [3000],
+      "environment": {
+        "QUEUE_SERVER_URL": "https://qu-queue.egg.gnk.sh",
+        "QUEUE_SERVER_PORT": "8080",
+        "FLAG": "lactf{Byp455in_7he_Qu3u3}",
+        "PORT": "3000",
+        "ADMIN_SECRET": "0wN7Q3JQC9Ae4Q9M1kXaserN5byNmvMjHDSsvmjvvh2gYUeBfZnTUNlo"
+      }
+    }
+  },
+  "http": {
+    "queue": [[8080, "qu-queue.egg.gnk.sh"]],
+    "flagserver": [[3000, "qu-flag.egg.gnk.sh"]]
+  }
+}

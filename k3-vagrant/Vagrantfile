@@ -1,5 +1,5 @@
 def is_arm64()
-  return false # CHANGE ME - change to true if on an m1/m2 mac
+  return true # CHANGE ME - change to true if on an m1/m2 mac
 end
 # -*- mode: ruby -*-
 # vi: set ft=ruby :

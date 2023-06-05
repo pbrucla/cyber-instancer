@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Run container registry server
+docker rm --force -v registry
 docker run -d -p 5000:5000 --restart=always --name registry registry:2
 
 # Update fixture.sql to use our local docker registry and fake domain
@@ -8,6 +9,7 @@ sed -i 's/docker.acmcyber.com/192.168.0.10/g' /tmp/fixture.sql
 sed -i 's/egg.gnk.sh/instancer.local/g' /tmp/fixture.sql
 
 # Run postgres server
+docker rm -f -v db
 docker run -d -p 5432:5432 --restart=always --name db \
   -e POSTGRES_PASSWORD=wLLaHYLzrV3j4yL7ErPkmhzf -e POSTGRES_USER=instancer \
   -e POSTGRES_DB=instancer -v /tmp/fixture.sql:/docker-entrypoint-initdb.d/fixture.sql:ro postgres
@@ -32,8 +34,17 @@ docker push 192.168.0.10:5000/cyber-instancer
 docker build /tmp/cyber-instancer/examples/simple-redis-chall -t 192.168.0.10:5000/simple-redis-chall
 docker push 192.168.0.10:5000/simple-redis-chall
 
+# Build and push queue-up challenge
+docker build /tmp/cyber-instancer/examples/queue-up/queue -t 192.168.0.10:5000/queue-up-queue
+docker push 192.168.0.10:5000/queue-up-queue
+docker build /tmp/cyber-instancer/examples/queue-up/flagserver -t 192.168.0.10:5000/queue-up-flag
+docker push 192.168.0.10:5000/queue-up-flag
+
 # install k3
 curl -sfL https://get.k3s.io | sh -
+
+# restart cyber-instancer if it exists
+kubectl rollout restart -n cyber-instancer deployment cyber-instancer
 
 # allow k3 unauthenticated docker pulls
 cat <<EOF >/etc/rancher/k3s/registries.yaml
