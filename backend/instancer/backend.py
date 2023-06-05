@@ -214,9 +214,9 @@ class Challenge(ABC):
 
     def is_running(self) -> bool:
         return self.expiration() is not None
-    
+
     @staticmethod
-    def flush_cache(chall_id: str):
+    def flush_cache(chall_id: str) -> None:
         """Forcibly flushes the cache of a challenge."""
         rclient.delete("all_challs", f"chall:{chall_id}", f"chall_tags:{chall_id}")
 
