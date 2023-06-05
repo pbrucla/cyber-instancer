@@ -214,6 +214,11 @@ class Challenge(ABC):
 
     def is_running(self) -> bool:
         return self.expiration() is not None
+    
+    @staticmethod
+    def flush_cache(chall_id: str):
+        """Forcibly flushes the cache of a challenge."""
+        rclient.delete("all_challs", f"chall:{chall_id}", f"chall_tags:{chall_id}")
 
     @staticmethod
     def create(
@@ -250,8 +255,8 @@ class Challenge(ABC):
                         copy.write_row((chall_id, tag.name, tag.is_category))
         rclient.delete("all_challs")
 
-    @staticmethod
-    def delete(chall_id: str) -> bool:
+    @classmethod
+    def delete(cls, chall_id: str) -> bool:
         """Delete a challenge.
 
         Returns True if the challenge was deleted and False if the challenge doesn't exist.
@@ -263,9 +268,7 @@ class Challenge(ABC):
                 cur.execute("DELETE FROM challenges WHERE id=%s", (chall_id,))
                 if cur.rowcount < 1:
                     return False
-        rclient.delete("all_challs")
-        rclient.delete(f"chall:{chall_id}")
-        rclient.delete(f"chall_tags:{chall_id}")
+        cls.flush_cache(chall_id)
         return True
 
     @classmethod
