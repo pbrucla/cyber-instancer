@@ -337,7 +337,8 @@ class Challenge(ABC):
                     result = cast(
                         tuple[dict[str, Any], bool, int, str, str, str], cur.fetchone()
                     )
-            rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
+            if result is not None:
+                rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
 
         if result is None:
             return None
