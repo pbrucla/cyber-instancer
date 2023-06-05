@@ -79,7 +79,7 @@ const Login = () => {
                         }}
                     >
                         <div className="row">
-                            <div className="column" style={{borderRadius: "5px 0 0 5px"}}>
+                            <div className="column" style={{borderRadius: "0.7rem 0 0 0.7rem"}}>
                                 TOKEN
                             </div>
                             <input
@@ -88,7 +88,7 @@ const Login = () => {
                                 name="login_token"
                                 className="column column2"
                                 defaultValue={token}
-                                style={{borderRadius: "0 5px 5px 0"}}
+                                style={{borderRadius: "0 0.7rem 0.7rem 0"}}
                             />
                         </div>
                         <div className="row">

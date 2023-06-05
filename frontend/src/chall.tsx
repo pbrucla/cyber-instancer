@@ -149,7 +149,7 @@ const Chall = () => {
             const outPorts: (string | JSX.Element)[] = [];
             const portmap = deployment.port_mappings;
             Object.keys(portmap).forEach((key) => {
-                if (typeof portmap[key] === "number") {
+                if (typeof portmap[key] === "string") {
                     outPorts.push(createLink(portmap[key] as string));
                 } else {
                     outPorts.push("nc " + deployment.host + " " + (portmap[key] as string));
@@ -165,6 +165,7 @@ const Chall = () => {
     } else {
         const cat = getCategories(chall);
         const title = chall.name.toUpperCase();
+        const author = chall.author;
         const description = chall.description;
         const tags = getTags(chall);
         const newTags: string[] = [];
@@ -183,6 +184,14 @@ const Chall = () => {
                     </div>
                     <br></br>
                     <div style={{overflowWrap: "break-word", color: "#ff8c4c", fontSize: "30px"}}>{newTags}</div>
+                    <br></br>
+                    <div style={{overflowWrap: "break-word", color: "#d0d0d0", fontSize: "25px"}}>
+                        <b>AUTHOR:</b> {author}
+                    </div>
+                    <br></br>
+                    <div style={{overflowWrap: "break-word", color: "#f0f0f0", fontSize: "25px"}}>
+                        <b>Description:</b>
+                    </div>
                     <br></br>
                     <div style={{overflowWrap: "break-word", color: "#f0f0f0", fontSize: "20px"}}>{description}</div>
                     <br></br>

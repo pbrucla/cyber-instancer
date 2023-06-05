@@ -71,18 +71,18 @@
 }
 
 .column:nth-child(3) {
-    background-color: #ffba44;
+    background-color: #f0f0f0;
     border-style: none;
     color: #101010;
     font-weight: 600;
 }
 
 .column1:nth-child(2) {
-    width: 30vw;
+    width: 32vw;
 }
 
 .column1:nth-child(3) {
-    width: 15vw;
+    width: 13vw;
 }
 
 .column2:nth-child(2) {

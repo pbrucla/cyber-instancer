@@ -68,7 +68,7 @@ const Register = () => {
                         }}
                     >
                         <div className="row">
-                            <div className="column" style={{borderRadius: "5px 0 0 0"}}>
+                            <div className="column" style={{borderRadius: "0.7rem 0 0 0"}}>
                                 USERNAME
                             </div>
                             <input
@@ -76,11 +76,11 @@ const Register = () => {
                                 className="column column2"
                                 placeholder="Enter here..."
                                 name="username"
-                                style={{borderRadius: "0 5px 0 0"}}
+                                style={{borderRadius: "0 0.7rem 0 0"}}
                             />
                         </div>
                         <div className="row">
-                            <div className="column" style={{borderRadius: "0 0 0 5px"}}>
+                            <div className="column" style={{borderRadius: "0 0 0 0.7rem"}}>
                                 EMAIL
                             </div>
                             <input
@@ -88,7 +88,7 @@ const Register = () => {
                                 className="column column2"
                                 placeholder="Enter here..."
                                 name="email"
-                                style={{borderRadius: "0 0 5px 0"}}
+                                style={{borderRadius: "0 0 0.7rem 0"}}
                             />
                         </div>
                         <div className="row">

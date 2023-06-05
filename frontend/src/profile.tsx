@@ -74,7 +74,7 @@ const Profile = () => {
                     <h1 className="Profile-Register-heading"> PROFILE </h1>
                     <div className="container">
                         <div className="row">
-                            <div className="column" style={{borderRadius: "5px 0 0 0"}}>
+                            <div className="column" style={{borderRadius: "0.7rem 0 0 0"}}>
                                 USERNAME
                             </div>
                             <input
@@ -91,9 +91,9 @@ const Profile = () => {
                                         console.log(err);
                                     });
                                 }}
-                                style={{borderRadius: "0 5px 0 0"}}
+                                style={{borderRadius: "0 0.7rem 0 0"}}
                             >
-                                Update Username
+                                UPDATE USERNAME
                             </button>
                         </div>
                         <div className="row">
@@ -113,17 +113,17 @@ const Profile = () => {
                                     });
                                 }}
                             >
-                                Update Email
+                                UPDATE EMAIL
                             </button>
                         </div>
                         <div className="row">
-                            <div className="column" style={{borderRadius: "0 0 0 5px"}}>
+                            <div className="column" style={{borderRadius: "0 0 0 0.7rem"}}>
                                 LOGIN URL
                             </div>
                             <div
                                 className="column column2"
                                 style={{
-                                    borderRadius: "0 0 5px 0",
+                                    borderRadius: "0 0 0.7rem 0",
                                     wordBreak: "break-all",
                                     whiteSpace: "normal",
                                 }}
