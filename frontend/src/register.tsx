@@ -73,7 +73,7 @@ const Register = () => {
                             </div>
                             <input
                                 type="text"
-                                className="column"
+                                className="column column2"
                                 placeholder="Enter here..."
                                 name="username"
                                 style={{borderRadius: "0 5px 0 0"}}
@@ -85,7 +85,7 @@ const Register = () => {
                             </div>
                             <input
                                 type="text"
-                                className="column"
+                                className="column column2"
                                 placeholder="Enter here..."
                                 name="email"
                                 style={{borderRadius: "0 0 5px 0"}}

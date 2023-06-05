@@ -86,7 +86,7 @@ const Login = () => {
                                 type="text"
                                 placeholder="Enter here..."
                                 name="login_token"
-                                className="column"
+                                className="column column2"
                                 defaultValue={token}
                                 style={{borderRadius: "0 5px 5px 0"}}
                             />
