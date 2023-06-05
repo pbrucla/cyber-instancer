@@ -8,7 +8,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from hashlib import sha256
 from time import time
-from typing import Any, cast
+from typing import Any, Self
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
@@ -148,21 +148,76 @@ class DeploymentInfo:
     "Mapping from a tuple of the container name and internal port to the external port or HTTPS domain."
 
 
-def _make_challenge(
-    chall_id: str,
-    cfg: dict[str, Any],
-    per_team: bool,
-    lifetime: int,
-    name: str,
-    description: str,
-    author: str,
-    team_id: str,
-) -> Challenge:
-    metadata = ChallengeMetadata(name, description, author)
-    if per_team:
-        return PerTeamChallenge(chall_id, team_id, cfg, lifetime, metadata)
+@dataclass(kw_only=True)
+class _ChallengeInfo:
+    """Information about a challenge that is stored in the database, not including tags."""
+
+    cfg: dict[str, Any]
+    per_team: bool
+    lifetime: int
+    name: str
+    description: str
+    author: str
+
+    def to_json(self) -> str:
+        return json.dumps(
+            (
+                self.cfg,
+                self.per_team,
+                self.lifetime,
+                self.name,
+                self.description,
+                self.author,
+            )
+        )
+
+    @classmethod
+    def from_json(cls, json_info: str | bytes) -> Self:
+        cfg, per_team, lifetime, name, description, author = json.loads(json_info)
+        return cls(
+            cfg=cfg,
+            per_team=per_team,
+            lifetime=lifetime,
+            name=name,
+            description=description,
+            author=author,
+        )
+
+
+def _cache_chall_info(chall_id: str, info: _ChallengeInfo) -> None:
+    rclient.set(f"chall:{chall_id}", info.to_json(), ex=CHALL_CACHE_TIME)
+
+
+def _cached_chall_info(chall_id: str) -> _ChallengeInfo | None:
+    cached = rclient.get(f"chall:{chall_id}")
+    return None if cached is None else _ChallengeInfo.from_json(cached)
+
+
+def _cache_chall_tags(chall_id: str, tags: list[ChallengeTag]) -> None:
+    rclient.set(
+        f"chall_tags:{chall_id}",
+        json.dumps([(tag.name, tag.is_category) for tag in tags]),
+        ex=CHALL_CACHE_TIME,
+    )
+
+
+def _cached_chall_tags(chall_id: str) -> list[ChallengeTag] | None:
+    cached = rclient.get(f"chall_tags:{chall_id}")
+    return (
+        None
+        if cached is None
+        else [
+            ChallengeTag(name, is_category) for name, is_category in json.loads(cached)
+        ]
+    )
+
+
+def _make_challenge(chall_id: str, info: _ChallengeInfo, team_id: str) -> Challenge:
+    metadata = ChallengeMetadata(info.name, info.description, info.author)
+    if info.per_team:
+        return PerTeamChallenge(chall_id, team_id, info.cfg, info.lifetime, metadata)
     else:
-        return SharedChallenge(chall_id, cfg, lifetime, metadata)
+        return SharedChallenge(chall_id, info.cfg, info.lifetime, metadata)
 
 
 class Challenge(ABC):
@@ -282,70 +337,86 @@ class Challenge(ABC):
         cache_key = "all_challs"
         cached = rclient.get(cache_key)
         if cached is not None:
-            challenge_ids = json.loads(cached)
-            result: list[tuple[Challenge, list[ChallengeTag]]] = []
-            for chall_id in challenge_ids:
-                chall = cls.fetch(chall_id, team_id)
-                if chall is not None:
-                    result.append((chall, chall.tags()))
-            return result
+            chall_ids = json.loads(cached)
+            return [
+                (chall, chall.tags())
+                for chall_id in chall_ids
+                if (chall := cls.fetch(chall_id, team_id)) is not None
+            ]
         else:
             with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT id, cfg, per_team, lifetime, name, description, author FROM challenges"
                     )
-                    all_challs: list[
-                        tuple[str, dict[str, Any], bool, int, str, str, str]
-                    ] = cur.fetchall()
+                    all_challs = [
+                        (
+                            chall_id,
+                            _ChallengeInfo(
+                                cfg=cfg,
+                                per_team=per_team,
+                                lifetime=lifetime,
+                                name=name,
+                                description=description,
+                                author=author,
+                            ),
+                        )
+                        for chall_id, cfg, per_team, lifetime, name, description, author in cur.fetchall()
+                    ]
                     cur.execute(
                         "SELECT challenge_id, name, is_category FROM tags ORDER BY is_category DESC, name"
                     )
-                    all_tags: list[tuple[str, str, bool]] = cur.fetchall()
+                    all_tags = [
+                        (chall_id, ChallengeTag(name, is_category))
+                        for chall_id, name, is_category in cur.fetchall()
+                    ]
             rclient.set(
                 cache_key,
-                json.dumps([chall_id for (chall_id, *_) in all_challs]),
+                json.dumps([chall_id for chall_id, chall_info in all_challs]),
                 ex=CHALL_CACHE_TIME,
             )
+            for chall_id, chall_info in all_challs:
+                _cache_chall_info(chall_id, chall_info)
             tags: dict[str, list[ChallengeTag]] = defaultdict(list)
-            for chall_id, name, is_category in all_tags:
-                tags[chall_id].append(ChallengeTag(name, is_category))
-            return [
-                (
-                    _make_challenge(*chall_data, team_id),
-                    tags.get(chall_data[0], []),
-                )
-                for chall_data in all_challs
+            for chall_id, tag in all_tags:
+                tags[chall_id].append(tag)
+            result = [
+                (_make_challenge(chall_id, chall_info, team_id), tags.get(chall_id, []))
+                for chall_id, chall_info in all_challs
             ]
+            for chall, chall_tags in result:
+                _cache_chall_tags(chall.id, chall_tags)
+            return result
 
     @staticmethod
     def fetch(challenge_id: str, team_id: str) -> Challenge | None:
         """Fetches the appropriate Challenge instance given challenge ID and team ID.
 
         Returns None if the challenge doesn't exist."""
-        cache_key = f"chall:{challenge_id}"
-        cached = rclient.get(cache_key)
-        if cached is not None:
-            result = cast(
-                tuple[dict[str, Any], bool, int, str, str, str],
-                tuple(json.loads(cached)),
-            )
-        else:
+
+        info = _cached_chall_info(challenge_id)
+        if info is None:
             with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT cfg, per_team, lifetime, name, description, author FROM challenges WHERE id=%s",
                         (challenge_id,),
                     )
-                    result = cast(
-                        tuple[dict[str, Any], bool, int, str, str, str], cur.fetchone()
-                    )
-            if result is not None:
-                rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
+                    db_response = cur.fetchone()
+            if db_response is None:
+                return None
+            cfg, per_team, lifetime, name, description, author = db_response
+            info = _ChallengeInfo(
+                cfg=cfg,
+                per_team=per_team,
+                lifetime=lifetime,
+                name=name,
+                description=description,
+                author=author,
+            )
+            _cache_chall_info(challenge_id, info)
 
-        if result is None:
-            return None
-        return _make_challenge(challenge_id, *result, team_id)
+        return _make_challenge(challenge_id, info, team_id)
 
     def tags(self) -> list[ChallengeTag]:
         """Return a list of tags for the challenge.
@@ -353,22 +424,21 @@ class Challenge(ABC):
         The category tags will be listed first and tags will be sorted alphabetically.
         """
 
-        cache_key = f"chall_tags:{self.id}"
-        cached = rclient.get(cache_key)
-
-        if cached is not None:
-            result = json.loads(cached)
-        else:
+        result = _cached_chall_tags(self.id)
+        if result is None:
             with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         "SELECT name, is_category FROM tags WHERE challenge_id=%s ORDER BY is_category DESC, name",
                         (self.id,),
                     )
-                    result = cur.fetchall()
-            rclient.set(cache_key, json.dumps(result), ex=CHALL_CACHE_TIME)
+                    result = [
+                        ChallengeTag(name, is_category)
+                        for name, is_category in cur.fetchall()
+                    ]
+            _cache_chall_tags(self.id, result)
 
-        return [ChallengeTag(*tag) for tag in result]
+        return result
 
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""
