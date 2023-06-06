@@ -3,7 +3,13 @@
     text-align: center;
     justify-content: center;
     align-items: center;
-    height: calc(99vh - 5rem);
+    height: 66vw;
+
+    width:100%;
+    background-image: url("../images/home-banner.svg");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
 }
 
 .Home-header {
