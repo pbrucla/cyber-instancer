@@ -1,45 +1,14 @@
 import "./styles/index.css";
 import "./styles/home.css";
-import {useState} from "react";
-import axios, {AxiosError, AxiosResponse} from "axios";
-import {Profile} from "./util/types.ts";
 
 const Home = () => {
-    const [profileName, setProfileName] = useState<string | null>(null);
-
-    function getData() {
-        axios({
-            method: "GET",
-            url: "/api/me",
-        })
-            .then((response: AxiosResponse<Profile>) => {
-                const res = response.data;
-                setProfileName(res.name);
-            })
-            .catch((error: AxiosError) => {
-                if (error.response) {
-                    console.log(error.response);
-                    console.log(error.response.status);
-                    console.log(error.response.headers);
-                }
-            });
-    }
-
     return (
         <>
             <div className="Home">
                 <header className="Home-header">
-                    <p>now with vite B)</p>
+                    <h1>Challenge Instancer</h1>
 
-                    <p>Test API request</p>
-                    <button className="button" onClick={getData}>
-                        Click me
-                    </button>
-                    {profileName && (
-                        <div>
-                            <p>Name: {profileName}</p>
-                        </div>
-                    )}
+                    <p>Have fun! Create/login to an account to deploy challenges.</p>
                 </header>
             </div>
         </>
