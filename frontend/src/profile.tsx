@@ -34,8 +34,8 @@ const Profile = () => {
                 navigate("/login");
                 return;
             } else {
-                setUsername(profileData.username);
-                setEmail(profileData.email);
+                setUsername(profileData.username ? profileData.username : "");
+                setEmail(profileData.email ? profileData.email : "");
                 setLoginURL(profileData.login_url);
             }
         };

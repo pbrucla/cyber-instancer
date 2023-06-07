@@ -49,8 +49,8 @@ export type MessageType = {
 };
 
 export type ProfileType = {
-    username: string;
-    email: string;
+    username: string | null;
+    email: string | null;
     login_url: string;
 };
 
