@@ -110,7 +110,7 @@
     }
 }
 
-.success {
+.centered-message {
     display: flex;
     flex-direction: row;
     justify-content: center;

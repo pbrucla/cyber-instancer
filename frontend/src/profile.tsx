@@ -14,6 +14,7 @@ const Profile = () => {
     const [loginURL, setLoginURL] = useState("Loading...");
     const [isShaking, setIsShaking] = useState([false, false]);
     const [success, setSuccess] = useState([false, false]);
+    const [errorMsg, setErrorMsg] = useState("");
 
     useEffect(() => {
         const updateProfileData = async () => {
@@ -59,7 +60,12 @@ const Profile = () => {
         });
         if (res.status !== 200) {
             setIsShaking([updateUsername, updateEmail]);
+            res.json()
+                .then((body: MessageType) => setErrorMsg(body.msg))
+                .catch(() => setErrorMsg("An unexpected error occurred"));
             return null;
+        } else {
+            setErrorMsg("");
         }
         setSuccess([updateUsername, updateEmail]);
         setTimeout(() => {
@@ -141,10 +147,11 @@ const Profile = () => {
                 </div>
             </div>
             {(success[0] || success[1]) && (
-                <div className="success">
-                    <span className="dot"></span>Edited {success[0] ? "username" : "email"} successfully!
+                <div className="centered-message">
+                    <span className="dot"></span>Updated {success[0] ? "username" : "email"} successfully!
                 </div>
             )}
+            <div className="centered-message">{errorMsg && "Error: " + errorMsg}</div>
         </>
     );
 };
