@@ -132,7 +132,7 @@ def register() -> ResponseReturnValue:
     if not validate_team_username(team_username):
         return {
             "status": "invalid_username",
-            "msg": "invalid team_username: must be between 3 and 100 characters",
+            "msg": "Invalid username: must be between 3 and 100 characters",
         }, 400
     if not validate_email(email):
         return {"status": "invalid_email", "msg": "invalid email"}, 400
@@ -224,7 +224,7 @@ def update_profile() -> ResponseReturnValue:
                         conn.rollback()
                         return {
                             "status": "invalid_username",
-                            "msg": "Invalid new username",
+                            "msg": "Invalid new username: must be between 3 and 100 characters",
                         }, 400
                 if "email" in request.form:
                     if validate_email(request.form["email"]):
