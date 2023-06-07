@@ -20,6 +20,9 @@ from . import authentication
 
 blueprint = Blueprint("account", __name__, url_prefix="/accounts")
 
+# Simple dict to map teams table column names to regular names
+teams_real_names = {"team_username": "username", "team_email": "email"}
+
 
 class LoginToken:
     def __init__(
@@ -144,9 +147,18 @@ def register() -> ResponseReturnValue:
                 )
             except IntegrityError as e:
                 conn.rollback()
+                failed_key_match = re.match(
+                    r"^Key \((.+)\)=", str(e.diag.message_detail)
+                )
+                if failed_key_match is None:
+                    return {
+                        "status": "unexpected_error",
+                        "msg": "An unexpected error occurred",
+                    }, 400
+                bad_field = teams_real_names[failed_key_match.group(1)]
                 return {
-                    "status": "username_or_email_already_taken",
-                    "msg": "username or email already taken",
+                    "status": "{}_already_taken".format(bad_field),
+                    "msg": "{} already taken".format(bad_field),
                 }, 400
             conn.commit()
             return {"success": True, "token": authentication.new_session(str(team_id))}
@@ -228,9 +240,18 @@ def update_profile() -> ResponseReturnValue:
                         }, 400
             except IntegrityError as e:
                 conn.rollback()
+                failed_key_match = re.match(
+                    r"^Key \((.+)\)=", str(e.diag.message_detail)
+                )
+                if failed_key_match is None:
+                    return {
+                        "status": "unexpected_error",
+                        "msg": "An unexpected error occurred",
+                    }, 400
+                bad_field = teams_real_names[failed_key_match.group(1)]
                 return {
-                    "status": "username_or_email_already_taken",
-                    "msg": "username or email already taken",
+                    "status": "{}_already_taken".format(bad_field),
+                    "msg": "{} already taken".format(bad_field),
                 }, 400
             conn.commit()
     return {"status": "ok", "msg": "Successfully updated profile"}
