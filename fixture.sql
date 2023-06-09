@@ -37,6 +37,9 @@ private-redis-chall	rev	t
 private-redis-chall	private	f
 short-lived-redis-chall	crypto	t
 short-lived-redis-chall	quick	f
+lactf-2023-queue-up	web	t
+lactf-2023-queue-up	medium	f
+lactf-2023-queue-up	lactf	f
 \.
 
 ALTER TABLE ONLY public.challenges
