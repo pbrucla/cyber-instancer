@@ -6,7 +6,7 @@ Challenge Instancer Project for 35L. Please do not touch unless you are part of 
 
 Please note: setup for this application is done in 3 stages: deploying a kubernetes cluster, setting up a docker container repository, and (finally) actually deploying this app into the kubernetes cluster.
 
-There are essentially 3 ways to run this application.
+There are essentially 3 ways to run this application:
 
 - Production: Run the kubernetes cluster on a remote server, which will contain redis and the instancer application itself, with a separate Postgres and docker container registry service hosted locally or on another machine
   - See the "[Requirements](#requirements)", "[Config files](#config-files)", "[Kubernetes setup](#kubernetes-setup)", and "[Database setup](#database-setup)" sections below
