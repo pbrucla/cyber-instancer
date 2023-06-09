@@ -559,6 +559,7 @@ class Challenge(ABC):
                                 spec=kclient.V1PodSpec(
                                     enable_service_links=False,
                                     automount_service_account_token=False,
+                                    termination_grace_period_seconds=0,
                                     containers=[
                                         config_to_container(
                                             depname,
@@ -773,7 +774,7 @@ class Challenge(ABC):
             if namespace_made:
                 print(f"[*] Got error, cleaning up namespace {self.namespace}...")
                 try:
-                    capi.delete_namespace(self.namespace)
+                    capi.delete_namespace(self.namespace, grace_period_seconds=0)
                     rclient.zrem("expiration", self.namespace)
                 except ApiException:
                     print(f"[*] Could not clean up namespace {self.namespace}...")
@@ -786,7 +787,7 @@ class Challenge(ABC):
 
         print(f"[*] Deleting namespace {namespace}...")
         try:
-            capi.delete_namespace(namespace)
+            capi.delete_namespace(namespace, grace_period_seconds=0)
             rclient.zrem("expiration", namespace)
             rclient.delete(f"ports:{namespace}")
         except ApiException as e:
