@@ -3,9 +3,11 @@ import re
 import secrets
 import time
 import urllib.parse
+import uuid
 
 # Login token handling
 from base64 import b64decode, b64encode
+from dataclasses import dataclass
 from typing import Any, Self, cast
 from uuid import uuid4
 
@@ -103,6 +105,26 @@ class LoginToken:
         cipher = AES.new(key, AES.MODE_GCM, nonce)
         enc, mac = cipher.encrypt_and_digest(dec)
         return b64encode(nonce + enc + mac).decode("utf-8")
+
+
+@dataclass
+class TeamAccount:
+    """A Team Account"""
+
+    team_id: uuid.UUID
+    "The team id"
+    team_username: str | None
+    "The team's username"
+    team_email: str | None
+    "The team's email"
+
+
+def get_all_accounts() -> list[TeamAccount]:
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM teams")
+            res = cur.fetchall()
+    return [TeamAccount(r[0], r[1], r[2]) for r in res]
 
 
 def validate_email(email: str) -> bool:
