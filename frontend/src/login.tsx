@@ -1,6 +1,6 @@
 import "./styles/index.css";
 import "./styles/info-box.css";
-import {FormEvent, useState, useEffect} from "react";
+import {FormEvent, useState, useEffect, useCallback} from "react";
 import useAccountManagement from "./util/account";
 import {useNavigate, useSearchParams} from "react-router-dom";
 
@@ -18,17 +18,35 @@ const Login = () => {
         if (token !== null) {
             setToken(token);
         }
+    }, [searchParams, navigate]);
 
+    const loggedInRedirect = useCallback(() => {
+        const challRed = searchParams.get("chall");
+        // Validate chall to prevent arbitrary redirects
+        const validChallName = new RegExp("^[0-9a-zA-Z-]+$");
+
+        if (challRed === null) {
+            navigate("/profile");
+        } else {
+            if (!validChallName.test(challRed)) {
+                navigate("/profile");
+            } else {
+                navigate(`/chall/${encodeURIComponent(challRed)}/`);
+            }
+        }
+    }, [navigate, searchParams]);
+
+    useEffect(() => {
         /* Redirect if logged in */
         const checkLoggedIn = async () => {
             if (await validateAccountToken()) {
-                navigate("/profile");
+                loggedInRedirect();
             } else {
                 setAccountToken(null);
             }
         };
         checkLoggedIn().catch(console.error);
-    }, [searchParams, validateAccountToken, setAccountToken, navigate]);
+    }, [validateAccountToken, setAccountToken, navigate, loggedInRedirect]);
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
@@ -44,25 +62,24 @@ const Login = () => {
         })
             .then((res) => {
                 if (res.status === 200) {
-                    console.log("success!");
+                    console.debug("login success!");
                     res.json()
                         .then((data) => (data as {token: string}).token)
                         .then((token) => {
                             setAccountToken(token);
-                            setAccountToken(token);
                         })
-                        .then(() => navigate("/profile"))
-                        .catch(() => console.log("An unexpected error occurred"));
+                        .then(() => loggedInRedirect())
+                        .catch(() => console.error("An unexpected error occurred"));
                 } else {
-                    console.log("failed");
+                    console.error("failed to login");
                     res.json()
                         .then((data) => (data as {msg: string}).msg)
                         .then((errmsg) => setFormStatus(errmsg))
-                        .catch(() => console.log("An unexpected error occurred"));
+                        .catch(() => console.error("An unexpected error occurred"));
                 }
             })
             .catch(() => {
-                console.log("An unexpected error occurred");
+                console.error("An unexpected error occurred");
             });
     };
 

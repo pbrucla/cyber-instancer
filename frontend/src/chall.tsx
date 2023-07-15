@@ -1,9 +1,10 @@
 import "./styles/index.css";
 import "./styles/chall.css";
 import {useState, useEffect} from "react";
-import {useParams} from "react-router-dom";
+import {useParams, useSearchParams} from "react-router-dom";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
+
 import {
     SingleChallengeType,
     ChallengeInfoType,
@@ -30,17 +31,14 @@ function createLink(host: string) {
 const Chall = () => {
     /* Redirect if not logged in */
     const {accountToken} = useAccountManagement();
+    const [searchParams] = useSearchParams();
+    const loginToken = searchParams.get("token");
     const navigate = useNavigate();
-    useEffect(() => {
-        if (accountToken === null) {
-            navigate("/login");
-        }
-    }, [navigate, accountToken]);
 
     const {ID} = useParams() as {ID: string};
 
     /* Load challenge */
-    const [chall, setChall] = useState<ChallengeInfoType | undefined>();
+    const [chall, setChall] = useState<ChallengeInfoType | undefined | null>(undefined);
     const [deployment, setDeployment] = useState<DeploymentType | undefined>();
     const [deployed, setDeployed] = useState<boolean>(false);
     const [timer, setTimer] = useState<number>(-100);
@@ -53,31 +51,45 @@ const Chall = () => {
                 })
             ).json()) as ChallengeDeploymentType;
             if (challengeDeployment.status === "ok") {
-                console.log(challengeDeployment);
+                console.debug(challengeDeployment);
                 setDeployment(challengeDeployment.deployment);
             } else {
+                loggedOutRedirect();
+            }
+        }
+        function loggedOutRedirect() {
+            if (loginToken === null) {
+                console.debug("Redirected w/o token");
                 navigate("/login");
+            } else {
+                console.debug("Redirected with token");
+                navigate(`/login?token=${encodeURIComponent(loginToken)}&chall=${encodeURIComponent(ID)}`);
             }
         }
         if (accountToken === null) {
-            navigate("/login");
+            loggedOutRedirect();
         } else if (timer <= 0) {
             const getChall = async () => {
-                const challenge: SingleChallengeType = (await (
-                    await fetch("/api/challenge/" + ID, {
-                        headers: {Authorization: `Bearer ${accountToken}`},
-                    })
-                ).json()) as SingleChallengeType;
+                const res = await fetch("/api/challenge/" + ID, {
+                    headers: {Authorization: `Bearer ${accountToken}`},
+                });
+                if (res.status === 404) {
+                    setChall(null);
+                    console.debug("Challenge not found");
+                    return;
+                }
+                const challenge = (await res.json()) as SingleChallengeType;
                 if (challenge.status === "ok") {
                     setChall(challenge.challenge_info);
                     await getDeployment();
                 } else {
-                    navigate("/login");
+                    console.debug("Failed to get chall status");
+                    loggedOutRedirect();
                 }
             };
-            getChall().catch((err) => console.log(err));
+            getChall().catch((err) => console.error(err));
         }
-    }, [navigate, timer, ID, accountToken]);
+    }, [navigate, timer, ID, accountToken, loginToken]);
 
     let challInfo;
     let buttons;
@@ -96,7 +108,7 @@ const Chall = () => {
         if (challengeDeployment.status === "ok") {
             setDeployment(challengeDeployment.deployment);
         } else {
-            console.log("Deployment error");
+            console.error("Deployment error");
         }
     }
 
@@ -113,11 +125,11 @@ const Chall = () => {
             })
         ).json()) as MessageType;
         if (status.status === "ok") {
-            console.log(status.msg);
+            console.debug(status.msg);
             setDeployment(undefined);
         } else {
-            console.log("error");
-            console.log(status);
+            console.error("error");
+            console.error(status);
         }
     }
 
@@ -160,8 +172,10 @@ const Chall = () => {
     }, [deployment, deployed]);
 
     /* Display information */
-    if (chall === undefined) {
+    if (chall === null) {
         challInfo = <h1 style={{color: "#d0d0d0"}}>ERROR: CHALLENGE NOT FOUND</h1>;
+    } else if (chall === undefined) {
+        challInfo = <h1 style={{color: "#d0d0d0"}}>Loading...</h1>;
     } else {
         const cat = getCategories(chall);
         const title = chall.name.toUpperCase();
@@ -214,7 +228,7 @@ const Chall = () => {
                         <button
                             className="deploy ON"
                             onClick={() => {
-                                terminateChallenge().catch((err) => console.log(err));
+                                terminateChallenge().catch((err) => console.error(err));
                             }}
                         >
                             <Timer className="buttonsvg l" />
