@@ -22,7 +22,7 @@ function createLink(host: string) {
         output = "https://" + output;
     }
     return (
-        <a href={output} className="chall-link">
+        <a href={output} className="chall-link" target="_blank" rel="noreferrer noopener">
             {output}
         </a>
     );
