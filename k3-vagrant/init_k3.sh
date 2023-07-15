@@ -6,7 +6,7 @@ docker run -d -p 5000:5000 --restart=always --name registry registry:2
 
 # Update fixture.sql to use our local docker registry and fake domain
 sed -i 's/docker.acmcyber.com/192.168.0.10/g' /tmp/fixture.sql
-sed -i 's/egg.gnk.sh/instancer.local/g' /tmp/fixture.sql
+sed -i 's/instancer.acmcyber.com/instancer.local/g' /tmp/fixture.sql
 
 # Run postgres server
 docker rm -f -v db
