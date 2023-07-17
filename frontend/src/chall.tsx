@@ -44,19 +44,6 @@ const Chall = () => {
     const [timer, setTimer] = useState<number>(-100);
 
     useEffect(() => {
-        async function getDeployment() {
-            const challengeDeployment: ChallengeDeploymentType = (await (
-                await fetch("/api/challenge/" + ID + "/deployment", {
-                    headers: {Authorization: `Bearer ${accountToken as string}`},
-                })
-            ).json()) as ChallengeDeploymentType;
-            if (challengeDeployment.status === "ok") {
-                console.debug(challengeDeployment);
-                setDeployment(challengeDeployment.deployment);
-            } else {
-                loggedOutRedirect();
-            }
-        }
         function loggedOutRedirect() {
             if (loginToken === null) {
                 console.debug("Redirected w/o token");
@@ -69,25 +56,38 @@ const Chall = () => {
         if (accountToken === null) {
             loggedOutRedirect();
         } else if (timer <= 0) {
-            const getChall = async () => {
-                const res = await fetch("/api/challenge/" + ID, {
-                    headers: {Authorization: `Bearer ${accountToken}`},
-                });
-                if (res.status === 404) {
-                    setChall(null);
-                    console.debug("Challenge not found");
-                    return;
-                }
-                const challenge = (await res.json()) as SingleChallengeType;
-                if (challenge.status === "ok") {
-                    setChall(challenge.challenge_info);
-                    await getDeployment();
-                } else {
-                    console.debug("Failed to get chall status");
-                    loggedOutRedirect();
-                }
-            };
-            getChall().catch((err) => console.error(err));
+            fetch("/api/challenge/" + ID, {
+                headers: {Authorization: `Bearer ${accountToken}`},
+            })
+                .then((res) => {
+                    if (res.status === 404) {
+                        setChall(null);
+                        console.debug("Challenge not found");
+                        return;
+                    }
+                    return res.json();
+                })
+                .then((challenge: SingleChallengeType) => {
+                    if (challenge.status === "ok") {
+                        setChall(challenge.challenge_info);
+                        fetch("/api/challenge/" + ID + "/deployment", {
+                            headers: {Authorization: `Bearer ${accountToken}`},
+                        })
+                            .then((res) => res.json())
+                            .then((challengeDeployment: ChallengeDeploymentType) => {
+                                if (challengeDeployment.status === "ok") {
+                                    setDeployment(challengeDeployment.deployment);
+                                } else {
+                                    loggedOutRedirect();
+                                }
+                            })
+                            .catch((err) => console.debug(err));
+                    } else {
+                        console.debug("Failed to get chall status");
+                        loggedOutRedirect();
+                    }
+                })
+                .catch((err) => console.debug(err));
         }
     }, [navigate, timer, ID, accountToken, loginToken]);
 
@@ -97,19 +97,24 @@ const Chall = () => {
     /* Deploy challenge */
     const [isShaking, setIsShaking] = useState(false);
 
-    async function deployChallenge() {
+    function deployChallenge() {
         setIsShaking(false);
-        const challengeDeployment: ChallengeDeploymentType = (await (
-            await fetch("/api/challenge/" + ID + "/deploy", {
-                headers: {Authorization: `Bearer ${accountToken as string}`},
-                method: "POST",
+        fetch("/api/challenge/" + ID + "/deploy", {
+            headers: {Authorization: `Bearer ${accountToken as string}`},
+            method: "POST",
+        })
+            .then((res) => res.json())
+            .then((challengeDeployment: ChallengeDeploymentType) => {
+                if (challengeDeployment.status === "ok") {
+                    setDeployment(challengeDeployment.deployment);
+                } else {
+                    console.error("Deployment error");
+                }
             })
-        ).json()) as ChallengeDeploymentType;
-        if (challengeDeployment.status === "ok") {
-            setDeployment(challengeDeployment.deployment);
-        } else {
-            console.error("Deployment error");
-        }
+            .catch((err) => {
+                console.debug(err);
+                setIsShaking(true);
+            });
     }
 
     useEffect(() => {
@@ -117,20 +122,22 @@ const Chall = () => {
     }, [deployment]);
 
     /* Terminate challenge */
-    async function terminateChallenge() {
-        const status: MessageType = (await (
-            await fetch("/api/challenge/" + ID + "/deployment", {
-                headers: {Authorization: `Bearer ${accountToken as string}`},
-                method: "DELETE",
+    function terminateChallenge() {
+        fetch("/api/challenge/" + ID + "/deployment", {
+            headers: {Authorization: `Bearer ${accountToken as string}`},
+            method: "DELETE",
+        })
+            .then((res) => res.json())
+            .then((status: MessageType) => {
+                if (status.status === "ok") {
+                    console.debug(status.msg);
+                    setDeployment(undefined);
+                } else {
+                    console.error("error");
+                    console.error(status);
+                }
             })
-        ).json()) as MessageType;
-        if (status.status === "ok") {
-            console.debug(status.msg);
-            setDeployment(undefined);
-        } else {
-            console.error("error");
-            console.error(status);
-        }
+            .catch((err) => console.debug(err));
     }
 
     /* Timer */
@@ -225,12 +232,7 @@ const Chall = () => {
                             <div className="IP-port-box"> SHARED CHALLENGE </div>
                         </>
                     ) : (
-                        <button
-                            className="deploy ON"
-                            onClick={() => {
-                                terminateChallenge().catch((err) => console.error(err));
-                            }}
-                        >
+                        <button className="deploy ON" onClick={terminateChallenge}>
                             <Timer className="buttonsvg l" />
                             <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
                             <Stop className="buttonsvg r" />
@@ -245,15 +247,7 @@ const Chall = () => {
             );
         } else {
             buttons = (
-                <button
-                    className={"deploy OFF" + (isShaking ? " shake-animation" : "")}
-                    onClick={() => {
-                        deployChallenge().catch((err) => {
-                            console.log(err);
-                            setIsShaking(true);
-                        });
-                    }}
-                >
+                <button className={"deploy OFF" + (isShaking ? " shake-animation" : "")} onClick={deployChallenge}>
                     DEPLOY NOW
                 </button>
             );

@@ -22,7 +22,7 @@ const Register = () => {
         checkLoggedIn().catch(console.error);
     }, [validateAccountToken, navigate, setAccountToken]);
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
         e.preventDefault();
 
@@ -30,28 +30,28 @@ const Register = () => {
         const form = e.currentTarget;
         const formData = new FormData(form);
 
-        await fetch("/api/accounts/register", {
+        fetch("/api/accounts/register", {
             method: "POST",
             body: formData,
         })
             .then((res) => {
                 if (res.status === 200) {
-                    console.log("success!");
+                    console.debug("success!");
                     res.json()
                         .then((data: {token: string}) => data.token)
                         .then((token) => setAccountToken(token))
                         .then(() => navigate("/challs"))
-                        .catch(() => console.log("An unexpected error occurred"));
+                        .catch(() => console.debug("An unexpected error occurred"));
                 } else {
-                    console.log("failed");
+                    console.debug("failed");
                     res.json()
                         .then((data: {msg: string}) => data.msg)
                         .then((errmsg) => setFormStatus(errmsg))
-                        .catch(() => console.log("An unexpected error occurred"));
+                        .catch(() => console.debug("An unexpected error occurred"));
                 }
             })
             .catch(() => {
-                console.log("An unexpected error occurred");
+                console.debug("An unexpected error occurred");
             });
     };
 
