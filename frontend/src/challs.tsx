@@ -206,18 +206,28 @@ const ChallPage = () => {
                 .then((res) => res.json())
                 .then((challenges: ChallengesType) => {
                     if (challenges.status === "ok") {
+                        setLoadingMsg(null);
                         setShow(
                             challenges.challenges.map((chall: ChallengeType) => {
                                 return {challenge: chall, display: true};
                             })
                         );
-                    } else {
+                    } else if (challenges.status === "missing_authorization") {
                         navigate("/login");
+                    } else {
+                        setLoadingMsg("An unexpected error occurred");
+                        console.log(JSON.stringify(challenges));
                     }
                 })
-                .catch((err) => console.debug(err));
+                .catch((err) => {
+                    setLoadingMsg("An unexpected error occurred");
+                    console.debug(err);
+                });
         }
     }, [navigate, accountToken]);
+
+    /* challenge loading screen */
+    const [loadingMsg, setLoadingMsg] = useState<string | null>("Loading Challenges...");
 
     /* content */
     return (
@@ -300,6 +310,8 @@ const ChallPage = () => {
                     )}
                 </div>
                 {/*FILTERBAR: end*/}
+
+                {loadingMsg && <div className="loadingMsg">{loadingMsg}</div>}
 
                 {/*CARDS: begin*/}
                 <div className={open ? "cards contract" : "cards full"}>
