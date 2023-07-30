@@ -95,10 +95,13 @@ const Chall = () => {
     let buttons;
 
     /* Deploy challenge */
-    const [isShaking, setIsShaking] = useState(false);
+    const [isShaking, setIsShaking] = useState<boolean>(false);
+    const [disableButton, setDisableButton] = useState<boolean>(false);
 
     function deployChallenge() {
         setIsShaking(false);
+        if (disableButton) return;
+        setDisableButton(true);
         fetch("/api/challenge/" + ID + "/deploy", {
             headers: {Authorization: `Bearer ${accountToken as string}`},
             method: "POST",
@@ -107,13 +110,21 @@ const Chall = () => {
             .then((challengeDeployment: ChallengeDeploymentType) => {
                 if (challengeDeployment.status === "ok") {
                     setDeployment(challengeDeployment.deployment);
-                } else {
+                    setErrorMsg(null);
+                } else if (challengeDeployment.status === "temporarily_unavailable") {
                     console.error("Deployment error");
+                    setIsShaking(true);
+                    setErrorMsg("Challenge temporarily unavailable. Please wait a few moments and try again.");
+                } else if (challengeDeployment.status === "missing_authorization") {
+                    navigate("/login");
+                } else {
+                    console.error("An unexpected API response was received");
                 }
+                setDisableButton(false);
             })
             .catch((err) => {
-                console.debug(err);
-                setIsShaking(true);
+                console.error(err);
+                setDisableButton(false);
             });
     }
 
@@ -121,8 +132,13 @@ const Chall = () => {
         setDeployed(isDeployed(deployment));
     }, [deployment]);
 
+    /* Error messages */
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
     /* Terminate challenge */
     function terminateChallenge() {
+        if (disableButton) return;
+        setDisableButton(true);
         fetch("/api/challenge/" + ID + "/deployment", {
             headers: {Authorization: `Bearer ${accountToken as string}`},
             method: "DELETE",
@@ -136,6 +152,7 @@ const Chall = () => {
                     console.error("error");
                     console.error(status);
                 }
+                setDisableButton(false);
             })
             .catch((err) => console.debug(err));
     }
@@ -232,7 +249,7 @@ const Chall = () => {
                             <div className="IP-port-box"> SHARED CHALLENGE </div>
                         </>
                     ) : (
-                        <button className="deploy ON" onClick={terminateChallenge}>
+                        <button className="deploy ON" onClick={terminateChallenge} disabled={disableButton}>
                             <Timer className="buttonsvg l" />
                             <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
                             <Stop className="buttonsvg r" />
@@ -247,9 +264,16 @@ const Chall = () => {
             );
         } else {
             buttons = (
-                <button className={"deploy OFF" + (isShaking ? " shake-animation" : "")} onClick={deployChallenge}>
-                    DEPLOY NOW
-                </button>
+                <>
+                    <button
+                        className={"deploy OFF" + (isShaking ? " shake-animation" : "")}
+                        onClick={deployChallenge}
+                        disabled={disableButton}
+                    >
+                        DEPLOY NOW
+                    </button>
+                    {errorMsg && <div className="errorMsg">{errorMsg}</div>}
+                </>
             );
         }
     }

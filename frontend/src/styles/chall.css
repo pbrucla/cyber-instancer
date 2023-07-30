@@ -47,6 +47,12 @@
 .deploy.OFF.shake-animation {
     animation: shake 0.5s;
 }
+
+.deploy.OFF:disabled {
+    background-color: #9a2d55;
+    cursor: wait;
+}
+
 @keyframes shake {
     0% {
         transform: translateX(0);
@@ -74,6 +80,11 @@
 .deploy.ON.shared:hover {
     opacity: 100%;
     cursor: not-allowed;
+}
+
+.deploy.ON:disabled {
+    background-color: #818181;
+    cursor: wait;
 }
 
 .buttonsvg {
@@ -104,4 +115,9 @@
 }
 .chall-link:hover {
     color: #d0d0d0;
+}
+
+.errorMsg {
+    margin: 10px 0px;
+    max-width: 30rem;
 }

@@ -3,7 +3,7 @@ from typing import Any
 from flask import Blueprint, g
 from flask.typing import ResponseReturnValue
 
-from instancer.backend import Challenge, ChallengeTag
+from instancer.backend import Challenge, ChallengeTag, ResourceUnavailableError
 from instancer.config import config
 
 
@@ -72,7 +72,13 @@ def challenge_deploy() -> ResponseReturnValue:
     """
     Starts or renews a team's challenge deployment.
     """
-    g.chall.start()
+    try:
+        g.chall.start()
+    except ResourceUnavailableError as e:
+        return {
+            "status": "temporarily_unavailable",
+            "msg": "This challenge is temporarily unavailable. Try again in a few moments.",
+        }, 503
     return {
         "status": "ok",
         "deployment": deployment_status(g.chall),
