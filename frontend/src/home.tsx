@@ -3,9 +3,9 @@ import "./styles/home.css";
 
 const Home = () => {
     return (
-        <>
+        <div className="HomeBox">
             <div className="Home"></div>
-        </>
+        </div>
     );
 };
 

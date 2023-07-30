@@ -10,6 +10,13 @@
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
+
+    overflow: hidden;
+}
+
+.HomeBox {
+    position: fixed;
+    width: 100vw;
 }
 
 .Home-header {
