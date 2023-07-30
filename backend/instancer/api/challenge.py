@@ -74,11 +74,17 @@ def challenge_deploy() -> ResponseReturnValue:
     """
     try:
         g.chall.start()
-    except ResourceUnavailableError as e:
+    except ResourceUnavailableError:
         return {
             "status": "temporarily_unavailable",
             "msg": "This challenge is temporarily unavailable. Try again in a few moments.",
         }, 503
+    except Exception:
+        return {
+            "status": "unknown_error",
+            "msg": "An unexpected error occurred.",
+        }, 500
+
     return {
         "status": "ok",
         "deployment": deployment_status(g.chall),
