@@ -200,23 +200,22 @@ const ChallPage = () => {
         if (accountToken === null) {
             navigate("/login");
         } else {
-            const getChalls = async () => {
-                const challenges: ChallengesType = (await (
-                    await fetch("/api/challenges", {
-                        headers: {Authorization: `Bearer ${accountToken}`},
-                    })
-                ).json()) as ChallengesType;
-                if (challenges.status === "ok") {
-                    setShow(
-                        challenges.challenges.map((chall: ChallengeType) => {
-                            return {challenge: chall, display: true};
-                        })
-                    );
-                } else {
-                    navigate("/login");
-                }
-            };
-            getChalls().catch((err) => console.log(err));
+            fetch("/api/challenges", {
+                headers: {Authorization: `Bearer ${accountToken}`},
+            })
+                .then((res) => res.json())
+                .then((challenges: ChallengesType) => {
+                    if (challenges.status === "ok") {
+                        setShow(
+                            challenges.challenges.map((chall: ChallengeType) => {
+                                return {challenge: chall, display: true};
+                            })
+                        );
+                    } else {
+                        navigate("/login");
+                    }
+                })
+                .catch((err) => console.debug(err));
         }
     }, [navigate, accountToken]);
 

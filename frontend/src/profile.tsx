@@ -17,62 +17,68 @@ const Profile = () => {
     const [errorMsg, setErrorMsg] = useState("");
 
     useEffect(() => {
-        const updateProfileData = async () => {
-            if (accountToken === null) {
-                navigate("/login");
-                return;
-            }
-            const res = await fetch("/api/accounts/profile", {
-                headers: {Authorization: `Bearer ${accountToken}`},
-            });
-            if (res.status !== 200) {
-                navigate("/login");
-                return;
-            }
-            const profileData = (await res.json()) as ProfileType;
-            if (profileData === null) {
-                navigate("/login");
-                return;
-            } else {
-                setUsername(profileData.username ? profileData.username : "");
-                setEmail(profileData.email ? profileData.email : "");
-                setLoginURL(profileData.login_url);
-            }
-        };
-
-        updateProfileData().catch(console.error);
+        if (accountToken === null) {
+            navigate("/login");
+            return;
+        }
+        fetch("/api/accounts/profile", {
+            headers: {Authorization: `Bearer ${accountToken}`},
+        })
+            .then((res) => {
+                if (res.status !== 200) {
+                    navigate("/login");
+                    return;
+                }
+                return res.json();
+            })
+            .then((profileData: ProfileType) => {
+                if (profileData === null) {
+                    navigate("/login");
+                    return;
+                } else {
+                    setUsername(profileData.username ? profileData.username : "");
+                    setEmail(profileData.email ? profileData.email : "");
+                    setLoginURL(profileData.login_url);
+                }
+            })
+            .catch((err) => console.debug(err));
     }, [navigate, accountToken]);
 
-    async function updateProfile(updateUsername: boolean, updateEmail: boolean) {
+    function updateProfile(updateUsername: boolean, updateEmail: boolean) {
         setIsShaking([false, false]);
         setSuccess([false, false]);
         if (accountToken === null) {
             navigate("/login");
             return null;
         }
-        const res = await fetch("/api/accounts/profile", {
+        fetch("/api/accounts/profile", {
             method: "PATCH",
             headers: {Authorization: `Bearer ${accountToken}`, "Content-Type": "application/x-www-form-urlencoded"},
             body:
                 (updateUsername ? `username=${encodeURIComponent(username)}` : ``) +
                 (updateUsername && updateEmail ? `&` : ``) +
                 (updateEmail ? `email=${encodeURIComponent(email)}` : ``),
-        });
-        if (res.status !== 200) {
-            setIsShaking([updateUsername, updateEmail]);
-            res.json()
-                .then((body: MessageType) => setErrorMsg(body.msg))
-                .catch(() => setErrorMsg("An unexpected error occurred"));
-            return null;
-        } else {
-            setErrorMsg("");
-        }
-        setSuccess([updateUsername, updateEmail]);
-        setTimeout(() => {
-            setSuccess([false, false]);
-        }, 3000);
-        const responseMessage = (await res.json()) as MessageType;
-        console.log(responseMessage.msg);
+        })
+            .then((res) => {
+                if (res.status !== 200) {
+                    setIsShaking([updateUsername, updateEmail]);
+                    res.json()
+                        .then((body: MessageType) => setErrorMsg(body.msg))
+                        .catch(() => setErrorMsg("An unexpected error occurred"));
+                    return null;
+                } else {
+                    setErrorMsg("");
+                    setSuccess([updateUsername, updateEmail]);
+                    setTimeout(() => {
+                        setSuccess([false, false]);
+                    }, 3000);
+                    return res.json();
+                }
+            })
+            .then((responseMessage: MessageType) => {
+                console.debug(responseMessage.msg);
+            })
+            .catch((err) => console.debug(err));
     }
 
     function handleInputChange(event: React.ChangeEvent<HTMLInputElement>, setter: (arg: string) => void) {
@@ -99,9 +105,7 @@ const Profile = () => {
                             <button
                                 className={"column column1 " + (isShaking[0] ? " shake-animation" : "")}
                                 onClick={() => {
-                                    updateProfile(true, false).catch((err) => {
-                                        console.log(err);
-                                    });
+                                    updateProfile(true, false);
                                 }}
                                 style={{borderRadius: "0 0.7rem 0 0"}}
                             >
@@ -120,9 +124,7 @@ const Profile = () => {
                             <button
                                 className={"column column1 " + (isShaking[1] ? " shake-animation" : "")}
                                 onClick={() => {
-                                    updateProfile(false, true).catch((err) => {
-                                        console.log(err);
-                                    });
+                                    updateProfile(false, true);
                                 }}
                             >
                                 UPDATE EMAIL

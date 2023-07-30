@@ -48,7 +48,7 @@ const Login = () => {
         checkLoggedIn().catch(console.error);
     }, [validateAccountToken, setAccountToken, navigate, loggedInRedirect]);
 
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         // Prevent the browser from reloading the page
         e.preventDefault();
 
@@ -56,7 +56,7 @@ const Login = () => {
         const form = e.currentTarget;
         const formData = new FormData(form);
 
-        await fetch("/api/accounts/login", {
+        fetch("/api/accounts/login", {
             method: "POST",
             body: formData,
         })
