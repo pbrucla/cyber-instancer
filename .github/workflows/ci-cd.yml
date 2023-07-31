@@ -1,0 +1,16 @@
+name: Deployment CI/CD
+
+on:
+  release:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Decode ssh key
+      env:
+        SSH_KEY: ${{ secrets.SSH_KEY }}
+      run: echo "$SSH_KEY" > id_rsa && chmod 600 id_rsa
+    - name: Trigger script on remote server
+      run: ssh -i id_rsa gh-actions@instancer.acmcyber.com
