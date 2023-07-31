@@ -128,35 +128,33 @@ if __name__ == "__main__":
         """
         )
         choice = input()
-        match choice:
-            case "1":
-                input_uuid = input(
-                    "Enter account UUID (leave blank for random, enter admin to use admin uuid): "
-                )
-                match input_uuid:
-                    case "":
-                        input_uuid = str(uuid.uuid4())
-                    case "admin":
-                        input_uuid = admin_uuid
-                    case _:
-                        try:
-                            uuid.UUID(input_uuid)
-                        except:
-                            print("Invalid Input")
-                print("Using uuid {}".format(input_uuid))
-                new_token = LoginToken(input_uuid)
-                print("Login URL:")
-                print(new_token.get_login_url(url=instancer_url))
-            case "2":
-                input_encrypted = input("Enter in a login URL or login token: ")
-                if "/login?token=" in input_encrypted:
-                    input_encrypted = input_encrypted.split("login?token=", 2)[1]
-                input_encrypted = urllib.parse.unquote(input_encrypted)
+        if choice == "1":
+            input_uuid = input(
+                "Enter account UUID (leave blank for random, enter admin to use admin uuid): "
+            )
+            if input_uuid == "":
+                input_uuid = str(uuid.uuid4())
+            elif input_uuid == "admin":
+                input_uuid = admin_uuid
+            else:
+                try:
+                    uuid.UUID(input_uuid)
+                except:
+                    print("Invalid Input")
+            print("Using uuid {}".format(input_uuid))
+            new_token = LoginToken(input_uuid)
+            print("Login URL:")
+            print(new_token.get_login_url(url=instancer_url))
+        elif choice == "2":
+            input_encrypted = input("Enter in a login URL or login token: ")
+            if "/login?token=" in input_encrypted:
+                input_encrypted = input_encrypted.split("login?token=", 2)[1]
+            input_encrypted = urllib.parse.unquote(input_encrypted)
 
-                token = LoginToken.decode(input_encrypted)
-                print("Token information:")
-                print(json.dumps(token.get_json()))
-            case "3":
-                exit(0)
-            case _:
-                print("Unexpected input")
+            token = LoginToken.decode(input_encrypted)
+            print("Token information:")
+            print(json.dumps(token.get_json()))
+        elif choice == "3":
+            exit(0)
+        else:
+            print("Unexpected input")
