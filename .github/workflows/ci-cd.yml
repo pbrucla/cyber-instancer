@@ -13,4 +13,4 @@ jobs:
           SSH_KEY: ${{ secrets.SSH_KEY }}
         run: echo "$SSH_KEY" > id_rsa && chmod 600 id_rsa
       - name: Trigger script on remote server
-        run: ssh -i id_rsa -T gh-actions@instancer.acmcyber.com
+        run: ssh -i id_rsa -o StrictHostKeyChecking=no -T gh-actions@instancer.acmcyber.com
