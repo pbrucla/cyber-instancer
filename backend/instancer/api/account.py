@@ -127,6 +127,33 @@ def get_all_accounts() -> list[TeamAccount]:
     return [TeamAccount(r[0], r[1], r[2]) for r in res]
 
 
+def find_account(team_id: str) -> TeamAccount | None:
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM teams where team_id = %s", (team_id,))
+            res = cur.fetchone()
+            if res is None:
+                return None
+            return TeamAccount(res[0], res[1], res[2])
+
+
+def find_or_create_account(team_id: str) -> TeamAccount:
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM teams where team_id = %s", (team_id,))
+            res = cur.fetchone()
+            if res is None:
+                cur.execute(
+                    "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, NULL, NULL)",
+                    (team_id,),
+                )
+                conn.commit()
+
+                return TeamAccount(uuid.UUID(team_id), None, None)
+            else:
+                return TeamAccount(res[0], res[1], res[2])
+
+
 def validate_email(email: str) -> bool:
     return (
         re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email) is not None
@@ -191,23 +218,10 @@ def profile() -> ResponseReturnValue:
     """Returns profile information
 
     for now, returns team username, team email, and login url"""
-    with connect_pg() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT team_username, team_email from teams where team_id = %s",
-                (g.session["team_id"],),
-            )
-            res = cur.fetchone()
-            if res is None:
-                cur.execute(
-                    "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, NULL, NULL)",
-                    (g.session["team_id"],),
-                )
-                username = None
-                email = None
-            else:
-                username, email = res
-            conn.commit()
+
+    acc = find_or_create_account(g.session["team_id"])
+    username = acc.team_username
+    email = acc.team_email
 
     t = LoginToken(g.session["team_id"])
     return {
@@ -226,15 +240,7 @@ def update_profile() -> ResponseReturnValue:
     with connect_pg() as conn:
         with conn.cursor() as cur:
             # Verify user exists, and if not, create it
-            cur.execute(
-                "SELECT team_username, team_email from teams where team_id = %s",
-                (g.session["team_id"],),
-            )
-            if cur.fetchone() is None:
-                cur.execute(
-                    "INSERT into teams (team_id, team_username, team_email) VALUES (%s, NULL NULL)",
-                    (g.session["team_id"],),
-                )
+            find_or_create_account(g.session["team_id"])
             try:
                 if "username" in request.form:
                     if validate_team_username(request.form["username"]):
@@ -293,17 +299,7 @@ def login() -> ResponseReturnValue:
     except ValueError:
         return {"status": "invalid_login_token", "msg": "Invalid login token"}, 401
 
-    with connect_pg() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT team_username, team_email from teams where team_id = %s",
-                (account.team_id,),
-            )
-            if cur.fetchone() is None:
-                cur.execute(
-                    "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, NULL, NULL)",
-                    (account.team_id,),
-                )
+    find_or_create_account(account.team_id)
     return {
         "status": "ok",
         "token": authentication.new_session(account.team_id),
