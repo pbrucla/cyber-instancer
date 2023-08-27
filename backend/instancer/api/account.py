@@ -155,6 +155,9 @@ def get_all_accounts() -> list[TeamAccount]:
 
 
 def find_account(team_id: str) -> TeamAccount | None:
+    # in rctf mode, database teams is not used
+    if config.rctf_mode:
+        return TeamAccount(uuid.UUID(team_id), None, None)
     with connect_pg() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM teams where team_id = %s", (team_id,))
@@ -165,6 +168,9 @@ def find_account(team_id: str) -> TeamAccount | None:
 
 
 def find_or_create_account(team_id: str) -> TeamAccount:
+    if config.rctf_mode:
+        # in rctf mode, database teams is not used
+        return TeamAccount(uuid.UUID(team_id), None, None)
     with connect_pg() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM teams where team_id = %s", (team_id,))
