@@ -2,7 +2,7 @@ import json
 import secrets
 from typing import Any, cast
 
-from instancer.config import rclient
+from instancer.config import config, rclient
 
 
 def new_session(team_id: str) -> str:
@@ -12,7 +12,9 @@ def new_session(team_id: str) -> str:
     """
 
     token = secrets.token_urlsafe()
-    rclient.set(f"session:{token}", json.dumps({"team_id": team_id}), ex=7 * 24 * 3600)
+    rclient.set(
+        f"session:{token}", json.dumps({"team_id": team_id}), ex=config.session_length
+    )
     return token
 
 

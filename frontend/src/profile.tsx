@@ -4,6 +4,7 @@ import useAccountManagement from "./util/account";
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {ProfileType, MessageType} from "./util/types.ts";
+import config from "./util/config";
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -19,6 +20,10 @@ const Profile = () => {
     useEffect(() => {
         if (accountToken === null) {
             navigate("/login");
+            return;
+        }
+        if (config.rctf_mode) {
+            navigate("/");
             return;
         }
         fetch("/api/accounts/profile", {

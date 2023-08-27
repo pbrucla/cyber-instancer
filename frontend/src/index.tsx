@@ -11,6 +11,7 @@ import Profile from "./profile";
 import Register from "./register";
 import Chall from "./chall";
 import Login from "./login";
+import config from "./util/config";
 import useAccountManagement from "./util/account";
 import {ReactComponent as HomeBtn} from "./images/home.svg";
 
@@ -20,7 +21,11 @@ function NavComponents({accountToken}: {accountToken: string | null}) {
 
     const logout = () => {
         setAccountToken(null);
-        navgiate("/");
+        if (config.rctf_mode && config.rctf_url !== null) {
+            window.location.href = config.rctf_url;
+        } else {
+            navgiate("/");
+        }
     };
 
     if (accountToken !== null) {
@@ -29,20 +34,36 @@ function NavComponents({accountToken}: {accountToken: string | null}) {
                 <button className="button right" onClick={() => logout()}>
                     LOG OUT
                 </button>
-                <Link to="profile">
-                    <button className="button right">PROFILE</button>
-                </Link>
-                <Link to="challs">
-                    <button className="button right">CHALLS</button>
-                </Link>
+                {!config.rctf_mode && (
+                    <Link to="profile">
+                        <button className="button right">PROFILE</button>
+                    </Link>
+                )}
+                {config.rctf_mode && config.rctf_url !== null ? (
+                    <a href={`${config.rctf_url}/challs`}>
+                        <button className="button right">CHALLS</button>
+                    </a>
+                ) : (
+                    <Link to="challs">
+                        <button className="button right">CHALLS</button>
+                    </Link>
+                )}
             </>
         );
     } else {
         return (
             <>
-                <Link to="register">
-                    <button className="button right">REGISTER</button>
-                </Link>
+                {!config.rctf_mode && (
+                    <Link to="register">
+                        <button className="button right">REGISTER</button>
+                    </Link>
+                )}
+                {config.rctf_mode && config.rctf_url !== null && (
+                    <a href={`${config.rctf_url}/register`}>
+                        <button className="button right">REGISTER</button>
+                    </a>
+                )}
+
                 <Link to="login">
                     <button className="button right">LOGIN</button>
                 </Link>
@@ -59,11 +80,19 @@ function IndexComponent() {
             <BrowserRouter>
                 <nav>
                     <div>
-                        <Link to="/">
-                            <button className="homeButton">
-                                <HomeBtn className="svg" />
-                            </button>
-                        </Link>
+                        {config.rctf_url !== null && config.rctf_mode ? (
+                            <a href={config.rctf_url}>
+                                <button className="homeButton">
+                                    <HomeBtn className="svg" />
+                                </button>
+                            </a>
+                        ) : (
+                            <Link to="/">
+                                <button className="homeButton">
+                                    <HomeBtn className="svg" />
+                                </button>
+                            </Link>
+                        )}
                         <NavComponents accountToken={accountToken} />
                     </div>
                 </nav>

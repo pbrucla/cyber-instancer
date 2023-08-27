@@ -63,6 +63,9 @@ class PartialConfig:
     dev: bool = False
     url: str = "http://localhost:8080"
     challenge_host: str = "localhost"
+    rctf_mode: bool = False
+    rctf_url: str | None = None
+    session_length: int = 24 * 3600
 
 
 @dataclass
@@ -141,6 +144,9 @@ def apply_config(c: dict[str, Any]) -> None:
                 "dev": {"type": "boolean"},
                 "url": {"type": "string"},
                 "challenge_host": {"type": "string"},
+                "rctf_mode": {"type": "boolean"},
+                "rctf_url": {"type": "string"},
+                "session_length": {"type": "integer"},
             },
         },
     )
@@ -160,6 +166,9 @@ def apply_config(c: dict[str, Any]) -> None:
     apply_dict(c, "dev", "dev")
     apply_dict(c, "url", "url")
     apply_dict(c, "challenge_host", "challenge_host")
+    apply_dict(c, "rctf_mode", "rctf_mode")
+    apply_dict(c, "session_length", "session_length")
+    apply_dict(c, "rctf_url", "rctf_url")
 
 
 try:
@@ -183,6 +192,9 @@ apply_env("INSTANCER_REDIS_RESYNC_INTERVAL", "redis_resync_interval", func=int)
 apply_env("INSTANCER_DEV", "dev", func=parse_bool)
 apply_env("INSTANCER_URL", "url")
 apply_env("INSTANCER_CHALLENGE_HOST", "challenge_host")
+apply_env("INSTANCER_RCTF_MODE", "rctf_mode", func=parse_bool)
+apply_env("INSTANCER_SESSION_LENGTH", "session_length", func=int)
+apply_env("INSTANCER_RCTF_URL", "rctf_url")
 
 config = Config(partial_config)
 

@@ -18,6 +18,7 @@ def check_authorization() -> ResponseReturnValue | None:
         "api.account.register",
         "api.account.login",
         "api.account.dev_login",
+        "api.account.dev_register",
     ]:
         return None
     if request.authorization is None:

@@ -1,14 +1,16 @@
 import os
 
 import redis
-from flask import Flask, request
+from flask import Flask, render_template, request
 from flask.typing import ResponseReturnValue
 
 from instancer import api, backend
 from instancer.config import config, connect_pg
 from instancer.config import rclient as r
 
-app = Flask(__name__, static_folder="static", static_url_path="/")
+app = Flask(
+    __name__, static_folder="static", static_url_path="/", template_folder="static"
+)
 
 
 # Serve APIs
@@ -23,7 +25,10 @@ app.register_blueprint(api.blueprint)
 @app.route("/login")
 @app.route("/register")
 def react(chall_id: str = "") -> ResponseReturnValue:
-    return app.send_static_file("index.html")
+    return render_template(
+        "index.html",
+        client_conf={"rctf_mode": config.rctf_mode, "rctf_url": config.rctf_url},
+    )
 
 
 # Testing

@@ -3,12 +3,20 @@ import "./styles/info-box.css";
 import {FormEvent, useState, useEffect} from "react";
 import useAccountManagement from "./util/account";
 import {useNavigate} from "react-router-dom";
+import config from "./util/config";
 
 const Register = () => {
     const navigate = useNavigate();
 
     const [formStatus, setFormStatus] = useState("");
     const {setAccountToken, validateAccountToken} = useAccountManagement();
+
+    /* Redirect to homepage if rctf mode */
+    useEffect(() => {
+        if (config.rctf_mode) {
+            navigate("/");
+        }
+    }, [navigate]);
 
     /* Redirect if logged in */
     useEffect(() => {
