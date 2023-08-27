@@ -27,11 +27,27 @@ teams_real_names = {"team_username": "username", "team_email": "email"}
 
 
 class LoginToken:
+    login_token = None
+
     def __init__(
-        self, team_id: str, timestamp: float | None = None, forceUUID: bool = True
+        self,
+        team_id: str,
+        timestamp: float | None = None,
+        forceUUID: bool = True,
+        secret_key: str | None = None,
+        team_name: str | None = None,
+        team_email: str | None = None,
     ):
         """Initialize a LoginToken given decoded parameters"""
 
+        if secret_key is None and self.login_token is None:
+            raise ValueError("Must provide a valid secret key")
+        if secret_key is not None and len(b64decode(secret_key)) != 32:
+            raise ValueError(
+                "Invalid secret login key. Secret login key must be exactly 32 bytes long, base64 encoded"
+            )
+        if secret_key is not None:
+            self.login_token = secret_key
         if timestamp is None:
             timestamp = time.time()
         # Unless forceUUID is disabled, all team_ids should be UUIDs
@@ -46,28 +62,41 @@ class LoginToken:
                 raise ValueError("A non-UUID was passed in as the team_id")
         self.team_id = team_id
         self.timestamp = timestamp
+        self.team_name = team_name
+        self.team_email = team_email
 
     @classmethod
-    def decode(cls, token: str, onlyAllowType8: bool = True) -> Self:
+    def decode(cls, token: str) -> Self:
         """Decodes a token
 
         May throw a ValueError if the key format is invalid"""
+
         decoded = json.loads(LoginToken.decrypt(token))
 
         try:
-            if decoded["k"] != 8 and onlyAllowType8:
-                raise ValueError(
-                    "Token was an invalid type (type {})".format(decoded["k"])
+            if decoded["k"] == 16:
+                return cls(
+                    decoded["d"]["teamId"],
+                    timestamp=decoded["t"],
+                    team_name=decoded["d"]["name"],
+                    team_email=decoded["d"]["email"],
                 )
-            return cls(decoded["d"], timestamp=decoded["t"])
+            elif decoded["k"] == 8:
+                return cls(decoded["d"], timestamp=decoded["t"])
+            else:
+                raise ValueError(
+                    "Token was an invalid or unknown type (type {})".format(
+                        decoded["k"]
+                    )
+                )
         except KeyError:
             raise ValueError(
                 "Invalid key - either it failed to decrypt or was not of the required format or key type"
             )
 
-    def get_login_url(self, currentTime: bool = True) -> str:
+    def get_login_url(self, currentTime: bool = True, url: str = config.url) -> str:
         return "{}/login?token={}".format(
-            config.url, urllib.parse.quote_plus(self.get_token(currentTime=currentTime))
+            url, urllib.parse.quote_plus(self.get_token(currentTime=currentTime))
         )
 
     def get_token(self, currentTime: bool = True) -> str:
@@ -76,9 +105,7 @@ class LoginToken:
             "t": (int(time.time()) if currentTime else self.timestamp),
             "d": self.team_id,
         }
-        encrypted_token = LoginToken.encrypt(
-            json.dumps(login_token, separators=(",", ":"))
-        )
+        encrypted_token = self.encrypt(json.dumps(login_token, separators=(",", ":")))
         return encrypted_token
 
     @staticmethod
@@ -305,6 +332,20 @@ def login() -> ResponseReturnValue:
         "token": authentication.new_session(account.team_id),
         "msg": "Successfully logged in",
     }
+
+
+@blueprint.route("/preview", methods=["GET"])
+def preview_token() -> ResponseReturnValue:
+    """Decodes a token, returning the embedded team name if one exists"""
+    try:
+        token = request.args["login_token"]
+    except KeyError:
+        return {"status": "missing_login_token", "msg": "Missing login token"}, 401
+    try:
+        account = LoginToken.decode(token)
+    except ValueError:
+        return {"status": "invalid_login_token", "msg": "Invalid login token"}, 401
+    return {"status": "ok", "team_name": "test"}
 
 
 if config.dev:

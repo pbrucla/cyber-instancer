@@ -13,7 +13,15 @@ from Crypto.Cipher import AES
 class LoginToken:
     login_token = None
 
-    def __init__(self, team_id: str, timestamp=None, forceUUID=True, secret_key=None):
+    def __init__(
+        self,
+        team_id: str,
+        timestamp=None,
+        forceUUID=True,
+        secret_key=None,
+        team_name=None,
+        team_email=None,
+    ):
         """Initialize a LoginToken given decoded parameters"""
 
         if secret_key is None and self.login_token is None:
@@ -38,9 +46,11 @@ class LoginToken:
                 raise ValueError("A non-UUID was passed in as the team_id")
         self.team_id = team_id
         self.timestamp = timestamp
+        self.team_name = team_name
+        self.team_email = team_email
 
     @classmethod
-    def decode(cls, token, onlyAllowType8=True):
+    def decode(cls, token):
         """Decodes a token
 
         May throw a ValueError if the key format is invalid"""
@@ -48,11 +58,21 @@ class LoginToken:
         decoded = json.loads(LoginToken.decrypt(token))
 
         try:
-            if decoded["k"] != 8 and onlyAllowType8:
-                raise ValueError(
-                    "Token was an invalid type (type {})".format(decoded["k"])
+            if decoded["k"] == 16:
+                return cls(
+                    decoded["d"]["teamId"],
+                    timestamp=decoded["t"],
+                    team_name=decoded["d"]["name"],
+                    team_email=decoded["d"]["email"],
                 )
-            return cls(decoded["d"], timestamp=decoded["t"])
+            elif decoded["k"] == 8:
+                return cls(decoded["d"], timestamp=decoded["t"])
+            else:
+                raise ValueError(
+                    "Token was an invalid or unknown type (type {})".format(
+                        decoded["k"]
+                    )
+                )
         except KeyError:
             raise ValueError(
                 "Invalid key - either it failed to decrypt or was not of the required format or key type"
@@ -76,7 +96,11 @@ class LoginToken:
         login_token = {
             "k": 8,
             "t": (int(time.time()) if currentTime else self.timestamp),
-            "d": self.team_id,
+            "d": {
+                "teamId": self.team_id,
+                "name": self.team_name,
+                "email": self.team_email,
+            },
         }
         return login_token
 
@@ -107,17 +131,25 @@ class LoginToken:
 
 
 if __name__ == "__main__":
-    with open("../config.yml", "r") as f:
-        try:
-            conf = yaml.safe_load(f)
-            LoginToken.login_token = conf["login_secret_key"]
-            admin_uuid = conf["admin_team_id"]
-            instancer_url = conf["url"]
-            print("Found valid config")
-        except yaml.YAMLError as exc:
-            print("Failed to read config file:")
-            print(exc)
-            exit(1)
+    custom_token = input(
+        "Enter in the login_secret_key, or leave blank to use one in config.yml: "
+    )
+    if custom_token == "":
+        with open("../config.yml", "r") as f:
+            try:
+                conf = yaml.safe_load(f)
+                LoginToken.login_token = conf["login_secret_key"]
+                admin_uuid = conf["admin_team_id"]
+                instancer_url = conf["url"]
+                print("Found valid config")
+            except yaml.YAMLError as exc:
+                print("Failed to read config file:")
+                print(exc)
+                exit(1)
+    else:
+        LoginToken.login_token = custom_token
+        admin_uuid = uuid.uuid4()
+        instancer_url = "http://localhost:8080"
 
     while True:
         print(
