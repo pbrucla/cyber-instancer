@@ -57,3 +57,10 @@ export type ProfileType = {
 export interface Profile {
     name: string;
 }
+
+export type previewSuccessType = {
+    status: string;
+    team_name: string;
+};
+
+export type previewType = MessageType | previewSuccessType;

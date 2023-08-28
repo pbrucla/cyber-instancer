@@ -92,7 +92,7 @@ class LoginToken:
 
     def get_token(self, currentTime: bool = True) -> str:
         login_token = {
-            "k": 8,
+            "k": 16,
             "t": (int(time.time()) if currentTime else self.timestamp),
             "d": self.team_id,
         }

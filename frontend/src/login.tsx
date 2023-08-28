@@ -12,11 +12,28 @@ const Login = () => {
     const [formStatus, setFormStatus] = useState("");
     const [token, setToken] = useState("");
     const [searchParams] = useSearchParams();
+    const [loginAs, setLoginAs] = useState("");
 
     useEffect(() => {
         const token = searchParams.get("token");
         if (token !== null) {
             setToken(token);
+            fetch(`/api/accounts/preview?login_token=${encodeURIComponent(token)}`)
+                .then((res) => {
+                    if (res.status !== 200) throw Error("Invalid Token");
+                    else return res;
+                })
+                .then((res) => res.json())
+                .then((resJson) => {
+                    if ((resJson as {team_name: string}).team_name !== null) {
+                        setLoginAs((resJson as {team_name: string}).team_name);
+                    } else {
+                        console.debug("Token does not contain team information");
+                    }
+                })
+                .catch(() => {
+                    console.error("Invalid token");
+                });
         }
     }, [searchParams, navigate]);
 
@@ -48,14 +65,7 @@ const Login = () => {
         checkLoggedIn().catch(console.error);
     }, [validateAccountToken, setAccountToken, navigate, loggedInRedirect]);
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-        // Prevent the browser from reloading the page
-        e.preventDefault();
-
-        // Read the form data
-        const form = e.currentTarget;
-        const formData = new FormData(form);
-
+    const attemptLogin = (formData: FormData) => {
         fetch("/api/accounts/login", {
             method: "POST",
             body: formData,
@@ -83,40 +93,69 @@ const Login = () => {
             });
     };
 
+    const onLoginSubmit = () => {
+        const formData = new FormData();
+        formData.append("login_token", token);
+        attemptLogin(formData);
+    };
+
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        // Prevent the browser from reloading the page
+        e.preventDefault();
+
+        // Read the form data
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+        attemptLogin(formData);
+    };
+
     return (
         <>
             <div className="Profile-Login-div">
                 <div className="Profile-Login-div-inner">
-                    <h1 className="Profile-Login-heading"> LOGIN </h1>
-                    <form
-                        className="container"
-                        method="post"
-                        onSubmit={(e) => {
-                            void handleSubmit(e);
-                        }}
-                    >
-                        <div className="row">
-                            <div className="column" style={{borderRadius: "0.7rem 0 0 0.7rem"}}>
-                                TOKEN
+                    {loginAs === "" ? (
+                        <>
+                            <h1 className="Profile-Login-heading"> LOGIN </h1>
+                            <form
+                                className="container"
+                                method="post"
+                                onSubmit={(e) => {
+                                    void handleSubmit(e);
+                                }}
+                            >
+                                <div className="row">
+                                    <div className="column" style={{borderRadius: "0.7rem 0 0 0.7rem"}}>
+                                        TOKEN
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter here..."
+                                        name="login_token"
+                                        className="column column2"
+                                        defaultValue={token}
+                                        style={{borderRadius: "0 0.7rem 0.7rem 0"}}
+                                    />
+                                </div>
+                                <div className="row">
+                                    <button type="submit" className="button">
+                                        SUBMIT
+                                    </button>
+                                </div>
+                                <div className="status">
+                                    <h4>{formStatus}</h4>
+                                </div>
+                            </form>
+                        </>
+                    ) : (
+                        <>
+                            <h1 className="Profile-Login-heading"> Login as {loginAs}?</h1>
+                            <div className="Login-Button-Box">
+                                <button className="Login-Button" onClick={onLoginSubmit}>
+                                    Login
+                                </button>
                             </div>
-                            <input
-                                type="text"
-                                placeholder="Enter here..."
-                                name="login_token"
-                                className="column column2"
-                                defaultValue={token}
-                                style={{borderRadius: "0 0.7rem 0.7rem 0"}}
-                            />
-                        </div>
-                        <div className="row">
-                            <button type="submit" className="button">
-                                SUBMIT
-                            </button>
-                        </div>
-                        <div className="status">
-                            <h4>{formStatus}</h4>
-                        </div>
-                    </form>
+                        </>
+                    )}
                 </div>
             </div>
         </>
