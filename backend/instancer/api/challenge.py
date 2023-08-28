@@ -1,3 +1,4 @@
+from time import time
 from typing import Any
 
 from flask import Blueprint, g
@@ -11,12 +12,12 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
     """Return a dict with the challenge deployment status or None if the challenge is not deployed."""
 
     status = chall.deployment_status()
-    return (
-        None
-        if status is None
-        else {
+    if status is None:
+        return None
+    elif (status.expiration - 3540) < int(time()):
+        return {
             "expiration": status.expiration,
-            "start_delay": status.expiration - 60,
+            "start_delay": status.expiration - 3540,
             "port_mappings": {
                 f"{container}:{internal}": external
                 for (
@@ -26,7 +27,13 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
             },
             "host": config.challenge_host,
         }
-    )
+    else:
+        return {
+            "expiration": status.expiration,
+            "start_delay": status.expiration - 3540,
+            "port_mappings": None,
+            "host": None,
+        }
 
 
 def challenge_info(chall: Challenge, tags: list[ChallengeTag]) -> dict[str, Any]:
