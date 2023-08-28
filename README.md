@@ -52,6 +52,9 @@ Do NOT share this, or else an attacker will be able to login as whomever they wi
 - `dev`: Enables some developer debugging api endpoints. Do not enable in production.
 - `url`: URL to the instancer.
 - `challenge_host`: IP or hostname that points to the kube cluster. Usually same as `url` but without http(s)
+- `rctf_mode`: boolean; whether or not the instancer is integrated into [our custom fork of rctf](https://github.com/pbrucla/rctf-cyber-platform). This will disable registration, disable team database capabilities, disables generating login urls on the instancer directly, and redirects back to the rctf platform when appropriate instead of to instancer pages. Defaulted to false, but we generally only use the instancer in rctf mode, so standalone mode will not be tested as thoroughly
+- `rctf_url`: url to the instancer. Only applies if in rctf mode
+- `session_length`: number of seconds that a session is active (or 3600 \* number of hours). Defaults to one day.
 
 ### k3s.yaml
 

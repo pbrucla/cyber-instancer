@@ -13,5 +13,8 @@ postgres:
 in_cluster: false
 redis_resync_interval: 60
 dev: false
-url: "https://example.com"
-challenge_host: aplet.me
+url: "https://instancer.example.com"
+challenge_host: instancer.example.com
+rctf_mode: true
+rctf_url: "https://rctf.example.com"
+session_length: 86400
