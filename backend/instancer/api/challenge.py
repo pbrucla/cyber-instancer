@@ -16,6 +16,7 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
         if status is None
         else {
             "expiration": status.expiration,
+            "start_delay": status.expiration - 60,
             "port_mappings": {
                 f"{container}:{internal}": external
                 for (
