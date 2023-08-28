@@ -12,10 +12,10 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
     """Return a dict with the challenge deployment status or None if the challenge is not deployed."""
 
     status = chall.deployment_status()
-    start_delay = 3570
     if status is None:
         return None
-    elif start_delay < int(time()):
+    start_delay = status.expiration - 3570
+    if start_delay < int(time()):
         return {
             "expiration": status.expiration,
             "start_delay": start_delay,
