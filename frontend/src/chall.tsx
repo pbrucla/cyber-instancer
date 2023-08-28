@@ -31,7 +31,7 @@ function createLink(host: string) {
 const Chall = () => {
     /* Redirect if not logged in */
     const {accountToken} = useAccountManagement();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const loginToken = searchParams.get("token");
     const navigate = useNavigate();
 
@@ -55,7 +55,12 @@ const Chall = () => {
         }
         if (accountToken === null) {
             loggedOutRedirect();
-        } else if (timer <= 0) {
+            return;
+        }
+        if (loginToken) {
+            setSearchParams("");
+        }
+        if (timer <= 0) {
             fetch("/api/challenge/" + ID, {
                 headers: {Authorization: `Bearer ${accountToken}`},
             })
@@ -89,7 +94,7 @@ const Chall = () => {
                 })
                 .catch((err) => console.debug(err));
         }
-    }, [navigate, timer, ID, accountToken, loginToken]);
+    }, [navigate, timer, ID, accountToken, loginToken, setSearchParams]);
 
     let challInfo;
     let buttons;
