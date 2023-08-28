@@ -15,26 +15,18 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
     if status is None:
         return None
     start_delay = status.expiration - 3570
-    if start_delay < int(time()):
-        return {
-            "expiration": status.expiration,
-            "start_delay": start_delay,
-            "port_mappings": {
-                f"{container}:{internal}": external
-                for (
-                    container,
-                    internal,
-                ), external in status.port_mappings.items()
-            },
-            "host": config.challenge_host,
-        }
-    else:
-        return {
-            "expiration": status.expiration,
-            "start_delay": start_delay,
-            "port_mappings": None,
-            "host": None,
-        }
+    return {
+        "expiration": status.expiration,
+        "start_delay": start_delay,
+        "port_mappings": {
+            f"{container}:{internal}": external
+            for (
+                container,
+                internal,
+            ), external in status.port_mappings.items()
+        },
+        "host": config.challenge_host,
+    }
 
 
 def challenge_info(chall: Challenge, tags: list[ChallengeTag]) -> dict[str, Any]:
