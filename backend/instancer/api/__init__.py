@@ -1,6 +1,8 @@
 from flask import Blueprint, g, request
 from flask.typing import ResponseReturnValue
 
+from instancer.config import config
+
 from . import account, admin, authentication, challenge, challenges
 
 blueprint = Blueprint("api", __name__, url_prefix="/api")
@@ -19,6 +21,7 @@ def check_authorization() -> ResponseReturnValue | None:
         "api.account.login",
         "api.account.dev_login",
         "api.account.dev_register",
+        "api.account.preview",
     ]:
         return None
     if request.authorization is None:
@@ -41,3 +44,13 @@ def check_authorization() -> ResponseReturnValue | None:
         return {"status": "invalid_token", "msg": "invalid token"}, 401
     g.session = session
     return None
+
+
+@blueprint.before_request
+def rctf_mode() -> ResponseReturnValue | None:
+    if not config.rctf_mode:
+        return None
+    if request.endpoint in ["api.account.register", "api.account.update_profile"]:
+        return {"status": "disabled", "msg": "this api endpoint is disabled"}, 405
+    else:
+        return None

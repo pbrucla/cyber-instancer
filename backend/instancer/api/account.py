@@ -34,20 +34,11 @@ class LoginToken:
         team_id: str,
         timestamp: float | None = None,
         forceUUID: bool = True,
-        secret_key: str | None = None,
         team_name: str | None = None,
         team_email: str | None = None,
     ):
         """Initialize a LoginToken given decoded parameters"""
 
-        if secret_key is None and self.login_token is None:
-            raise ValueError("Must provide a valid secret key")
-        if secret_key is not None and len(b64decode(secret_key)) != 32:
-            raise ValueError(
-                "Invalid secret login key. Secret login key must be exactly 32 bytes long, base64 encoded"
-            )
-        if secret_key is not None:
-            self.login_token = secret_key
         if timestamp is None:
             timestamp = time.time()
         # Unless forceUUID is disabled, all team_ids should be UUIDs
@@ -74,14 +65,14 @@ class LoginToken:
         decoded = json.loads(LoginToken.decrypt(token))
 
         try:
-            if decoded["k"] == 16:
+            if decoded["k"] == 8:
                 return cls(
                     decoded["d"]["teamId"],
                     timestamp=decoded["t"],
                     team_name=decoded["d"]["name"],
                     team_email=decoded["d"]["email"],
                 )
-            elif decoded["k"] == 8:
+            elif decoded["k"] == 16:
                 return cls(decoded["d"], timestamp=decoded["t"])
             else:
                 raise ValueError(
@@ -197,58 +188,56 @@ def validate_team_username(team_id: str) -> bool:
     return 3 <= len(team_id) <= 100
 
 
-if not config.rctf_mode:
+@blueprint.route("/register", methods=["POST"])
+def register() -> ResponseReturnValue:
+    """Register an account
 
-    @blueprint.route("/register", methods=["POST"])
-    def register() -> ResponseReturnValue:
-        """Register an account
+    Requires username, email body parameters
+    """
+    try:
+        team_username = request.form["username"]
+    except KeyError:
+        return {"status": "missing_username", "msg": "missing username"}, 400
+    try:
+        email = request.form["email"]
+    except KeyError:
+        return {"status": "missing_email", "msg": "missing email"}, 400
+    if not validate_team_username(team_username):
+        return {
+            "status": "invalid_username",
+            "msg": "Invalid username: must be between 3 and 100 characters",
+        }, 400
+    if not validate_email(email):
+        return {"status": "invalid_email", "msg": "invalid email"}, 400
+    team_id = uuid4()
 
-        Requires username, email body parameters
-        """
-        try:
-            team_username = request.form["username"]
-        except KeyError:
-            return {"status": "missing_username", "msg": "missing username"}, 400
-        try:
-            email = request.form["email"]
-        except KeyError:
-            return {"status": "missing_email", "msg": "missing email"}, 400
-        if not validate_team_username(team_username):
-            return {
-                "status": "invalid_username",
-                "msg": "Invalid username: must be between 3 and 100 characters",
-            }, 400
-        if not validate_email(email):
-            return {"status": "invalid_email", "msg": "invalid email"}, 400
-        team_id = uuid4()
-
-        with connect_pg() as conn:
-            with conn.cursor() as cur:
-                try:
-                    cur.execute(
-                        "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, %s, %s)",
-                        (team_id, team_username, email),
-                    )
-                except IntegrityError as e:
-                    conn.rollback()
-                    failed_key_match = re.match(
-                        r"^Key \((.+)\)=", str(e.diag.message_detail)
-                    )
-                    if failed_key_match is None:
-                        return {
-                            "status": "unexpected_error",
-                            "msg": "An unexpected error occurred",
-                        }, 400
-                    bad_field = teams_real_names[failed_key_match.group(1)]
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute(
+                    "INSERT INTO teams (team_id, team_username, team_email) VALUES (%s, %s, %s)",
+                    (team_id, team_username, email),
+                )
+            except IntegrityError as e:
+                conn.rollback()
+                failed_key_match = re.match(
+                    r"^Key \((.+)\)=", str(e.diag.message_detail)
+                )
+                if failed_key_match is None:
                     return {
-                        "status": "{}_already_taken".format(bad_field),
-                        "msg": "{} already taken".format(bad_field),
+                        "status": "unexpected_error",
+                        "msg": "An unexpected error occurred",
                     }, 400
-                conn.commit()
+                bad_field = teams_real_names[failed_key_match.group(1)]
                 return {
-                    "success": True,
-                    "token": authentication.new_session(str(team_id)),
-                }
+                    "status": "{}_already_taken".format(bad_field),
+                    "msg": "{} already taken".format(bad_field),
+                }, 400
+            conn.commit()
+            return {
+                "success": True,
+                "token": authentication.new_session(str(team_id)),
+            }
 
 
 @blueprint.route("/profile", methods=["GET"])
@@ -272,59 +261,57 @@ def profile() -> ResponseReturnValue:
     }
 
 
-if not config.rctf_mode:
+@blueprint.route("/profile", methods=["PATCH"])
+def update_profile() -> ResponseReturnValue:
+    """Updates information in the profile (email, team name)
 
-    @blueprint.route("/profile", methods=["PATCH"])
-    def update_profile() -> ResponseReturnValue:
-        """Updates information in the profile (email, team name)
-
-        Body fields: neither, one, or both of username, email"""
-        with connect_pg() as conn:
-            with conn.cursor() as cur:
-                # Verify user exists, and if not, create it
-                find_or_create_account(g.session["team_id"])
-                try:
-                    if "username" in request.form:
-                        if validate_team_username(request.form["username"]):
-                            cur.execute(
-                                "UPDATE teams SET team_username = %s WHERE team_id = %s",
-                                (request.form["username"], g.session["team_id"]),
-                            )
-                        else:
-                            conn.rollback()
-                            return {
-                                "status": "invalid_username",
-                                "msg": "Invalid new username: must be between 3 and 100 characters",
-                            }, 400
-                    if "email" in request.form:
-                        if validate_email(request.form["email"]):
-                            cur.execute(
-                                "UPDATE teams SET team_email = %s WHERE team_id = %s",
-                                (request.form["email"], g.session["team_id"]),
-                            )
-                        else:
-                            conn.rollback()
-                            return {
-                                "status": "invalid_email",
-                                "msg": "Invalid new email",
-                            }, 400
-                except IntegrityError as e:
-                    conn.rollback()
-                    failed_key_match = re.match(
-                        r"^Key \((.+)\)=", str(e.diag.message_detail)
-                    )
-                    if failed_key_match is None:
+    Body fields: neither, one, or both of username, email"""
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            # Verify user exists, and if not, create it
+            find_or_create_account(g.session["team_id"])
+            try:
+                if "username" in request.form:
+                    if validate_team_username(request.form["username"]):
+                        cur.execute(
+                            "UPDATE teams SET team_username = %s WHERE team_id = %s",
+                            (request.form["username"], g.session["team_id"]),
+                        )
+                    else:
+                        conn.rollback()
                         return {
-                            "status": "unexpected_error",
-                            "msg": "An unexpected error occurred",
+                            "status": "invalid_username",
+                            "msg": "Invalid new username: must be between 3 and 100 characters",
                         }, 400
-                    bad_field = teams_real_names[failed_key_match.group(1)]
+                if "email" in request.form:
+                    if validate_email(request.form["email"]):
+                        cur.execute(
+                            "UPDATE teams SET team_email = %s WHERE team_id = %s",
+                            (request.form["email"], g.session["team_id"]),
+                        )
+                    else:
+                        conn.rollback()
+                        return {
+                            "status": "invalid_email",
+                            "msg": "Invalid new email",
+                        }, 400
+            except IntegrityError as e:
+                conn.rollback()
+                failed_key_match = re.match(
+                    r"^Key \((.+)\)=", str(e.diag.message_detail)
+                )
+                if failed_key_match is None:
                     return {
-                        "status": "{}_already_taken".format(bad_field),
-                        "msg": "{} already taken".format(bad_field),
+                        "status": "unexpected_error",
+                        "msg": "An unexpected error occurred",
                     }, 400
-                conn.commit()
-        return {"status": "ok", "msg": "Successfully updated profile"}
+                bad_field = teams_real_names[failed_key_match.group(1)]
+                return {
+                    "status": "{}_already_taken".format(bad_field),
+                    "msg": "{} already taken".format(bad_field),
+                }, 400
+            conn.commit()
+    return {"status": "ok", "msg": "Successfully updated profile"}
 
 
 @blueprint.route("/login", methods=["POST"])
@@ -350,7 +337,7 @@ def login() -> ResponseReturnValue:
 
 
 @blueprint.route("/preview", methods=["GET"])
-def preview_token() -> ResponseReturnValue:
+def preview() -> ResponseReturnValue:
     """Decodes a token, returning the embedded team name if one exists"""
     try:
         token = request.args["login_token"]
@@ -358,9 +345,13 @@ def preview_token() -> ResponseReturnValue:
         return {"status": "missing_login_token", "msg": "Missing login token"}, 401
     try:
         account = LoginToken.decode(token)
-    except ValueError:
-        return {"status": "invalid_login_token", "msg": "Invalid login token"}, 401
-    return {"status": "ok", "team_name": "test"}
+    except ValueError as e:
+        return {
+            "status": "invalid_login_token",
+            "msg": "Invalid login token " + str(e),
+        }, 401
+
+    return {"status": "ok", "team_name": account.team_name}
 
 
 if config.dev:
