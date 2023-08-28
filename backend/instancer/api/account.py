@@ -348,7 +348,7 @@ def preview() -> ResponseReturnValue:
     except ValueError as e:
         return {
             "status": "invalid_login_token",
-            "msg": "Invalid login token " + str(e),
+            "msg": "Invalid login token",
         }, 401
 
     return {"status": "ok", "team_name": account.team_name}
