@@ -58,14 +58,14 @@ class LoginToken:
         decoded = json.loads(LoginToken.decrypt(token))
 
         try:
-            if decoded["k"] == 16:
+            if decoded["k"] == 8:
                 return cls(
                     decoded["d"]["teamId"],
                     timestamp=decoded["t"],
                     team_name=decoded["d"]["name"],
                     team_email=decoded["d"]["email"],
                 )
-            elif decoded["k"] == 8:
+            elif decoded["k"] == 16:
                 return cls(decoded["d"], timestamp=decoded["t"])
             else:
                 raise ValueError(
@@ -85,7 +85,7 @@ class LoginToken:
 
     def get_token(self, currentTime=True):
         login_token = {
-            "k": 8,
+            "k": 16,
             "t": (int(time.time()) if currentTime else self.timestamp),
             "d": self.team_id,
         }

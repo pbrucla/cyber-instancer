@@ -32,6 +32,27 @@
     margin-left: 10px;
 }
 
+.Login-Button-Box {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.Login-Button {
+    background-color: #ffba44;
+    border: none;
+    color: #101010;
+    font-weight: 600;
+    font-size: 1rem;
+    font-size: 0.9rem;
+    margin: auto;
+
+    min-width: 5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+}
+
 .container {
     border-radius: 5px;
     overflow: hidden;
