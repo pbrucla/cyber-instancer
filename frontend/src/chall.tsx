@@ -269,7 +269,7 @@ const Chall = () => {
             );
         } else {
             buttons = (
-                <>
+                <div className="deployment-info">
                     <button
                         className={"deploy OFF" + (isShaking ? " shake-animation" : "")}
                         onClick={deployChallenge}
@@ -278,7 +278,7 @@ const Chall = () => {
                         DEPLOY NOW
                     </button>
                     {errorMsg && <div className="errorMsg">{errorMsg}</div>}
-                </>
+                </div>
             );
         }
     }
