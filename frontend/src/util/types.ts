@@ -40,6 +40,7 @@ export type TagType = {
 export type DeploymentType = {
     expiration: number;
     host: string;
+    start_delay: number;
     port_mappings: Record<string, string | number>;
 };
 
