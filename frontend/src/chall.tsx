@@ -269,7 +269,7 @@ const Chall = () => {
                         ))
                     ) : (
                         <div className="IP-port-box" key="loading">
-                            loading challenge information...
+                            challenge is booting up
                         </div>
                     )}
                 </div>
