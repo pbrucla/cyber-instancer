@@ -3,7 +3,7 @@ services:
   web:
     build: .
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./k3s.yaml:/app/.kube/config:ro
       - ./config.yml:/app/config.yml:ro
