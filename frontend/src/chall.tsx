@@ -261,12 +261,17 @@ const Chall = () => {
                             <Stop className="buttonsvg r" />
                         </button>
                     )}
-                    {Date.now() / 1000 > deployment.start_delay &&
+                    {Date.now() / 1000 > deployment.start_delay ? (
                         ports.map((p: string | JSX.Element) => (
                             <div className="IP-port-box" key={p as string}>
                                 {p}
                             </div>
-                        ))}
+                        ))
+                    ) : (
+                        <div className="IP-port-box" key="loading">
+                            loading challenge information...
+                        </div>
+                    )}
                 </div>
             );
         } else {
