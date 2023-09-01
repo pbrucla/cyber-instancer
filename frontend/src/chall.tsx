@@ -185,6 +185,7 @@ const Chall = () => {
 
     /* hosts and ports */
     const [ports, setPorts] = useState<(string | JSX.Element)[]>([]);
+
     useEffect(() => {
         if (deployed && deployment) {
             const outPorts: (string | JSX.Element)[] = [];
@@ -242,7 +243,7 @@ const Chall = () => {
             </>
         );
 
-        if (deployed) {
+        if (deployed && deployment) {
             buttons = (
                 <div className="deployment-info">
                     {chall.is_shared ? (
@@ -260,11 +261,17 @@ const Chall = () => {
                             <Stop className="buttonsvg r" />
                         </button>
                     )}
-                    {ports.map((p: string | JSX.Element) => (
-                        <div className="IP-port-box" key={p as string}>
-                            {p}
+                    {Date.now() / 1000 > deployment.start_delay ? (
+                        ports.map((p: string | JSX.Element) => (
+                            <div className="IP-port-box" key={p as string}>
+                                {p}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="IP-port-box" key="loading">
+                            challenge is booting up
                         </div>
-                    ))}
+                    )}
                 </div>
             );
         } else {
