@@ -20,13 +20,16 @@ function NavComponents({accountToken}: {accountToken: string | null}) {
     const navigate = useNavigate();
 
     const logout = () => {
+        if (accountToken === null) {
+            navigate("/");
+            return;
+        }
+
         fetch("/api/accounts/logout", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers: {Authorization: `Bearer ${accountToken}`},
             body: JSON.stringify({
-                login_token: accountToken,
+                token: accountToken,
             }),
         })
             .then((res) => {
