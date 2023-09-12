@@ -99,14 +99,15 @@ const Chall = () => {
     let challInfo;
     let buttons;
 
-    /* Deploy challenge */
-    const [isShaking, setIsShaking] = useState<boolean>(false);
-    const [disableButton, setDisableButton] = useState<boolean>(false);
+    /* Deploy and extend challenge */
+    const [isShaking, setIsShaking] = useState<boolean[]>([false, false]);
+    const [disableButton, setDisableButton] = useState<boolean[]>([false, false]);
+    const [extended, setExtended] = useState<boolean>(false);
 
-    function deployChallenge() {
-        setIsShaking(false);
-        if (disableButton) return;
-        setDisableButton(true);
+    function deployChallenge(index: number) {
+        updateArr(index, isShaking, setIsShaking, false);
+        if (disableButton[index]) return;
+        updateArr(index, disableButton, setDisableButton, true);
         fetch("/api/challenge/" + ID + "/deploy", {
             headers: {Authorization: `Bearer ${accountToken as string}`},
             method: "POST",
@@ -116,21 +117,33 @@ const Chall = () => {
                 if (challengeDeployment.status === "ok") {
                     setDeployment(challengeDeployment.deployment);
                     setErrorMsg(null);
+                    if (index === 1) setExtended(true);
                 } else if (challengeDeployment.status === "temporarily_unavailable") {
                     console.error("Deployment error");
-                    setIsShaking(true);
+                    updateArr(index, isShaking, setIsShaking, true);
                     setErrorMsg("Challenge temporarily unavailable. Please wait a few moments and try again.");
                 } else if (challengeDeployment.status === "missing_authorization") {
                     navigate("/login");
                 } else {
                     console.error("An unexpected API response was received");
                 }
-                setDisableButton(false);
+                updateArr(index, disableButton, setDisableButton, false);
             })
             .catch((err) => {
                 console.error(err);
-                setDisableButton(false);
+                updateArr(index, disableButton, setDisableButton, false);
             });
+    }
+
+    function updateArr(
+        index: number,
+        state: boolean[],
+        updateState: React.Dispatch<React.SetStateAction<boolean[]>>,
+        newValue: boolean
+    ) {
+        const newArray = [...state];
+        newArray[index] = newValue;
+        updateState(newArray);
     }
 
     useEffect(() => {
@@ -142,8 +155,8 @@ const Chall = () => {
 
     /* Terminate challenge */
     function terminateChallenge() {
-        if (disableButton) return;
-        setDisableButton(true);
+        if (disableButton[0]) return;
+        updateArr(0, disableButton, setDisableButton, true);
         fetch("/api/challenge/" + ID + "/deployment", {
             headers: {Authorization: `Bearer ${accountToken as string}`},
             method: "DELETE",
@@ -157,7 +170,7 @@ const Chall = () => {
                     console.error("error");
                     console.error(status);
                 }
-                setDisableButton(false);
+                updateArr(0, disableButton, setDisableButton, false);
             })
             .catch((err) => console.debug(err));
     }
@@ -167,8 +180,9 @@ const Chall = () => {
         let interval = 0;
 
         if (deployed) {
-            if (timer === -100 && deployment) {
+            if ((timer === -100 || extended) && deployment) {
                 setTimer(Math.floor(deployment.expiration - Date.now() / 1000));
+                setExtended(false);
             } else if (timer < 0) {
                 setDeployed(false);
             } else {
@@ -181,7 +195,7 @@ const Chall = () => {
             setTimer(-100);
         }
         return () => clearInterval(interval);
-    }, [deployed, deployment, timer]);
+    }, [deployed, deployment, timer, extended]);
 
     /* hosts and ports */
     const [ports, setPorts] = useState<(string | JSX.Element)[]>([]);
@@ -252,21 +266,32 @@ const Chall = () => {
                                 <Timer className="buttonsvg l" />
                                 <span style={{marginLeft: "0", marginRight: "4rem"}}>{prettyTime(timer)}</span>
                             </button>
-                            <div className="IP-port-box"> SHARED CHALLENGE </div>
                         </>
                     ) : (
-                        <button className="deploy ON" onClick={terminateChallenge} disabled={disableButton}>
-                            <Timer className="buttonsvg l" />
-                            <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
-                            <Stop className="buttonsvg r" />
-                        </button>
+                        <>
+                            <button className="deploy ON" onClick={terminateChallenge} disabled={disableButton[0]}>
+                                <Timer className="buttonsvg l" />
+                                <span style={{marginLeft: "0"}}>{prettyTime(timer)}</span>
+                                <Stop className="buttonsvg r" />
+                            </button>
+                        </>
                     )}
                     {Date.now() / 1000 > deployment.start_delay ? (
-                        ports.map((p: string | JSX.Element) => (
-                            <div className="IP-port-box" key={p as string}>
-                                {p}
-                            </div>
-                        ))
+                        <>
+                            <button
+                                className={"deploy OFF extend" + (isShaking[1] ? " shake-animation" : "")}
+                                onClick={() => deployChallenge(1)}
+                                disabled={disableButton[1]}
+                            >
+                                EXTEND CHALLENGE
+                            </button>
+                            {chall.is_shared && <div className="IP-port-box"> SHARED CHALLENGE </div>}
+                            {ports.map((p: string | JSX.Element) => (
+                                <div className="IP-port-box" key={p as string}>
+                                    {p}
+                                </div>
+                            ))}
+                        </>
                     ) : (
                         <div className="IP-port-box" key="loading">
                             challenge is booting up
@@ -278,9 +303,9 @@ const Chall = () => {
             buttons = (
                 <div className="deployment-info">
                     <button
-                        className={"deploy OFF" + (isShaking ? " shake-animation" : "")}
-                        onClick={deployChallenge}
-                        disabled={disableButton}
+                        className={"deploy OFF" + (isShaking[0] ? " shake-animation" : "")}
+                        onClick={() => deployChallenge(0)}
+                        disabled={disableButton[0]}
                     >
                         DEPLOY NOW
                     </button>
