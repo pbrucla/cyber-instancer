@@ -253,11 +253,15 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
 
     # per team challenges need to be deleted and re-created?
     # per_team = request.form.get("per_team")
-    cfg = request.form.get("cfg")
+
+    # challenge does not have cfg
+    # cfg = request.form.get("cfg")
+
     lifetime = request.form.get("lifetime")
     name = request.form.get("name")
     description = request.form.get("description")
     author = request.form.get("author")
+
     # TO DO: unsure about how to handle updating tags
     # categories = request.form.get("categories")
     # other_tags = request.form.get("tags")
@@ -283,54 +287,54 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
 
         chall.lifetime = lifetime
 
-    if cfg is not None:
-        cfg = json.loads(cfg)
+    # if cfg is not None:
+    #     cfg = json.loads(cfg)
 
-        try:
-            jsonschema.validate(cfg, config_schema)
-        except jsonschema.ValidationError as e:
-            return {"status": "invalid_config", "msg": str(e)}, 400
+    #     try:
+    #         jsonschema.validate(cfg, config_schema)
+    #     except jsonschema.ValidationError as e:
+    #         return {"status": "invalid_config", "msg": str(e)}, 400
 
-        tcp = cfg.get("tcp", {})
-        http = cfg.get("http", {})
+    #     tcp = cfg.get("tcp", {})
+    #     http = cfg.get("http", {})
 
-        for contname in tcp:
-            if contname not in cfg["containers"]:
-                return {
-                    "status": "invalid_tcp",
-                    "msg": f"exposed port for non-existent container {contname!r}",
-                }
-        for contname in http:
-            if contname not in cfg["containers"]:
-                return {
-                    "status": "invalid_tcp",
-                    "msg": f"exposed subdomain for non-existent container {contname!r}",
-                }
-        for contname, container in cfg["containers"].items():
-            if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", contname):
-                return {
-                    "status": "invalid_container",
-                    "msg": f"container id {contname!r} does not match [a-z0-9]([-a-z0-9]{{,62}}[a-z0-9]",
-                }, 400
-            if contname.endswith("-instancer-external"):
-                return {
-                    "status": "invalid_container",
-                    "msg": "suffix -instancer-external is reserved and cannot be used for containers",
-                }, 400
-            exposed_ports = tcp.get(contname, [])
-            container_ports = container.get("ports", [])
-            private_ports = [x for x in container_ports if x not in exposed_ports]
-            if (
-                len(exposed_ports) > 0
-                and len(private_ports) > 0
-                and not container.get("multiService", False)
-            ):
-                return {
-                    "status": "invalid_container",
-                    "msg": f"container {contname!r} has both exposed and private ports but multiService is not true",
-                }, 400
+    #     for contname in tcp:
+    #         if contname not in cfg["containers"]:
+    #             return {
+    #                 "status": "invalid_tcp",
+    #                 "msg": f"exposed port for non-existent container {contname!r}",
+    #             }
+    #     for contname in http:
+    #         if contname not in cfg["containers"]:
+    #             return {
+    #                 "status": "invalid_tcp",
+    #                 "msg": f"exposed subdomain for non-existent container {contname!r}",
+    #             }
+    #     for contname, container in cfg["containers"].items():
+    #         if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", contname):
+    #             return {
+    #                 "status": "invalid_container",
+    #                 "msg": f"container id {contname!r} does not match [a-z0-9]([-a-z0-9]{{,62}}[a-z0-9]",
+    #             }, 400
+    #         if contname.endswith("-instancer-external"):
+    #             return {
+    #                 "status": "invalid_container",
+    #                 "msg": "suffix -instancer-external is reserved and cannot be used for containers",
+    #             }, 400
+    #         exposed_ports = tcp.get(contname, [])
+    #         container_ports = container.get("ports", [])
+    #         private_ports = [x for x in container_ports if x not in exposed_ports]
+    #         if (
+    #             len(exposed_ports) > 0
+    #             and len(private_ports) > 0
+    #             and not container.get("multiService", False)
+    #         ):
+    #             return {
+    #                 "status": "invalid_container",
+    #                 "msg": f"container {contname!r} has both exposed and private ports but multiService is not true",
+    #             }, 400
 
-        chall.cfg = cfg
+    #     chall.cfg = cfg
 
     if name is not None:
         chall.metadata.name = name
