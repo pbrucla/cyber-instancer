@@ -342,13 +342,13 @@ def logout() -> ResponseReturnValue:
 
     Requires body param login_token"""
     try:
-        token = request.form["token"]
+        token = request.get_json()["token"]
     except KeyError:
-        return {"status": "missing_login_token", "msg": "Missing login token"}, 401
+        return {"status": "missing_token", "msg": "Missing token"}, 401
 
     res = authentication.del_session(token)
     if not res:
-        return {"status": "logout_failed", "msg": "Invalid token"}, 500
+        return {"status": "invalid_json_token", "msg": "Invalid json token"}, 400
 
     return {
         "status": "ok",

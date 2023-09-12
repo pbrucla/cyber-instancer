@@ -27,7 +27,10 @@ function NavComponents({accountToken}: {accountToken: string | null}) {
 
         fetch("/api/accounts/logout", {
             method: "POST",
-            headers: {Authorization: `Bearer ${accountToken}`},
+            headers: {
+                Authorization: `Bearer ${accountToken}`,
+                "Content-Type": "application/json",
+            },
             body: JSON.stringify({
                 token: accountToken,
             }),
