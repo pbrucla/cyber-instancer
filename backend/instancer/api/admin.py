@@ -142,7 +142,7 @@ def challenge_get(chall_id: str) -> ResponseReturnValue:
 
     challenges = []
 
-    for (chall, tags) in Challenge.fetchall(team_id):
+    for chall, tags in Challenge.fetchall(team_id):
         output = chall.json()
         output["tags"] = tags
         challenges.append(output)
