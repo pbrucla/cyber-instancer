@@ -122,7 +122,10 @@ const Chall = () => {
                     console.error("Deployment error");
                     updateArr(index, isShaking, setIsShaking, true);
                     setErrorMsg("Challenge temporarily unavailable. Please wait a few moments and try again.");
-                } else if (challengeDeployment.status === "missing_authorization") {
+                } else if (
+                    challengeDeployment.status === "missing_authorization" ||
+                    challengeDeployment.status === "invalid_token"
+                ) {
                     navigate("/login");
                 } else {
                     console.error("An unexpected API response was received");
@@ -294,7 +297,7 @@ const Chall = () => {
                         </>
                     ) : (
                         <div className="IP-port-box" key="loading">
-                            challenge is booting up
+                            <div className="loading_3_dots">challenge is booting up, please wait...</div>
                         </div>
                     )}
                 </div>
