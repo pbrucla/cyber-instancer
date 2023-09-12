@@ -17,15 +17,37 @@ import {ReactComponent as HomeBtn} from "./images/home.svg";
 
 function NavComponents({accountToken}: {accountToken: string | null}) {
     const {setAccountToken} = useAccountManagement();
-    const navgiate = useNavigate();
+    const navigate = useNavigate();
 
     const logout = () => {
-        setAccountToken(null);
-        if (config.rctf_mode && config.rctf_url !== null) {
-            window.location.href = config.rctf_url;
-        } else {
-            navgiate("/");
+        if (accountToken === null) {
+            navigate("/");
+            return;
         }
+
+        fetch("/api/accounts/logout", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${accountToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                token: accountToken,
+            }),
+        })
+            .then((res) => {
+                if (res.status === 200) {
+                    setAccountToken(null);
+                    if (config.rctf_mode && config.rctf_url !== null) {
+                        window.location.href = config.rctf_url;
+                    } else {
+                        navigate("/");
+                    }
+                }
+            })
+            .catch((err) => {
+                console.log(err);
+            });
     };
 
     if (accountToken !== null) {
