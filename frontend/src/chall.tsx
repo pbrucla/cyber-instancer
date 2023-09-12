@@ -301,16 +301,18 @@ const Chall = () => {
             );
         } else {
             buttons = (
-                <div className="deployment-info">
-                    <button
-                        className={"deploy OFF" + (isShaking[0] ? " shake-animation" : "")}
-                        onClick={() => deployChallenge(0)}
-                        disabled={disableButton[0]}
-                    >
-                        DEPLOY NOW
-                    </button>
+                <>
+                    <div className="deployment-info">
+                        <button
+                            className={"deploy OFF" + (isShaking[0] ? " shake-animation" : "")}
+                            onClick={() => deployChallenge(0)}
+                            disabled={disableButton[0]}
+                        >
+                            DEPLOY NOW
+                        </button>
+                    </div>
                     {errorMsg && <div className="errorMsg">{errorMsg}</div>}
-                </div>
+                </>
             );
         }
     }

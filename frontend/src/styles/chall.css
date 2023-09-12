@@ -1,11 +1,11 @@
 .content-div {
-    height: calc(89vh - 5rem);
+    height: calc(99vh - 7.75rem);
     display: flex;
     flex-direction: column;
     justify-content: left;
     align-items: left;
-    padding-left: 10vh;
-    padding-top: 10vh;
+    padding-left: 5.5rem;
+    padding-top: 1.25rem;
 }
 
 .deployment-info {
@@ -122,6 +122,6 @@
 }
 
 .errorMsg {
-    margin: 10px 0px;
-    max-width: 30rem;
+    margin: 2rem 0px;
+    max-width: 60vw;
 }
