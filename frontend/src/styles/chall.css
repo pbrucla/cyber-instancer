@@ -87,6 +87,10 @@
     cursor: wait;
 }
 
+.deploy.OFF.extend {
+    margin-left: 2rem;
+}
+
 .buttonsvg {
     height: 2rem;
 }
