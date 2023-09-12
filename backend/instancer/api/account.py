@@ -336,6 +336,30 @@ def login() -> ResponseReturnValue:
     }
 
 
+@blueprint.route("/logout", methods=["POST"])
+def logout() -> ResponseReturnValue:
+    """Logout the current user
+
+    Requires body param login_token"""
+    try:
+        token = request.form["login_token"]
+    except KeyError:
+        return {"status": "missing_login_token", "msg": "Missing login token"}, 401
+    try:
+        account = LoginToken.decode(token)
+    except ValueError:
+        return {"status": "invalid_login_token", "msg": "Invalid login token"}, 401
+
+    res = authentication.del_session(account.team_id)
+    if not res:
+        return {"status": "logout_failed", "msg": "Logout failed"}, 500
+
+    return {
+        "status": "ok",
+        "msg": "Successfully logged out",
+    }
+
+
 @blueprint.route("/preview", methods=["GET"])
 def preview() -> ResponseReturnValue:
     """Decodes a token, returning the embedded team name if one exists"""

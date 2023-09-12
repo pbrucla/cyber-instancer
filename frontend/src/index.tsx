@@ -20,12 +20,28 @@ function NavComponents({accountToken}: {accountToken: string | null}) {
     const navgiate = useNavigate();
 
     const logout = () => {
-        setAccountToken(null);
-        if (config.rctf_mode && config.rctf_url !== null) {
-            window.location.href = config.rctf_url;
-        } else {
-            navgiate("/");
-        }
+        fetch("/api/logout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                token: accountToken,
+            }),
+        })
+            .then((res) => {
+                if (res.status === 200) {
+                    setAccountToken(null);
+                    if (config.rctf_mode && config.rctf_url !== null) {
+                        window.location.href = config.rctf_url;
+                    } else {
+                        navgiate("/");
+                    }
+                }
+            })
+            .catch((err) => {
+                console.log(err);
+            });
     };
 
     if (accountToken !== null) {

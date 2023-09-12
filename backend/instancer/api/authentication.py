@@ -28,3 +28,12 @@ def get_session(token: str) -> dict[str, Any] | None:
     if data is None:
         return None
     return cast(dict[str, Any], json.loads(data))
+
+
+def del_session(token: str) -> bool:
+    """Delete session data.
+
+    Returns True if the session was deleted and False otherwise.
+    """
+
+    return rclient.delete(f"session:{token}") == 1
