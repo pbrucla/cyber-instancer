@@ -17,7 +17,7 @@ import {ReactComponent as HomeBtn} from "./images/home.svg";
 
 function NavComponents({accountToken}: {accountToken: string | null}) {
     const {setAccountToken} = useAccountManagement();
-    const navgiate = useNavigate();
+    const navigate = useNavigate();
 
     const logout = () => {
         fetch("/api/logout", {
@@ -35,7 +35,7 @@ function NavComponents({accountToken}: {accountToken: string | null}) {
                     if (config.rctf_mode && config.rctf_url !== null) {
                         window.location.href = config.rctf_url;
                     } else {
-                        navgiate("/");
+                        navigate("/");
                     }
                 }
             })
