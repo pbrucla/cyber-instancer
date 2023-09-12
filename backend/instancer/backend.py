@@ -326,6 +326,27 @@ class Challenge(ABC):
                     for tag in tags:
                         copy.write_row((chall_id, tag.name, tag.is_category))
         rclient.delete("all_challs")
+    
+    @classmethod
+    def update(self) -> None:
+        """Update a challenge and insert it into the database."""
+
+        with connect_pg() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    (
+                        "UPDATE challenges SET cfg=%s, lifetime=%s, name=%s, description=%s, author=%s "
+                        "WHERE id=%s"
+                    ),
+                    (
+                        Jsonb(self.cfg),
+                        self.lifetime,
+                        self.metadata.name,
+                        self.metadata.description,
+                        self.metadata.author,
+                        self.chall_id,
+                    ),
+                )
 
     @classmethod
     def delete(cls, chall_id: str) -> bool:
@@ -900,6 +921,18 @@ class Challenge(ABC):
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(namespace={self.namespace!r}, expiration={self.expiration()!r})"
+
+    def json(self) -> _ChallengeInfo:
+        """JSON representation of a challenge."""
+
+        return _ChallengeInfo(
+            cfg=self.containers,
+            per_team=self.is_shared(),
+            lifetime=self.lifetime,
+            name=self.metadata.name,
+            description=self.metadata.description,
+            author=self.metadata.author,
+        ).to_json()
 
 
 class SharedChallenge(Challenge):
