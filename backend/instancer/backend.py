@@ -326,7 +326,7 @@ class Challenge(ABC):
                     for tag in tags:
                         copy.write_row((chall_id, tag.name, tag.is_category))
         rclient.delete("all_challs")
-    
+
     @classmethod
     def update(self) -> None:
         """Update a challenge and insert it into the database."""

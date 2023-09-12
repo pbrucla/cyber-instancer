@@ -139,7 +139,7 @@ def challenge_get(chall_id: str) -> ResponseReturnValue:
         team_id = request.args["team_id"]
     except KeyError:
         return {"status": "missing_team_id", "msg": "Missing team ID"}, 400
-    
+
     challenges = []
 
     for (chall, tags) in Challenge.fetchall(team_id):
@@ -153,13 +153,13 @@ def challenge_get(chall_id: str) -> ResponseReturnValue:
     chall = Challenge.fetch(chall_id, team_id)
     if chall is None:
         return {"status": "invalid_chall_id", "msg": "Invalid challenge ID"}, 404
-    
+
     output = chall.json()
     output["tags"] = ChallengeTag.fetchall(chall_id)
     challenges.append(output)
-    
+
     return {"status": "ok", "challenges": output}
-    
+
 
 @blueprint.route("/challenges/upload", methods=["POST"])
 def challenge_upload() -> ResponseReturnValue:
@@ -261,13 +261,13 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
     # TO DO: unsure about how to handle updating tags
     # categories = request.form.get("categories")
     # other_tags = request.form.get("tags")
-    
+
     if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", chall_id):
         return {
             "status": "invalid_id",
             "msg": "challenge id must match [a-z0-9]([-a-z0-9]{,62}[a-z0-9]",
         }, 400
-    
+
     chall = Challenge.fetch(chall_id)
     if chall is None:
         return {"status": "invalid_chall_id", "msg": "invalid challenge ID"}, 404
@@ -276,10 +276,13 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
         lifetime = int(lifetime)
 
         if lifetime <= 0:
-            return {"status": "invalid_lifetime", "msg": "lifetime must be positive"}, 400
-        
+            return {
+                "status": "invalid_lifetime",
+                "msg": "lifetime must be positive",
+            }, 400
+
         chall.lifetime = lifetime
-    
+
     if cfg is not None:
         cfg = json.loads(cfg)
 
@@ -326,33 +329,32 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
                     "status": "invalid_container",
                     "msg": f"container {contname!r} has both exposed and private ports but multiService is not true",
                 }, 400
-        
+
         chall.cfg = cfg
-    
+
     if name is not None:
         chall.metadata.name = name
-    
+
     if description is not None:
         chall.metadata.description = description
-    
+
     if author is not None:
         chall.metadata.author = author
-    
+
     # if categories is not None:
     #     categories = categories.split()
-    
+
     # if other_tags is not None:
     #     other_tags = other_tags.split()
-    
+
     # if categories is not None or other_tags is not None:
     #     chall.tags = [ChallengeTag(category, is_category=True) for category in categories] + [
     #         ChallengeTag(tag, is_category=False) for tag in other_tags
     #     ]
-    
-    chall.update()
-    
-    return {"status": "ok"}
 
+    chall.update()
+
+    return {"status": "ok"}
 
 
 @blueprint.route("/challenges/<chall_id>", methods=["DELETE"])
