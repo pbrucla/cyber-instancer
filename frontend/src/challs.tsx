@@ -212,7 +212,7 @@ const ChallPage = () => {
                                 return {challenge: chall, display: true};
                             })
                         );
-                    } else if (challenges.status === "missing_authorization") {
+                    } else if (challenges.status === "missing_authorization" || challenges.status === "invalid_token") {
                         navigate("/login");
                     } else {
                         setLoadingMsg("An unexpected error occurred");

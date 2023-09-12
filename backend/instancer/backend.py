@@ -144,6 +144,8 @@ class DeploymentInfo:
 
     expiration: int
     "The expiration time."
+    start_time: int
+    "Time to first display challenge connection details"
     port_mappings: dict[tuple[str, int], int | str]
     "Mapping from a tuple of the container name and internal port to the external port or HTTPS domain."
 
@@ -155,6 +157,7 @@ class _ChallengeInfo:
     cfg: dict[str, Any]
     per_team: bool
     lifetime: int
+    boot_time: int
     name: str
     description: str
     author: str
@@ -168,12 +171,15 @@ class _ChallengeInfo:
                 self.name,
                 self.description,
                 self.author,
+                self.boot_time,
             )
         )
 
     @classmethod
     def from_json(cls, json_info: str | bytes) -> Self:
-        cfg, per_team, lifetime, name, description, author = json.loads(json_info)
+        cfg, per_team, lifetime, name, description, author, boot_time = json.loads(
+            json_info
+        )
         return cls(
             cfg=cfg,
             per_team=per_team,
@@ -181,6 +187,7 @@ class _ChallengeInfo:
             name=name,
             description=description,
             author=author,
+            boot_time=boot_time,
         )
 
 
@@ -215,9 +222,13 @@ def _cached_chall_tags(chall_id: str) -> list[ChallengeTag] | None:
 def _make_challenge(chall_id: str, info: _ChallengeInfo, team_id: str) -> Challenge:
     metadata = ChallengeMetadata(info.name, info.description, info.author)
     if info.per_team:
-        return PerTeamChallenge(chall_id, team_id, info.cfg, info.lifetime, metadata)
+        return PerTeamChallenge(
+            chall_id, team_id, info.cfg, info.lifetime, info.boot_time, metadata
+        )
     else:
-        return SharedChallenge(chall_id, info.cfg, info.lifetime, metadata)
+        return SharedChallenge(
+            chall_id, info.cfg, info.lifetime, info.boot_time, metadata
+        )
 
 
 class Challenge(ABC):
@@ -227,6 +238,8 @@ class Challenge(ABC):
     "Challenge ID"
     lifetime: int
     "Challenge lifetime, in seconds"
+    boot_time: int
+    "Delay to display connection details, in seconds"
     metadata: ChallengeMetadata
     "Challenge metadata"
     containers: dict[str, dict[str, Any]]
@@ -247,6 +260,7 @@ class Challenge(ABC):
         chall_id: str,
         cfg: dict[str, Any],
         lifetime: int,
+        boot_time: int,
         metadata: ChallengeMetadata,
         *,
         namespace: str,
@@ -257,6 +271,7 @@ class Challenge(ABC):
     ):
         self.id = chall_id
         self.lifetime = lifetime
+        self.boot_time = boot_time
         self.metadata = metadata
         if len(namespace) > 63:
             namespace = "ci-" + sha256(namespace.encode()).hexdigest()[:60]
@@ -281,6 +296,7 @@ class Challenge(ABC):
         per_team: bool,
         cfg: dict[str, Any],
         lifetime: int,
+        boot_time: int,
         metadata: ChallengeMetadata,
         tags: list[ChallengeTag],
     ) -> None:
@@ -290,14 +306,15 @@ class Challenge(ABC):
             with conn.cursor() as cur:
                 cur.execute(
                     (
-                        "INSERT INTO challenges (id, cfg, per_team, lifetime, name, description, author) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                        "INSERT INTO challenges (id, cfg, per_team, lifetime, boot_time, name, description, author) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
                     ),
                     (
                         chall_id,
                         Jsonb(cfg),
                         per_team,
                         lifetime,
+                        boot_time,
                         metadata.name,
                         metadata.description,
                         metadata.author,
@@ -347,7 +364,7 @@ class Challenge(ABC):
             with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT id, cfg, per_team, lifetime, name, description, author FROM challenges"
+                        "SELECT id, cfg, per_team, lifetime, boot_time, name, description, author FROM challenges"
                     )
                     all_challs = [
                         (
@@ -356,12 +373,13 @@ class Challenge(ABC):
                                 cfg=cfg,
                                 per_team=per_team,
                                 lifetime=lifetime,
+                                boot_time=boot_time,
                                 name=name,
                                 description=description,
                                 author=author,
                             ),
                         )
-                        for chall_id, cfg, per_team, lifetime, name, description, author in cur.fetchall()
+                        for chall_id, cfg, per_team, lifetime, boot_time, name, description, author in cur.fetchall()
                     ]
                     cur.execute(
                         "SELECT challenge_id, name, is_category FROM tags ORDER BY is_category DESC, name"
@@ -399,13 +417,13 @@ class Challenge(ABC):
             with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT cfg, per_team, lifetime, name, description, author FROM challenges WHERE id=%s",
+                        "SELECT cfg, per_team, lifetime, boot_time, name, description, author, boot_time FROM challenges WHERE id=%s",
                         (challenge_id,),
                     )
                     db_response = cur.fetchone()
             if db_response is None:
                 return None
-            cfg, per_team, lifetime, name, description, author = db_response
+            cfg, per_team, lifetime, boot_time, name, description, author = db_response
             info = _ChallengeInfo(
                 cfg=cfg,
                 per_team=per_team,
@@ -413,6 +431,7 @@ class Challenge(ABC):
                 name=name,
                 description=description,
                 author=author,
+                boot_time=boot_time,
             )
             _cache_chall_info(challenge_id, info)
 
@@ -462,6 +481,7 @@ class Challenge(ABC):
 
         curtime = int(time())
         expiration = curtime + self.lifetime
+        start_time = curtime + self.boot_time
 
         env_metadata = {
             "namespace": self.namespace,
@@ -821,7 +841,8 @@ class Challenge(ABC):
                 if isinstance(port, float):
                     port = int(port)
                 port_mappings[cont, int(cport)] = port
-            return DeploymentInfo(exp, port_mappings)
+            start_time = exp - self.lifetime + self.boot_time
+            return DeploymentInfo(exp, start_time, port_mappings)
 
         capi = kclient.CoreV1Api()
         crdapi = kclient.CustomObjectsApi()
@@ -850,7 +871,8 @@ class Challenge(ABC):
         if exp > t:
             rclient.set(cache_key, json.dumps(cache_entry), ex=exp - t)
 
-        return DeploymentInfo(exp, port_mappings)
+        start_time = exp - self.lifetime + self.boot_time
+        return DeploymentInfo(exp, start_time, port_mappings)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(namespace={self.namespace!r}, expiration={self.expiration()!r})"
@@ -860,7 +882,12 @@ class SharedChallenge(Challenge):
     """A challenge with one shared instance among all teams."""
 
     def __init__(
-        self, id: str, cfg: dict[str, Any], lifetime: int, metadata: ChallengeMetadata
+        self,
+        id: str,
+        cfg: dict[str, Any],
+        lifetime: int,
+        boot_time: int,
+        metadata: ChallengeMetadata,
     ):
         """Constructs a SharedChallenge given the challenge ID.
 
@@ -871,6 +898,7 @@ class SharedChallenge(Challenge):
             id,
             cfg,
             lifetime,
+            boot_time,
             metadata,
             namespace=f"ci-{id}",
             exposed_ports=cfg.get("tcp", {}),
@@ -893,6 +921,7 @@ class PerTeamChallenge(Challenge):
         team_id: str,
         cfg: dict[str, Any],
         lifetime: int,
+        boot_time: int,
         metadata: ChallengeMetadata,
     ):
         """Constructs a PerTeamChallenge given the challenge ID and team ID.
@@ -915,6 +944,7 @@ class PerTeamChallenge(Challenge):
             id,
             cfg,
             lifetime,
+            boot_time,
             metadata,
             namespace=f"ci-{id}-t-{team_id.replace('-', '')}",
             exposed_ports=cfg.get("tcp", {}),

@@ -140,6 +140,7 @@ def challenge_upload() -> ResponseReturnValue:
         per_team = bool(request.form.get("per_team"))
         cfg = json.loads(request.form["cfg"])
         lifetime = int(request.form["lifetime"])
+        boot_time = int(request.form["boot_time"])
         metadata = ChallengeMetadata(
             name=request.form["name"],
             description=request.form["description"],
@@ -156,6 +157,11 @@ def challenge_upload() -> ResponseReturnValue:
         }, 400
     if lifetime <= 0:
         return {"status": "invalid_lifetime", "msg": "lifetime must be positive"}, 400
+    if boot_time < 0 or boot_time >= lifetime:
+        return {
+            "status": "invalid_boot_time",
+            "msg": "boot_time must be positive but less than the challenge lifetime",
+        }, 400
 
     try:
         jsonschema.validate(cfg, config_schema)
@@ -204,7 +210,7 @@ def challenge_upload() -> ResponseReturnValue:
     tags = [ChallengeTag(category, is_category=True) for category in categories] + [
         ChallengeTag(tag, is_category=False) for tag in other_tags
     ]
-    Challenge.create(chall_id, per_team, cfg, lifetime, metadata, tags)
+    Challenge.create(chall_id, per_team, cfg, lifetime, boot_time, metadata, tags)
     return {"status": "ok"}
 
 

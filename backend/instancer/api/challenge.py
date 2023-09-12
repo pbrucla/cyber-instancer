@@ -14,10 +14,9 @@ def deployment_status(chall: Challenge) -> dict[str, Any] | None:
     status = chall.deployment_status()
     if status is None:
         return None
-    start_delay = status.expiration - 3570
     return {
         "expiration": status.expiration,
-        "start_delay": start_delay,
+        "start_delay": status.start_time,
         "port_mappings": {
             f"{container}:{internal}": external
             for (
