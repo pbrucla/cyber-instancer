@@ -344,7 +344,7 @@ class Challenge(ABC):
                         self.metadata.name,
                         self.metadata.description,
                         self.metadata.author,
-                        self.chall_id,
+                        self.id,
                     ),
                 )
 
