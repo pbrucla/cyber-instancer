@@ -144,7 +144,7 @@ class DeploymentInfo:
 
     expiration: int
     "The expiration time."
-    start_time: int
+    start_timestamp: int
     "Time to first display challenge connection details"
     port_mappings: dict[tuple[str, int], int | str]
     "Mapping from a tuple of the container name and internal port to the external port or HTTPS domain."
@@ -417,7 +417,7 @@ class Challenge(ABC):
             with connect_pg() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "SELECT cfg, per_team, lifetime, boot_time, name, description, author, boot_time FROM challenges WHERE id=%s",
+                        "SELECT cfg, per_team, lifetime, boot_time, name, description, author FROM challenges WHERE id=%s",
                         (challenge_id,),
                     )
                     db_response = cur.fetchone()
@@ -467,6 +467,18 @@ class Challenge(ABC):
             return None
         return int(score)
 
+    def boot_timestamp(self) -> int | None:
+        """Returns the time a challenge was originally started up as a UNIX timestamp, or None if it isn't running."""
+        st = rclient.zscore("boot_time", self.namespace)
+        if st is None:
+            return None
+        return int(st)
+
+    def start_timestamp(self) -> int | None:
+        """Returns the time a challenge details should be displayed to the user as a UNIX timestamp, or None if it isn't running."""
+        boot_time_stamp = self.boot_timestamp()
+        return boot_time_stamp + self.boot_time if boot_time_stamp is not None else None
+
     @abstractmethod
     def is_shared(self) -> bool:
         """Returns True if challenge is shared, e.g. should not be terminatable"""
@@ -481,7 +493,6 @@ class Challenge(ABC):
 
         curtime = int(time())
         expiration = curtime + self.lifetime
-        start_time = curtime + self.boot_time
 
         env_metadata = {
             "namespace": self.namespace,
@@ -518,6 +529,9 @@ class Challenge(ABC):
                     curns.metadata.annotations[
                         "instancer.acmcyber.com/chall-expires"
                     ] = str(expiration)
+                    curns.metadata.annotations[
+                        "instancer.acmcyber.com/chall-start-time"
+                    ] = str(curtime)
                     capi.replace_namespace(self.namespace, curns)
                     rclient.zadd("expiration", {self.namespace: expiration})
                     return
@@ -533,6 +547,9 @@ class Challenge(ABC):
                                     "instancer.acmcyber.com/chall-expires": str(
                                         expiration
                                     ),
+                                    "instancer.acmcyber.com/chall-start-time": str(
+                                        curtime
+                                    ),
                                 },
                                 labels=common_labels,
                             )
@@ -541,6 +558,7 @@ class Challenge(ABC):
 
                 namespace_made = True
                 rclient.zadd("expiration", {self.namespace: expiration})
+                rclient.zadd("boot_time", {self.namespace: curtime})
                 for depname, container in self.containers.items():
                     print(
                         f"[*] Making deployment {depname} under namespace {self.namespace}..."
@@ -796,6 +814,7 @@ class Challenge(ABC):
                 try:
                     capi.delete_namespace(self.namespace, grace_period_seconds=0)
                     rclient.zrem("expiration", self.namespace)
+                    rclient.zrem("boot_time", self.namespace)
                 except ApiException:
                     print(f"[*] Could not clean up namespace {self.namespace}...")
             raise
@@ -809,6 +828,7 @@ class Challenge(ABC):
         try:
             capi.delete_namespace(namespace, grace_period_seconds=0)
             rclient.zrem("expiration", namespace)
+            rclient.zrem("boot_time", namespace)
             rclient.delete(f"ports:{namespace}")
         except ApiException as e:
             if e.status == 404:
@@ -834,6 +854,12 @@ class Challenge(ABC):
 
         port_mappings = {}
 
+        start_time_stamp = self.start_timestamp()
+        if (
+            start_time_stamp is None
+        ):  # start time stamp was lost, probably due to others using same kube cluster on older versions
+            start_time_stamp = 1
+
         if cached is not None:
             parsed = json.loads(cached)
             for k, port in parsed.items():
@@ -841,8 +867,7 @@ class Challenge(ABC):
                 if isinstance(port, float):
                     port = int(port)
                 port_mappings[cont, int(cport)] = port
-            start_time = exp - self.lifetime + self.boot_time
-            return DeploymentInfo(exp, start_time, port_mappings)
+            return DeploymentInfo(exp, start_time_stamp, port_mappings)
 
         capi = kclient.CoreV1Api()
         crdapi = kclient.CustomObjectsApi()
@@ -871,8 +896,7 @@ class Challenge(ABC):
         if exp > t:
             rclient.set(cache_key, json.dumps(cache_entry), ex=exp - t)
 
-        start_time = exp - self.lifetime + self.boot_time
-        return DeploymentInfo(exp, start_time, port_mappings)
+        return DeploymentInfo(exp, start_time_stamp, port_mappings)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(namespace={self.namespace!r}, expiration={self.expiration()!r})"
