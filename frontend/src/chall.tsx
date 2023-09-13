@@ -57,9 +57,6 @@ const Chall = () => {
             loggedOutRedirect();
             return;
         }
-        if (loginToken) {
-            setSearchParams("");
-        }
         if (timer <= 0) {
             fetch("/api/challenge/" + ID, {
                 headers: {Authorization: `Bearer ${accountToken}`},
@@ -82,6 +79,9 @@ const Chall = () => {
                             .then((challengeDeployment: ChallengeDeploymentType) => {
                                 if (challengeDeployment.status === "ok") {
                                     setDeployment(challengeDeployment.deployment);
+                                    if (loginToken) {
+                                        setSearchParams("");
+                                    }
                                 } else {
                                     loggedOutRedirect();
                                 }
