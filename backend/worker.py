@@ -23,6 +23,7 @@ def main() -> None:
             or int(last_resync.decode()) + config.redis_resync_interval <= curtime
         ):
             expirations = {}
+            boot_timestamps = {}
             for ns in capi.list_namespace().items:
                 annotations = ns.metadata.annotations
                 if (
@@ -35,13 +36,30 @@ def main() -> None:
                         )
                     except ValueError:
                         pass
+                if (
+                    isinstance(annotations, dict)
+                    and "instancer.acmcyber.com/chall-start-time" in annotations
+                ):
+                    try:
+                        boot_timestamps[ns.metadata.name] = int(
+                            annotations["instancer.acmcyber.com/chall-start-time"]
+                        )
+                    except ValueError:
+                        pass
 
             if len(expirations) > 0:
                 rclient.zadd("expiration", expirations)
 
+            if len(boot_timestamps) > 0:
+                rclient.zadd("boot_time", boot_timestamps)
+
             for ns in rclient.zrange("expiration", 0, -1):
                 if ns.decode() not in expirations:
                     rclient.zrem("expiration", ns)
+
+            for ns in rclient.zrange("boot_time", 0, -1):
+                if ns.decode() not in boot_timestamps:
+                    rclient.zrem("boot_time", ns)
 
             rclient.set("last_resync", int(time()))
 
