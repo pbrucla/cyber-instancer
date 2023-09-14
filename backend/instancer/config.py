@@ -1,4 +1,5 @@
 import os
+import sys
 from base64 import b64decode
 from dataclasses import asdict, dataclass
 from typing import Any, Callable, TextIO
@@ -213,3 +214,31 @@ def connect_pg() -> psycopg.Connection[Any]:
         port=config.postgres_port,
         password=config.postgres_password,
     )
+
+
+# If boot_time challenge column is missing, add the column
+# only want to run once
+if rclient.set("migration:db_boot_time", "done", nx=True):
+    with connect_pg() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "select COLUMN_NAME from information_schema.columns where table_name='challenges'"
+            )
+            column_names = [row[0] for row in cur]
+            if "boot_time" not in column_names:
+                print(
+                    "[*] Migrating database - boot_time update",
+                    file=sys.stdout,
+                    flush=True,
+                )
+                cur.execute(
+                    "alter table public.challenges add boot_time integer NOT NULL DEFAULT 0"
+                )
+                cur.execute(
+                    "alter table public.challenges add constraint challenges_boot_time_check CHECK ((boot_time >= 0 AND boot_time < lifetime))"
+                )
+                print(
+                    "[*] Migration finished - boot_time update",
+                    file=sys.stdout,
+                    flush=True,
+                )
