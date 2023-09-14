@@ -223,3 +223,9 @@ def challenge_delete(chall_id: str) -> ResponseReturnValue:
         if Challenge.delete(chall_id)
         else ({"status": "invalid_chall_id", "msg": "invalid challenge ID"}, 400)
     )
+
+
+@blueprint.route("/request_info", methods=["GET"])
+def request_info() -> ResponseReturnValue:
+    """Returns information about a request. Used for debugging"""
+    return {"status": "ok", "headers": str(request.headers)}
