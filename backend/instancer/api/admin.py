@@ -3,6 +3,7 @@ import re
 import jsonschema
 from flask import Blueprint, g, json, request
 from flask.typing import ResponseReturnValue
+from psycopg.errors import UniqueViolation
 
 from instancer.backend import Challenge, ChallengeMetadata, ChallengeTag
 from instancer.config import config
@@ -131,37 +132,46 @@ def check_admin_team() -> ResponseReturnValue | None:
     return None
 
 
+# @blueprint.route("/challenges/<chall_id>", methods=["GET"])
+# def challenge_get(chall_id: str) -> ResponseReturnValue:
+#     """Get a challenge by challenge ID & team ID."""
+
+#     try:
+#         team_id = request.args["team_id"]
+#     except KeyError:
+#         return {"status": "missing_team_id", "msg": "Missing team ID"}, 400
+
+#     challenges = []
+
+#     for chall, tags in Challenge.fetchall(team_id):
+#         output = chall.json()
+#         output["tags"] = tags
+#         challenges.append(output)
+
+#     if chall_id == "all":
+#         return {"status": "ok", "challenges": Challenge.fetchall(team_id)}
+
+#     chall = Challenge.fetch(chall_id, team_id)
+#     if chall is None:
+#         return {"status": "invalid_chall_id", "msg": "Invalid challenge ID"}, 404
+
+#     output = chall.json()
+#     output["tags"] = ChallengeTag.fetchall(chall_id)
+#     challenges.append(output)
+
+#     return {"status": "ok", "challenges": output}
+
+
 @blueprint.route("/challenges/<chall_id>", methods=["GET"])
-def challenge_get(chall_id: str) -> ResponseReturnValue:
-    """Get a challenge by challenge ID & team ID."""
-
-    try:
-        team_id = request.args["team_id"]
-    except KeyError:
-        return {"status": "missing_team_id", "msg": "Missing team ID"}, 400
-
-    challenges = []
-
-    for chall, tags in Challenge.fetchall(team_id):
-        output = chall.json()
-        output["tags"] = tags
-        challenges.append(output)
-
-    if chall_id == "all":
-        return {"status": "ok", "challenges": Challenge.fetchall(team_id)}
-
-    chall = Challenge.fetch(chall_id, team_id)
-    if chall is None:
-        return {"status": "invalid_chall_id", "msg": "Invalid challenge ID"}, 404
-
-    output = chall.json()
-    output["tags"] = ChallengeTag.fetchall(chall_id)
-    challenges.append(output)
-
-    return {"status": "ok", "challenges": output}
+def get_challenge(chall_id: str) -> ResponseReturnValue:
+    info = Challenge.fetch_info(chall_id)
+    if info is not None:
+        return {**{"status": "ok"}, **info.get_json()}
+    else:
+        return {"status": "not_found", "msg": "Challenge not found"}
 
 
-@blueprint.route("/challenges/upload", methods=["POST"])
+@blueprint.route("/challenges/create", methods=["POST"])
 def challenge_upload() -> ResponseReturnValue:
     """Create a new challenge."""
 
@@ -181,6 +191,7 @@ def challenge_upload() -> ResponseReturnValue:
         )
         categories = request.form["categories"].split()
         other_tags = request.form["tags"].split()
+        replace_existing = request.form.get("replace_existing", False)
     except (KeyError, ValueError):
         return {"status": "invalid_request", "msg": "invalid request"}, 400
     if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", chall_id):
@@ -243,7 +254,22 @@ def challenge_upload() -> ResponseReturnValue:
     tags = [ChallengeTag(category, is_category=True) for category in categories] + [
         ChallengeTag(tag, is_category=False) for tag in other_tags
     ]
-    Challenge.create(chall_id, per_team, cfg, lifetime, boot_time, metadata, tags)
+
+    try:
+        Challenge.create(chall_id, per_team, cfg, lifetime, boot_time, metadata, tags)
+    except UniqueViolation:
+        if replace_existing:
+            Challenge.delete(chall_id)
+            Challenge.create(
+                chall_id, per_team, cfg, lifetime, boot_time, metadata, tags
+            )
+        else:
+            return {
+                "status": "duplicate_challenge_id",
+                "msg": "Challenge already exists, and replace_existing is false or not set.",
+            }
+        return {"status": "ok", "msg": "Replaced older challenge"}
+
     return {"status": "ok"}
 
 
@@ -256,15 +282,16 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
 
     # challenge does not have cfg
     # cfg = request.form.get("cfg")
-
-    lifetime = request.form.get("lifetime")
+    try:
+        lifetime = request.form.get("lifetime", type=int)
+    except ValueError:
+        return {"status": "invalid_lifetime", "msg": "lifetime must be a number"}, 400
     name = request.form.get("name")
     description = request.form.get("description")
     author = request.form.get("author")
 
-    # TO DO: unsure about how to handle updating tags
-    # categories = request.form.get("categories")
-    # other_tags = request.form.get("tags")
+    categories = request.form.get("categories")
+    other_tags = request.form.get("tags")
 
     if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", chall_id):
         return {
@@ -272,7 +299,7 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
             "msg": "challenge id must match [a-z0-9]([-a-z0-9]{,62}[a-z0-9]",
         }, 400
 
-    chall = Challenge.fetch(chall_id)
+    chall = Challenge.fetch(chall_id, "test")
     if chall is None:
         return {"status": "invalid_chall_id", "msg": "invalid challenge ID"}, 404
 
@@ -345,16 +372,21 @@ def challenge_update(chall_id: str) -> ResponseReturnValue:
     if author is not None:
         chall.metadata.author = author
 
-    # if categories is not None:
-    #     categories = categories.split()
+    if not (categories is None and other_tags is None):
+        new_tags = []
+        if categories is not None:
+            categories_list = categories.split()
+            new_tags += [
+                ChallengeTag(category, is_category=True) for category in categories_list
+            ]
 
-    # if other_tags is not None:
-    #     other_tags = other_tags.split()
+        if other_tags is not None:
+            other_tags_list = other_tags.split()
+            new_tags += [
+                ChallengeTag(tag, is_category=False) for tag in other_tags_list
+            ]
 
-    # if categories is not None or other_tags is not None:
-    #     chall.tags = [ChallengeTag(category, is_category=True) for category in categories] + [
-    #         ChallengeTag(tag, is_category=False) for tag in other_tags
-    #     ]
+        chall.replace_tags(new_tags)
 
     chall.update()
 
