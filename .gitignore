@@ -146,3 +146,5 @@ k3s.yaml
 .vscode/
 .vite/
 *.eslintrc.json
+
+report.sarif
