@@ -137,7 +137,10 @@ def challenge_upload() -> ResponseReturnValue:
 
     try:
         chall_id = request.form["chall_id"]
-        per_team = bool(request.form.get("per_team"))
+        per_team = (
+            request.form.get("per_team") == "true"
+            or request.form.get("per_team") == "True"
+        )
         cfg = json.loads(request.form["cfg"])
         lifetime = int(request.form["lifetime"])
         boot_time = int(request.form["boot_time"])
