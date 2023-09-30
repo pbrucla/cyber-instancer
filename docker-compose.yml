@@ -23,7 +23,7 @@ services:
   redis-service:
     image: "redis:alpine"
   db:
-    image: "postgres"
+    image: "postgres:15"
     environment:
       - POSTGRES_PASSWORD=Q7FHcs0R2TQYqFyP92OD
       - POSTGRES_USER=instancer
