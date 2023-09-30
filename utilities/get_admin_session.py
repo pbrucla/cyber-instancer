@@ -1,8 +1,12 @@
+import os
+
 import requests
 import yaml
 from token_manager import LoginToken
 
-with open("../config.yml", "r") as f:
+config_file_path = os.path.join(os.path.dirname(__file__), "../config.yml")
+
+with open(config_file_path, "r") as f:
     try:
         conf = yaml.safe_load(f)
         LoginToken.login_token = conf["login_secret_key"]

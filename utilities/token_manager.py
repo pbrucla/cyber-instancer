@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import secrets
 import time
@@ -8,6 +9,8 @@ from base64 import b64decode, b64encode
 
 import yaml
 from Crypto.Cipher import AES
+
+config_file_path = os.path.join(os.path.dirname(__file__), "../config.yml")
 
 
 class LoginToken:
@@ -135,7 +138,7 @@ if __name__ == "__main__":
         "Enter in the login_secret_key, or leave blank to use one in config.yml: "
     )
     if custom_token == "":
-        with open("../config.yml", "r") as f:
+        with open(config_file_path, "r") as f:
             try:
                 conf = yaml.safe_load(f)
                 LoginToken.login_token = conf["login_secret_key"]
