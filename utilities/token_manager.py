@@ -69,8 +69,8 @@ class LoginToken:
                 return cls(decoded["d"], timestamp=decoded["t"])
             else:
                 raise ValueError(
-                    "Token was an invalid or unknown type (type {})".format(
-                        decoded["k"]
+                    "Token was an invalid or unknown type (type {}) with content '{}'".format(
+                        decoded["k"], str(decoded)
                     )
                 )
         except KeyError:
