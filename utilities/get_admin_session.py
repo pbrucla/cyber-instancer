@@ -22,7 +22,6 @@ login_token = LoginToken(admin_uuid)
 login_token_url = login_token.get_token()
 
 # print("Login Token: {}".format(login_token_url))
-
 r = requests.post(
     "{}/api/accounts/login".format(url), data={"login_token": login_token_url}
 )

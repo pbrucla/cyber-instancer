@@ -81,14 +81,14 @@ class LoginToken:
                 "Invalid key - either it failed to decrypt or was not of the required format or key type"
             )
 
-    def get_login_url(self, currentTime=True, url="http://localhost:8080") -> str:
+    def get_login_url(self, currentTime=True, url="http://localhost:8080", t=16) -> str:
         return "{}/login?token={}".format(
-            url, urllib.parse.quote_plus(self.get_token(currentTime=currentTime))
+            url, urllib.parse.quote_plus(self.get_token(currentTime=currentTime, t=t))
         )
 
-    def get_token(self, currentTime=True):
+    def get_token(self, currentTime=True, t=16):
         login_token = {
-            "k": 16,
+            "k": t,
             "t": (int(time.time()) if currentTime else self.timestamp),
             "d": self.team_id,
         }
@@ -164,6 +164,7 @@ if __name__ == "__main__":
         )
         choice = input()
         if choice == "1":
+            token_type = int(input("Token type (leave empty if unsure): ") or "16")
             input_uuid = input(
                 "Enter account UUID (leave blank for random, enter admin to use admin uuid): "
             )
@@ -179,7 +180,7 @@ if __name__ == "__main__":
             print("Using uuid {}".format(input_uuid))
             new_token = LoginToken(input_uuid)
             print("Login URL:")
-            print(new_token.get_login_url(url=instancer_url))
+            print(new_token.get_login_url(url=instancer_url, t=token_type))
         elif choice == "2":
             input_encrypted = input("Enter in a login URL or login token: ")
             if "/login?token=" in input_encrypted:
