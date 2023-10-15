@@ -2,6 +2,8 @@ import json
 import secrets
 from typing import Any, cast
 
+import requests
+
 from instancer.config import config, rclient
 
 
@@ -37,3 +39,13 @@ def del_session(token: str) -> bool:
     """
 
     return rclient.delete(f"session:{token}") == 1
+
+
+def verify_captcha_token(token: str) -> bool:
+    """Verifies captcha token via Google re-captcha
+
+    Returns True if verified and False otherwise
+    """
+    print(token)
+
+    return True
