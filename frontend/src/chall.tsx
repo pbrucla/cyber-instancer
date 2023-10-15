@@ -1,7 +1,7 @@
 import "./styles/index.css";
 import "./styles/chall.css";
 import {useState, useEffect} from "react";
-import {useParams, useSearchParams} from "react-router-dom";
+import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
 
@@ -14,7 +14,8 @@ import {
 } from "./util/types.ts";
 import {prettyTime, getCategories, getTags, isDeployed} from "./util/utility.ts";
 import useAccountManagement from "./util/account";
-import {useNavigate} from "react-router-dom";
+
+import ReCaptcha from "react-google-recaptcha";
 
 function createLink(host: string) {
     let output: string = host;
@@ -42,6 +43,8 @@ const Chall = () => {
     const [deployment, setDeployment] = useState<DeploymentType | undefined>();
     const [deployed, setDeployed] = useState<boolean>(false);
     const [timer, setTimer] = useState<number>(-100);
+
+    const [captchaToken, setCaptchaToken] = useState<string | null>("");
 
     useEffect(() => {
         function loggedOutRedirect() {
@@ -109,8 +112,14 @@ const Chall = () => {
         if (disableButton[index]) return;
         updateArr(index, disableButton, setDisableButton, true);
         fetch("/api/challenge/" + ID + "/deploy", {
-            headers: {Authorization: `Bearer ${accountToken as string}`},
+            headers: {
+                Authorization: `Bearer ${accountToken as string}`,
+                "Content-Type": "application/json",
+            },
             method: "POST",
+            body: JSON.stringify({
+                captcha_token: captchaToken,
+            }),
         })
             .then((res) => res.json())
             .then((challengeDeployment: ChallengeDeploymentType) => {
@@ -306,6 +315,7 @@ const Chall = () => {
             buttons = (
                 <>
                     <div className="deployment-info">
+                        <ReCaptcha sitekey="" onChange={setCaptchaToken} />
                         <button
                             className={"deploy OFF" + (isShaking[0] ? " shake-animation" : "")}
                             onClick={() => deployChallenge(0)}

@@ -1,11 +1,13 @@
 from time import time
 from typing import Any
 
-from flask import Blueprint, g
+from flask import Blueprint, g, request
 from flask.typing import ResponseReturnValue
 
 from instancer.backend import Challenge, ChallengeTag, ResourceUnavailableError
 from instancer.config import config
+
+from .authentication import verify_captcha_token
 
 
 def deployment_status(chall: Challenge) -> dict[str, Any] | None:
@@ -72,6 +74,16 @@ def challenge_deploy() -> ResponseReturnValue:
     """
     Starts or renews a team's challenge deployment.
     """
+    body = request.json
+    if not body or "captcha_token" not in body:
+        return {"status": "bad_request", "msg": "CAPTCHA token is required"}, 400
+
+    if not verify_captcha_token(body["captcha_token"]):
+        return {
+            "status": "invalid_token",
+            "msg": "Invalid CAPTCHA token",
+        }, 498
+
     try:
         g.chall.start()
     except ResourceUnavailableError:
