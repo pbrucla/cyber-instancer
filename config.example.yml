@@ -18,3 +18,5 @@ challenge_host: instancer.example.com
 rctf_mode: true
 rctf_url: "https://rctf.example.com"
 session_length: 86400
+recaptcha_site_key: "recaptchasitekeyobtainedfromgoogle"
+recaptcha_secret: "recaptchasecretobtainedfromgoogle"

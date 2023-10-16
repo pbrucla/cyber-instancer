@@ -41,11 +41,20 @@ def del_session(token: str) -> bool:
     return rclient.delete(f"session:{token}") == 1
 
 
-def verify_captcha_token(token: str) -> bool:
+def verify_captcha_token(token: str | None) -> bool:
     """Verifies captcha token via Google re-captcha
 
     Returns True if verified and False otherwise
     """
-    print(token)
+    if token == None:
+        return False
 
-    return True
+    try:
+        res = requests.post(
+            f"https://www.google.com/recaptcha/api/siteverify?secret={config.recaptcha_secret}&response={token}"
+        ).json()
+
+        success: bool = res["success"]
+        return success
+    except (KeyError, requests.JSONDecodeError):
+        return False

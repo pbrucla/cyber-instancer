@@ -66,6 +66,8 @@ class PartialConfig:
     challenge_host: str = "localhost"
     rctf_mode: bool = False
     rctf_url: str | None = None
+    recaptcha_site_key: str | None = None
+    recaptcha_secret: str | None = None
     session_length: int = 24 * 3600
 
 
@@ -148,6 +150,8 @@ def apply_config(c: dict[str, Any]) -> None:
                 "rctf_mode": {"type": "boolean"},
                 "rctf_url": {"type": "string"},
                 "session_length": {"type": "integer"},
+                "recaptcha_site_key": {"type": "string"},
+                "recaptcha_secret": {"type": "string"},
             },
         },
     )
@@ -170,6 +174,8 @@ def apply_config(c: dict[str, Any]) -> None:
     apply_dict(c, "rctf_mode", "rctf_mode")
     apply_dict(c, "session_length", "session_length")
     apply_dict(c, "rctf_url", "rctf_url")
+    apply_dict(c, "recaptcha_site_key", "recaptcha_site_key")
+    apply_dict(c, "recaptcha_secret", "recaptcha_secret")
 
 
 try:
@@ -196,6 +202,8 @@ apply_env("INSTANCER_CHALLENGE_HOST", "challenge_host")
 apply_env("INSTANCER_RCTF_MODE", "rctf_mode", func=parse_bool)
 apply_env("INSTANCER_SESSION_LENGTH", "session_length", func=int)
 apply_env("INSTANCER_RCTF_URL", "rctf_url")
+apply_env("INSTANCER_RECAPTCHA_SITE_KEY", "recaptcha_site_key")
+apply_env("INSTANCER_RECAPTCHA_SECRET", "recaptcha_secret")
 
 config = Config(partial_config)
 

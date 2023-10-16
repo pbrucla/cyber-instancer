@@ -27,7 +27,11 @@ app.register_blueprint(api.blueprint)
 def react(chall_id: str = "") -> ResponseReturnValue:
     return render_template(
         "index.html",
-        client_conf={"rctf_mode": config.rctf_mode, "rctf_url": config.rctf_url},
+        client_conf={
+            "rctf_mode": config.rctf_mode,
+            "rctf_url": config.rctf_url,
+            "recaptcha_site_key": config.recaptcha_site_key,
+        },
     )
 
 
