@@ -11,11 +11,10 @@
 .deployment-info {
     margin-top: 5vh;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: wrap;
     align-items: left;
-    justify-content: space-between;
-    gap: 3vh;
+    justify-content: flex-start;
 }
 
 .stat.ON {
