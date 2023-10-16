@@ -128,6 +128,7 @@ const Chall = () => {
         })
             .then((res) => res.json())
             .then((challengeDeployment: ChallengeDeploymentType) => {
+                console.log(challengeDeployment);
                 if (challengeDeployment.status === "ok") {
                     setDeployment(challengeDeployment.deployment);
                     setErrorMsg(null);
@@ -136,6 +137,9 @@ const Chall = () => {
                     console.error("Deployment error");
                     updateArr(index, isShaking, setIsShaking, true);
                     setErrorMsg("Challenge temporarily unavailable. Please wait a few moments and try again.");
+                } else if (challengeDeployment.status === "invalid_captcha_token") {
+                    updateArr(index, isShaking, setIsShaking, true);
+                    setErrorMsg("CAPTCHA is required");
                 } else if (
                     challengeDeployment.status === "missing_authorization" ||
                     challengeDeployment.status === "invalid_token"
