@@ -80,7 +80,7 @@ def challenge_deploy() -> ResponseReturnValue:
 
     if not verify_captcha_token(body["captcha_token"]):
         return {
-            "status": "invalid_token",
+            "status": "invalid_captcha_token",
             "msg": "Invalid CAPTCHA token",
         }, 498
 
