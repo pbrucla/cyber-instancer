@@ -113,22 +113,22 @@ const Chall = () => {
         if (disableButton[index]) return;
         updateArr(index, disableButton, setDisableButton, true);
 
-        const captcha_token = captchaRef.current?.getValue();
-        captchaRef.current?.reset();
-
-        fetch("/api/challenge/" + ID + "/deploy", {
-            headers: {
-                Authorization: `Bearer ${accountToken as string}`,
-                "Content-Type": "application/json",
-            },
-            method: "POST",
-            body: JSON.stringify({
-                captcha_token: captcha_token,
-            }),
-        })
+        captchaRef.current
+            ?.executeAsync()
+            .then((captcha_token) =>
+                fetch("/api/challenge/" + ID + "/deploy", {
+                    headers: {
+                        Authorization: `Bearer ${accountToken as string}`,
+                        "Content-Type": "application/json",
+                    },
+                    method: "POST",
+                    body: JSON.stringify({
+                        captcha_token: captcha_token,
+                    }),
+                })
+            )
             .then((res) => res.json())
             .then((challengeDeployment: ChallengeDeploymentType) => {
-                console.log(challengeDeployment);
                 if (challengeDeployment.status === "ok") {
                     setDeployment(challengeDeployment.deployment);
                     setErrorMsg(null);
@@ -324,7 +324,7 @@ const Chall = () => {
             buttons = (
                 <>
                     <div className="deployment-info">
-                        <ReCaptcha sitekey={config.recaptcha_site_key || ""} ref={captchaRef} />
+                        <ReCaptcha sitekey={config.recaptcha_site_key || ""} ref={captchaRef} size="invisible" />
                         <button
                             className={"deploy OFF" + (isShaking[0] ? " shake-animation" : "")}
                             onClick={() => deployChallenge(0)}
