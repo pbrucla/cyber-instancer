@@ -281,6 +281,7 @@ const Chall = () => {
         if (deployed && deployment) {
             buttons = (
                 <div className="deployment-info">
+                    <ReCaptcha sitekey={config.recaptcha_site_key || ""} ref={captchaRef} size="invisible" />
                     {chall.is_shared ? (
                         <>
                             <button className="deploy ON shared">
