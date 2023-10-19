@@ -149,6 +149,7 @@ const Chall = () => {
                     console.error("An unexpected API response was received");
                 }
                 updateArr(index, disableButton, setDisableButton, false);
+                captchaRef.current?.reset();
             })
             .catch((err) => {
                 console.error(err);
