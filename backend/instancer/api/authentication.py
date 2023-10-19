@@ -50,8 +50,9 @@ def verify_captcha_token(token: str | None) -> bool:
         return False
 
     try:
+        payload = {"secret": config.recaptcha_secret, "response": token}
         res = requests.post(
-            f"https://www.google.com/recaptcha/api/siteverify?secret={config.recaptcha_secret}&response={token}"
+            f"https://www.google.com/recaptcha/api/siteverify", data=payload
         ).json()
 
         success: bool = res["success"]
