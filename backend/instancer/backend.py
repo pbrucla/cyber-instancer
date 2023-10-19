@@ -190,6 +190,17 @@ class _ChallengeInfo:
             boot_time=boot_time,
         )
 
+    def get_json(self) -> dict[str, Any]:
+        return {
+            "per_team": self.per_team,
+            "lifetime": self.lifetime,
+            "name": self.name,
+            "description": self.description,
+            "author": self.author,
+            "boot_time": self.boot_time,
+            "cfg": self.cfg,
+        }
+
 
 def _cache_chall_info(chall_id: str, info: _ChallengeInfo) -> None:
     rclient.set(f"chall:{chall_id}", info.to_json(), ex=CHALL_CACHE_TIME)
@@ -326,6 +337,29 @@ class Challenge(ABC):
                     for tag in tags:
                         copy.write_row((chall_id, tag.name, tag.is_category))
         rclient.delete("all_challs")
+        Challenge.flush_cache(chall_id=chall_id)
+
+    def update(self) -> None:
+        """Update a challenge and insert it into the database."""
+
+        with connect_pg() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    (
+                        "UPDATE challenges SET lifetime=%s, name=%s, description=%s, author=%s, boot_time=%s "
+                        "WHERE id=%s"
+                    ),
+                    (
+                        self.lifetime,
+                        self.metadata.name,
+                        self.metadata.description,
+                        self.metadata.author,
+                        self.boot_time,
+                        self.id,
+                    ),
+                )
+
+        self.flush_cache(self.id)
 
     @classmethod
     def delete(cls, chall_id: str) -> bool:
@@ -437,6 +471,35 @@ class Challenge(ABC):
 
         return _make_challenge(challenge_id, info, team_id)
 
+    @staticmethod
+    def fetch_info(challenge_id: str) -> _ChallengeInfo | None:
+        """Fetches information on a given challenge by ID
+
+        Returns None if the challenge doesn't exist."""
+
+        info = _cached_chall_info(challenge_id)
+        if info is None:
+            with connect_pg() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT cfg, per_team, lifetime, boot_time, name, description, author FROM challenges WHERE id=%s",
+                        (challenge_id,),
+                    )
+                    db_response = cur.fetchone()
+            if db_response is None:
+                return None
+            cfg, per_team, lifetime, boot_time, name, description, author = db_response
+            info = _ChallengeInfo(
+                cfg=cfg,
+                per_team=per_team,
+                lifetime=lifetime,
+                name=name,
+                description=description,
+                author=author,
+                boot_time=boot_time,
+            )
+        return info
+
     def tags(self) -> list[ChallengeTag]:
         """Return a list of tags for the challenge.
 
@@ -458,6 +521,20 @@ class Challenge(ABC):
             _cache_chall_tags(self.id, result)
 
         return result
+
+    def replace_tags(self, new_tags: list[ChallengeTag]) -> None:
+        """Replace tags with a new list of ChallengeTags"""
+
+        with connect_pg() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM tags where challenge_id = %s", (self.id,))
+                with cur.copy(
+                    "COPY tags (challenge_id, name, is_category) FROM STDIN"
+                ) as copy:
+                    for tag in new_tags:
+                        copy.write_row((self.id, tag.name, tag.is_category))
+        rclient.delete("all_challs")
+        self.flush_cache(self.id)
 
     def expiration(self) -> int | None:
         """Returns the expiration time of a challenge as a UNIX timestamp, or None if it isn't running."""

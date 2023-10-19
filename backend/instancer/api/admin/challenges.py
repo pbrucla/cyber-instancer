@@ -1,13 +1,14 @@
 import re
 
 import jsonschema
-from flask import Blueprint, g, json, request
+from flask import Blueprint, json, request
 from flask.typing import ResponseReturnValue
+from psycopg.errors import UniqueViolation
 
 from instancer.backend import Challenge, ChallengeMetadata, ChallengeTag
-from instancer.config import config
 
-blueprint = Blueprint("admin", __name__, url_prefix="/admin")
+blueprint = Blueprint("admin_challenges", __name__, url_prefix="/challenges")
+
 
 container_schema = {
     "type": "object",
@@ -122,16 +123,16 @@ config_schema = {
 }
 
 
-@blueprint.before_request
-def check_admin_team() -> ResponseReturnValue | None:
-    """Only allow access for the admin team."""
+@blueprint.route("/<chall_id>", methods=["GET"])
+def get_challenge(chall_id: str) -> ResponseReturnValue:
+    info = Challenge.fetch_info(chall_id)
+    if info is not None:
+        return {**{"status": "ok"}, **info.get_json()}
+    else:
+        return {"status": "not_found", "msg": "Challenge not found"}
 
-    if g.session["team_id"] != str(config.admin_team_id):
-        return {"status": "not_admin", "msg": "only admins can use the admin API"}, 403
-    return None
 
-
-@blueprint.route("/challenges/upload", methods=["POST"])
+@blueprint.route("/create", methods=["POST"])
 def challenge_upload() -> ResponseReturnValue:
     """Create a new challenge."""
 
@@ -151,6 +152,7 @@ def challenge_upload() -> ResponseReturnValue:
         )
         categories = request.form["categories"].split()
         other_tags = request.form["tags"].split()
+        replace_existing = request.form.get("replace_existing", False)
     except (KeyError, ValueError):
         return {"status": "invalid_request", "msg": "invalid request"}, 400
     if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", chall_id):
@@ -213,7 +215,142 @@ def challenge_upload() -> ResponseReturnValue:
     tags = [ChallengeTag(category, is_category=True) for category in categories] + [
         ChallengeTag(tag, is_category=False) for tag in other_tags
     ]
-    Challenge.create(chall_id, per_team, cfg, lifetime, boot_time, metadata, tags)
+
+    try:
+        Challenge.create(chall_id, per_team, cfg, lifetime, boot_time, metadata, tags)
+    except UniqueViolation:
+        if replace_existing:
+            Challenge.delete(chall_id)
+            Challenge.create(
+                chall_id, per_team, cfg, lifetime, boot_time, metadata, tags
+            )
+        else:
+            return {
+                "status": "duplicate_challenge_id",
+                "msg": "Challenge already exists, and replace_existing is false or not set.",
+            }
+        return {"status": "ok", "msg": "Replaced older challenge"}
+
+    return {"status": "ok"}
+
+
+@blueprint.route("/<chall_id>", methods=["PUT"])
+def challenge_update(chall_id: str) -> ResponseReturnValue:
+    """Update a challenge."""
+
+    # per team challenges need to be deleted and re-created?
+    # per_team = request.form.get("per_team")
+
+    # challenge does not have cfg
+    # cfg = request.form.get("cfg")
+    try:
+        lifetime = request.form.get("lifetime", type=int)
+    except ValueError:
+        return {"status": "invalid_lifetime", "msg": "lifetime must be a number"}, 400
+    name = request.form.get("name")
+    description = request.form.get("description")
+    author = request.form.get("author")
+
+    categories = request.form.get("categories")
+    other_tags = request.form.get("tags")
+
+    if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", chall_id):
+        return {
+            "status": "invalid_id",
+            "msg": "challenge id must match [a-z0-9]([-a-z0-9]{,62}[a-z0-9]",
+        }, 400
+
+    chall = Challenge.fetch(chall_id, "test")
+    if chall is None:
+        return {"status": "invalid_chall_id", "msg": "invalid challenge ID"}, 404
+
+    if lifetime is not None:
+        lifetime = int(lifetime)
+
+        if lifetime <= 0:
+            return {
+                "status": "invalid_lifetime",
+                "msg": "lifetime must be positive",
+            }, 400
+
+        chall.lifetime = lifetime
+
+    # if cfg is not None:
+    #     cfg = json.loads(cfg)
+
+    #     try:
+    #         jsonschema.validate(cfg, config_schema)
+    #     except jsonschema.ValidationError as e:
+    #         return {"status": "invalid_config", "msg": str(e)}, 400
+
+    #     tcp = cfg.get("tcp", {})
+    #     http = cfg.get("http", {})
+
+    #     for contname in tcp:
+    #         if contname not in cfg["containers"]:
+    #             return {
+    #                 "status": "invalid_tcp",
+    #                 "msg": f"exposed port for non-existent container {contname!r}",
+    #             }
+    #     for contname in http:
+    #         if contname not in cfg["containers"]:
+    #             return {
+    #                 "status": "invalid_tcp",
+    #                 "msg": f"exposed subdomain for non-existent container {contname!r}",
+    #             }
+    #     for contname, container in cfg["containers"].items():
+    #         if not re.fullmatch(r"[a-z0-9]([-a-z0-9]{,62}[a-z0-9])?", contname):
+    #             return {
+    #                 "status": "invalid_container",
+    #                 "msg": f"container id {contname!r} does not match [a-z0-9]([-a-z0-9]{{,62}}[a-z0-9]",
+    #             }, 400
+    #         if contname.endswith("-instancer-external"):
+    #             return {
+    #                 "status": "invalid_container",
+    #                 "msg": "suffix -instancer-external is reserved and cannot be used for containers",
+    #             }, 400
+    #         exposed_ports = tcp.get(contname, [])
+    #         container_ports = container.get("ports", [])
+    #         private_ports = [x for x in container_ports if x not in exposed_ports]
+    #         if (
+    #             len(exposed_ports) > 0
+    #             and len(private_ports) > 0
+    #             and not container.get("multiService", False)
+    #         ):
+    #             return {
+    #                 "status": "invalid_container",
+    #                 "msg": f"container {contname!r} has both exposed and private ports but multiService is not true",
+    #             }, 400
+
+    #     chall.cfg = cfg
+
+    if name is not None:
+        chall.metadata.name = name
+
+    if description is not None:
+        chall.metadata.description = description
+
+    if author is not None:
+        chall.metadata.author = author
+
+    if not (categories is None and other_tags is None):
+        new_tags = []
+        if categories is not None:
+            categories_list = categories.split()
+            new_tags += [
+                ChallengeTag(category, is_category=True) for category in categories_list
+            ]
+
+        if other_tags is not None:
+            other_tags_list = other_tags.split()
+            new_tags += [
+                ChallengeTag(tag, is_category=False) for tag in other_tags_list
+            ]
+
+        chall.replace_tags(new_tags)
+
+    chall.update()
+
     return {"status": "ok"}
 
 
@@ -226,9 +363,3 @@ def challenge_delete(chall_id: str) -> ResponseReturnValue:
         if Challenge.delete(chall_id)
         else ({"status": "invalid_chall_id", "msg": "invalid challenge ID"}, 400)
     )
-
-
-@blueprint.route("/request_info", methods=["GET"])
-def request_info() -> ResponseReturnValue:
-    """Returns information about a request. Used for debugging"""
-    return {"status": "ok", "headers": str(request.headers)}
