@@ -785,8 +785,8 @@ class Challenge(ABC):
                             ing,
                         )
 
-                pol_interns = kclient.V1NetworkPolicy(
-                    metadata=kclient.V1ObjectMeta(name="interns", labels=common_labels),
+                pol_intrans = kclient.V1NetworkPolicy(
+                    metadata=kclient.V1ObjectMeta(name="intrans", labels=common_labels),
                     spec=kclient.V1NetworkPolicySpec(
                         pod_selector=kclient.V1LabelSelector(),
                         policy_types=["Ingress", "Egress"],
@@ -844,6 +844,11 @@ class Challenge(ABC):
                                 _from=[
                                     kclient.V1NetworkPolicyPeer(
                                         ip_block=kclient.V1IPBlock(cidr="0.0.0.0/0")
+                                    ),
+                                    # according to cilium, pods don't have IPs!
+                                    # https://github.com/cilium/cilium/issues/31961
+                                    kclient.V1NetworkPolicyPeer(
+                                        namespace_selector=kclient.V1LabelSelector()
                                     )
                                 ]
                             )
@@ -880,7 +885,7 @@ class Challenge(ABC):
                 print(
                     f"[*] Making network policies under namespace {self.namespace}..."
                 )
-                napi.create_namespaced_network_policy(self.namespace, pol_interns)
+                napi.create_namespaced_network_policy(self.namespace, pol_intrans)
                 napi.create_namespaced_network_policy(self.namespace, pol_ingress)
                 napi.create_namespaced_network_policy(self.namespace, pol_egress)
         except LockException:
