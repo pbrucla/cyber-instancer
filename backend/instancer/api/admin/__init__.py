@@ -3,10 +3,9 @@ from flask.typing import ResponseReturnValue
 
 from instancer.config import config
 
-from . import challenges
+from . import challenge, challenges
 
 blueprint = Blueprint("admin", __name__, url_prefix="/admin")
-blueprint.register_blueprint(challenges.blueprint)
 
 
 @blueprint.before_request
@@ -16,6 +15,10 @@ def check_admin_team() -> ResponseReturnValue | None:
     if g.session["team_id"] != str(config.admin_team_id):
         return {"status": "not_admin", "msg": "only admins can use the admin API"}, 403
     return None
+
+
+blueprint.register_blueprint(challenges.blueprint)
+blueprint.register_blueprint(challenge.blueprint)
 
 
 @blueprint.route("/request_info", methods=["GET"])
