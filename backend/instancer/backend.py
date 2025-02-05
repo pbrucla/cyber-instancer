@@ -778,7 +778,7 @@ class Challenge(ABC):
                             },
                         }
                         crdapi.create_namespaced_custom_object(
-                            "traefik.containo.us",
+                            "traefik.io",
                             "v1alpha1",
                             self.namespace,
                             "ingressroutes",
@@ -957,7 +957,7 @@ class Challenge(ABC):
                 port_mappings[serv.metadata.name, port.port] = port.node_port
 
         ingresses = crdapi.list_namespaced_custom_object(
-            "traefik.containo.us", "v1alpha1", self.namespace, "ingressroutes"
+            "traefik.io", "v1alpha1", self.namespace, "ingressroutes"
         )["items"]
         for ing in ingresses:
             http_ports = json.loads(

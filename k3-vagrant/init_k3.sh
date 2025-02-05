@@ -86,7 +86,7 @@ rules:
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses", "networkpolicies"]
     verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["traefik.containo.us"]
+  - apiGroups: ["traefik.io"]
     resources: ["ingressroutes"]
     verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
 ---
