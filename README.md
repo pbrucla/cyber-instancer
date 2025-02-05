@@ -136,6 +136,18 @@ spec:
     secretName: wildcard-domain
 ```
 
+- Just in case the cluster runs out of space, we want to make sure the instancer has priority over other tasks. As such, we can add a priority class:
+
+```
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 1000000
+globalDefault: false
+description: "This priority class should be used for infra pods"
+```
+
 - If running the instancer on the cluster (recommended), create a namespace for it, a service account, a cluster role for the service account, and a cluster role binding to bind the role to the service account:
 
 ```yaml
@@ -221,6 +233,7 @@ spec:
       labels:
         app.kubernetes.io/name: cyber-instancer
     spec:
+      priorityClassName: high-priority
       serviceAccountName: cyber-instancer
       containers:
         - name: app
@@ -264,6 +277,7 @@ spec:
       labels:
         app.kubernetes.io/name: redis
     spec:
+      priorityClassName: high-priority
       containers:
         - name: redis
           image: redis:7-alpine
@@ -294,6 +308,7 @@ spec:
       labels:
         app.kubernetes.io/name: cyber-instancer-worker
     spec:
+      priorityClassName: high-priority
       serviceAccountName: cyber-instancer
       containers:
         - name: app
