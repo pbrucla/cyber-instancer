@@ -51,7 +51,7 @@ ALTER TABLE ONLY public.challenges
     ADD CONSTRAINT challenges_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY public.tags
-    ADD CONSTRAINT tags_pkey PRIMARY KEY (challenge_id, name);
+    ADD CONSTRAINT tags_pkey PRIMARY KEY (challenge_id, name, is_category);
 
 ALTER TABLE ONLY public.tags
     ADD CONSTRAINT tags_challenge_id_fkey FOREIGN KEY (challenge_id) REFERENCES public.challenges(id);
