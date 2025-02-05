@@ -289,7 +289,7 @@ systemctl restart k3s
 sleep 20
 
 kubectl apply -f - <<EOF
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: cyber-instancer-ingress-ip
@@ -305,7 +305,7 @@ spec:
         - name: cyber-instancer-service
           port: 8080
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: cyber-instancer-ingress-fakedomain
