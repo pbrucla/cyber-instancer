@@ -125,7 +125,7 @@ spec:
 - Create a traefik `TLSStore` using the certificate:
 
 ```yaml
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: TLSStore
 metadata:
   name: default
@@ -167,7 +167,7 @@ rules:
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses", "networkpolicies"]
     verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
-  - apiGroups: ["traefik.containo.us"]
+  - apiGroups: ["traefik.io"]
     resources: ["ingressroutes"]
     verbs: ["list", "get", "watch", "create", "update", "patch", "delete"]
 ---
@@ -352,7 +352,7 @@ spec:
     - protocol: TCP
       port: 6379
 ---
-apiVersion: traefik.containo.us/v1alpha1
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: cyber-instancer-ingress
