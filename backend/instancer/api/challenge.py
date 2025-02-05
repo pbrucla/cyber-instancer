@@ -91,7 +91,8 @@ def challenge_deploy() -> ResponseReturnValue:
             "status": "temporarily_unavailable",
             "msg": "This challenge is temporarily unavailable. Try again in a few moments.",
         }, 503
-    except Exception:
+    except Exception as e:
+        print("ERROR when deploying challenge:", e, flush=True)
         return {
             "status": "unknown_error",
             "msg": "An unexpected error occurred.",
