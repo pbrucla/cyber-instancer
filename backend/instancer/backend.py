@@ -849,7 +849,7 @@ class Challenge(ABC):
                                     # https://github.com/cilium/cilium/issues/31961
                                     kclient.V1NetworkPolicyPeer(
                                         namespace_selector=kclient.V1LabelSelector()
-                                    )
+                                    ),
                                 ]
                             )
                         ],
