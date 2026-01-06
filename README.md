@@ -346,12 +346,11 @@ metadata:
 spec:
   selector:
     app.kubernetes.io/name: cyber-instancer
-  type: NodePort
+  type: ClusterIP
   ports:
     - protocol: TCP
       port: 8080
       targetPort: 8080
-      nodePort: 31337
 ---
 apiVersion: v1
 kind: Service
