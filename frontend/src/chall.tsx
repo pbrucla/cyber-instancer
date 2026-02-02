@@ -115,7 +115,7 @@ const Chall = () => {
 
         // Function to make the API call
         const makeDeployRequest = (captcha_token: string | null = null) => {
-            const requestBody: any = {};
+            const requestBody: {captcha_token?: string} = {};
             if (captcha_token) {
                 requestBody.captcha_token = captcha_token;
             }
@@ -174,7 +174,12 @@ const Chall = () => {
                 });
         } else {
             // If recaptcha is not configured, make request directly
-            makeDeployRequest();
+            makeDeployRequest().catch((err) => {
+                console.error("Deploy request failed", err);
+                updateArr(index, disableButton, setDisableButton, false);
+                updateArr(index, isShaking, setIsShaking, true);
+                setErrorMsg("Deployment failed. Please try again.");
+            });
         }
     }
 
@@ -251,7 +256,7 @@ const Chall = () => {
                 if (typeof portmap[key] === "string") {
                     outPorts.push(createLink(portmap[key] as string));
                 } else {
-                    outPorts.push("nc " + deployment.host + " " + (portmap[key] as string));
+                    outPorts.push("nc " + deployment.host + " " + String(portmap[key]));
                 }
             });
             setPorts(outPorts);
