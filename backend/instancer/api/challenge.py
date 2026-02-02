@@ -85,10 +85,6 @@ def challenge_deploy() -> ResponseReturnValue:
                 "status": "invalid_captcha_token",
                 "msg": "Invalid CAPTCHA token",
             }, 498
-    else:
-        # If recaptcha is not configured, we still expect a body but don't require captcha_token
-        if not body:
-            body = {}
 
     try:
         g.chall.start()
