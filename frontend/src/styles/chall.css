@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     justify-content: left;
-    align-items: left;
+    align-items: flex-start;
     padding-left: 5.5rem;
     padding-top: 1.25rem;
 }
@@ -12,8 +12,8 @@
     margin-top: 5vh;
     display: flex;
     flex-direction: row;
-    flex-wrarp: wrap;
-    align-items: left;
+    flex-wrap: wrap;
+    align-items: flex-start;
     justify-content: flex-start;
 }
 
@@ -40,7 +40,6 @@
     border: none;
     font-size: large;
     transition: box-shadow 0.3s ease;
-
     width: 15rem;
 }
 .deploy.OFF {
