@@ -4,6 +4,7 @@ import {useState, useEffect, useRef} from "react";
 import {useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {ReactComponent as Timer} from "./images/timer.svg";
 import {ReactComponent as Stop} from "./images/stop.svg";
+import ReactMarkdown from "react-markdown";
 
 import {
     SingleChallengeType,
@@ -299,7 +300,9 @@ const Chall = () => {
                         <b>Description:</b>
                     </div>
                     <br></br>
-                    <div style={{overflowWrap: "break-word", color: "#f0f0f0", fontSize: "20px"}}>{description}</div>
+                    <div id="description" style={{overflowWrap: "break-word", color: "#f0f0f0", fontSize: "20px"}}>
+                        <ReactMarkdown>{description}</ReactMarkdown>
+                    </div>
                     <br></br>
                 </div>
             </>
