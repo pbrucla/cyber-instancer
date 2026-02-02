@@ -45,8 +45,13 @@ def verify_captcha_token(token: str | None) -> bool:
     """Verifies captcha token via Google re-captcha
 
     Returns True if verified and False otherwise
+    If recaptcha is not configured, returns True (bypasses verification)
     """
-    if token == None:
+    # If recaptcha is not configured, bypass verification
+    if config.recaptcha_secret is None:
+        return True
+
+    if token is None:
         return False
 
     try:
