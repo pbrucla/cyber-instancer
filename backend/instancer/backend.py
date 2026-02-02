@@ -304,7 +304,8 @@ class Challenge(ABC):
         # Delete any per-team cached challenges
         pattern = f"ports:ci-{chall_id}*"
         to_delete_keys = rclient.keys(pattern)
-        rclient.delete(*to_delete_keys)
+        if len(to_delete_keys) > 0:
+            rclient.delete(*to_delete_keys)
 
 
     @staticmethod
