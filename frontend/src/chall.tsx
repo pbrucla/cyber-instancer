@@ -283,7 +283,7 @@ const Chall = () => {
 
         challInfo = (
             <>
-                <div style={{position: "relative", width: "90%"}}>
+                <div>
                     <div style={{overflowWrap: "break-word", color: "#d0d0d0", fontSize: "30px"}}>{cat}</div>
                     <br></br>
                     <div style={{overflowWrap: "break-word", color: "#ffffff", fontSize: "45px", fontWeight: "bold"}}>

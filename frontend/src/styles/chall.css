@@ -4,8 +4,7 @@
     flex-direction: column;
     justify-content: left;
     align-items: flex-start;
-    padding-left: 5.5rem;
-    padding-top: 1.25rem;
+    padding: 1.25rem 5.5rem;
 }
 
 .deployment-info {
@@ -15,10 +14,7 @@
     flex-wrap: wrap;
     align-items: flex-start;
     justify-content: flex-start;
-}
-
-.deployment-info > * {
-    margin: 0 0 2rem 2rem;
+    gap: 2rem;
 }
 
 .stat.ON {
@@ -90,10 +86,6 @@
     cursor: wait;
 }
 
-.deploy.OFF.extend {
-    margin-left: 2rem;
-}
-
 .buttonsvg {
     height: 2rem;
 }
@@ -110,7 +102,6 @@
     min-width: 12rem;
     height: 3rem;
     border: 2px solid #ffe81a;
-    margin: 0 0 2rem 2rem;
     padding: 0 1rem;
     display: flex;
     justify-content: center;
