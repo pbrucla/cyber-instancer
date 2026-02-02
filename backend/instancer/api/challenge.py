@@ -75,14 +75,20 @@ def challenge_deploy() -> ResponseReturnValue:
     Starts or renews a team's challenge deployment.
     """
     body = request.json
-    if not body or "captcha_token" not in body:
-        return {"status": "bad_request", "msg": "CAPTCHA token is required"}, 400
+    # Only require captcha token if recaptcha is configured
+    if config.recaptcha_secret is not None:
+        if not body or "captcha_token" not in body:
+            return {"status": "bad_request", "msg": "CAPTCHA token is required"}, 400
 
-    if not verify_captcha_token(body["captcha_token"]):
-        return {
-            "status": "invalid_captcha_token",
-            "msg": "Invalid CAPTCHA token",
-        }, 498
+        if not verify_captcha_token(body["captcha_token"]):
+            return {
+                "status": "invalid_captcha_token",
+                "msg": "Invalid CAPTCHA token",
+            }, 498
+    else:
+        # If recaptcha is not configured, we still expect a body but don't require captcha_token
+        if not body:
+            body = {}
 
     try:
         g.chall.start()

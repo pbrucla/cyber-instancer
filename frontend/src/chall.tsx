@@ -113,48 +113,60 @@ const Chall = () => {
         if (disableButton[index]) return;
         updateArr(index, disableButton, setDisableButton, true);
 
-        captchaRef.current
-            ?.executeAsync()
-            .then((captcha_token) =>
-                fetch("/api/challenge/" + ID + "/deploy", {
-                    headers: {
-                        Authorization: `Bearer ${accountToken as string}`,
-                        "Content-Type": "application/json",
-                    },
-                    method: "POST",
-                    body: JSON.stringify({
-                        captcha_token: captcha_token,
-                    }),
-                })
-            )
-            .then((res) => res.json())
-            .then((challengeDeployment: ChallengeDeploymentType) => {
-                if (challengeDeployment.status === "ok") {
-                    setDeployment(challengeDeployment.deployment);
-                    setErrorMsg(null);
-                    if (index === 1) setExtended(true);
-                } else if (challengeDeployment.status === "temporarily_unavailable") {
-                    console.error("Deployment error");
-                    updateArr(index, isShaking, setIsShaking, true);
-                    setErrorMsg("Challenge temporarily unavailable. Please wait a few moments and try again.");
-                } else if (challengeDeployment.status === "invalid_captcha_token") {
-                    updateArr(index, isShaking, setIsShaking, true);
-                    setErrorMsg("CAPTCHA is required");
-                } else if (
-                    challengeDeployment.status === "missing_authorization" ||
-                    challengeDeployment.status === "invalid_token"
-                ) {
-                    navigate("/login");
-                } else {
-                    console.error("An unexpected API response was received");
-                }
-                updateArr(index, disableButton, setDisableButton, false);
-                captchaRef.current?.reset();
+        // Function to make the API call
+        const makeDeployRequest = (captcha_token: string | null = null) => {
+            const requestBody: any = {};
+            if (captcha_token) {
+                requestBody.captcha_token = captcha_token;
+            }
+
+            return fetch("/api/challenge/" + ID + "/deploy", {
+                headers: {
+                    Authorization: `Bearer ${accountToken as string}`,
+                    "Content-Type": "application/json",
+                },
+                method: "POST",
+                body: JSON.stringify(requestBody),
             })
-            .catch((err) => {
-                console.error(err);
-                updateArr(index, disableButton, setDisableButton, false);
-            });
+                .then((res) => res.json())
+                .then((challengeDeployment: ChallengeDeploymentType) => {
+                    if (challengeDeployment.status === "ok") {
+                        setDeployment(challengeDeployment.deployment);
+                        setErrorMsg(null);
+                        if (index === 1) setExtended(true);
+                    } else if (challengeDeployment.status === "temporarily_unavailable") {
+                        console.error("Deployment error");
+                        updateArr(index, isShaking, setIsShaking, true);
+                        setErrorMsg("Challenge temporarily unavailable. Please wait a few moments and try again.");
+                    } else if (challengeDeployment.status === "invalid_captcha_token") {
+                        updateArr(index, isShaking, setIsShaking, true);
+                        setErrorMsg("CAPTCHA is required");
+                    } else if (
+                        challengeDeployment.status === "missing_authorization" ||
+                        challengeDeployment.status === "invalid_token"
+                    ) {
+                        navigate("/login");
+                    } else {
+                        console.error("An unexpected API response was received");
+                    }
+                    updateArr(index, disableButton, setDisableButton, false);
+                    captchaRef.current?.reset();
+                })
+                .catch((err) => {
+                    console.error(err);
+                    updateArr(index, disableButton, setDisableButton, false);
+                });
+        };
+
+        // If recaptcha is configured, execute captcha first
+        if (config.recaptcha_site_key) {
+            captchaRef.current
+                ?.executeAsync()
+                .then((captcha_token) => makeDeployRequest(captcha_token));
+        } else {
+            // If recaptcha is not configured, make request directly
+            makeDeployRequest();
+        }
     }
 
     function updateArr(
@@ -282,7 +294,9 @@ const Chall = () => {
         if (deployed && deployment) {
             buttons = (
                 <div className="deployment-info">
-                    <ReCaptcha sitekey={config.recaptcha_site_key || ""} ref={captchaRef} size="invisible" />
+                    {config.recaptcha_site_key && (
+                        <ReCaptcha sitekey={config.recaptcha_site_key} ref={captchaRef} size="invisible" />
+                    )}
                     {chall.is_shared ? (
                         <>
                             <button className="deploy ON shared">
@@ -326,7 +340,9 @@ const Chall = () => {
             buttons = (
                 <>
                     <div className="deployment-info">
-                        <ReCaptcha sitekey={config.recaptcha_site_key || ""} ref={captchaRef} size="invisible" />
+                        {config.recaptcha_site_key && (
+                            <ReCaptcha sitekey={config.recaptcha_site_key} ref={captchaRef} size="invisible" />
+                        )}
                         <button
                             className={"deploy OFF" + (isShaking[0] ? " shake-animation" : "")}
                             onClick={() => deployChallenge(0)}
