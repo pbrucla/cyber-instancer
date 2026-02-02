@@ -12,9 +12,13 @@
     margin-top: 5vh;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrarp: wrap;
     align-items: left;
     justify-content: flex-start;
+}
+
+.deployment-info > * {
+    margin: 0 0 2rem 2rem;
 }
 
 .stat.ON {
