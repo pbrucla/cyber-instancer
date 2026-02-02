@@ -301,6 +301,12 @@ class Challenge(ABC):
         """Forcibly flushes the cache of a challenge."""
         rclient.delete("all_challs", f"chall:{chall_id}", f"chall_tags:{chall_id}")
 
+        # Delete any per-team cached challenges
+        pattern = f"ports:ci-{chall_id}*"
+        to_delete_keys = rclient.keys(pattern)
+        rclient.delete(*to_delete_keys)
+
+
     @staticmethod
     def create(
         chall_id: str,
