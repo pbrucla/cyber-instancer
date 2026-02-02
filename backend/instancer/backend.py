@@ -307,7 +307,6 @@ class Challenge(ABC):
         if len(to_delete_keys) > 0:
             rclient.delete(*to_delete_keys)
 
-
     @staticmethod
     def create(
         chall_id: str,
@@ -641,8 +640,6 @@ class Challenge(ABC):
                     )
 
                 namespace_made = True
-                rclient.zadd("expiration", {self.namespace: expiration})
-                rclient.zadd("boot_time", {self.namespace: curtime})
                 for depname, container in self.containers.items():
                     print(
                         f"[*] Making deployment {depname} under namespace {self.namespace}..."
@@ -653,13 +650,15 @@ class Challenge(ABC):
                     }
                     pod_labels = {
                         **labels,
-                        "instancer.acmcyber.com/has-egress": "true"
-                        if container.get("hasEgress", True)
-                        else "false",
-                        "instancer.acmcyber.com/has-ingress": "true"
-                        if len(self.exposed_ports.get(depname, [])) > 0
-                        or len(self.http_ports.get(depname, [])) > 0
-                        else "false",
+                        "instancer.acmcyber.com/has-egress": (
+                            "true" if container.get("hasEgress", True) else "false"
+                        ),
+                        "instancer.acmcyber.com/has-ingress": (
+                            "true"
+                            if len(self.exposed_ports.get(depname, [])) > 0
+                            or len(self.http_ports.get(depname, [])) > 0
+                            else "false"
+                        ),
                     }
                     dep = kclient.V1Deployment(
                         metadata=kclient.V1ObjectMeta(
@@ -739,9 +738,11 @@ class Challenge(ABC):
                         )
                         serv = kclient.V1Service(
                             metadata=kclient.V1ObjectMeta(
-                                name=servname + "-instancer-external"
-                                if multiservice and serv_spec.type == "NodePort"
-                                else servname,
+                                name=(
+                                    servname + "-instancer-external"
+                                    if multiservice and serv_spec.type == "NodePort"
+                                    else servname
+                                ),
                                 labels={
                                     **common_labels,
                                     "instancer.acmcyber.com/container-name": servname,
@@ -895,6 +896,8 @@ class Challenge(ABC):
                 napi.create_namespaced_network_policy(self.namespace, pol_intrans)
                 napi.create_namespaced_network_policy(self.namespace, pol_ingress)
                 napi.create_namespaced_network_policy(self.namespace, pol_egress)
+                rclient.zadd("expiration", {self.namespace: expiration})
+                rclient.zadd("boot_time", {self.namespace: curtime})
         except LockException:
             raise ResourceUnavailableError(f"namespace {self.namespace} is locked")
         except Exception:
@@ -915,10 +918,10 @@ class Challenge(ABC):
 
         print(f"[*] Deleting namespace {namespace}...")
         try:
-            capi.delete_namespace(namespace, grace_period_seconds=0)
             rclient.zrem("expiration", namespace)
             rclient.zrem("boot_time", namespace)
             rclient.delete(f"ports:{namespace}")
+            capi.delete_namespace(namespace, grace_period_seconds=0)
         except ApiException as e:
             if e.status == 404:
                 print(

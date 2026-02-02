@@ -255,9 +255,9 @@ def profile() -> ResponseReturnValue:
         "status": "ok",
         "username": username,
         "email": email,
-        "login_url": "Login via the platform"
-        if config.rctf_mode
-        else t.get_login_url(),
+        "login_url": (
+            "Login via the platform" if config.rctf_mode else t.get_login_url()
+        ),
     }
 
 
