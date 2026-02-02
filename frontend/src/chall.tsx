@@ -150,7 +150,9 @@ const Chall = () => {
                         console.error("An unexpected API response was received");
                     }
                     updateArr(index, disableButton, setDisableButton, false);
-                    captchaRef.current?.reset();
+                    if (config.recaptcha_site_key) {
+                        captchaRef.current?.reset();
+                    }
                 })
                 .catch((err) => {
                     console.error(err);
@@ -162,7 +164,14 @@ const Chall = () => {
         if (config.recaptcha_site_key) {
             captchaRef.current
                 ?.executeAsync()
-                .then((captcha_token) => makeDeployRequest(captcha_token));
+                .then((captcha_token) => makeDeployRequest(captcha_token))
+                .catch((err) => {
+                    console.error("reCAPTCHA execution failed", err);
+                    updateArr(index, disableButton, setDisableButton, false);
+                    updateArr(index, isShaking, setIsShaking, true);
+                    setErrorMsg("Failed to verify CAPTCHA. Please try again.");
+                    captchaRef.current?.reset();
+                });
         } else {
             // If recaptcha is not configured, make request directly
             makeDeployRequest();

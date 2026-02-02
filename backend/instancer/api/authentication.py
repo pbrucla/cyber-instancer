@@ -51,7 +51,7 @@ def verify_captcha_token(token: str | None) -> bool:
     if config.recaptcha_secret is None:
         return True
 
-    if token == None:
+    if token is None:
         return False
 
     try:
