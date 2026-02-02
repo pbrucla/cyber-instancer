@@ -985,7 +985,7 @@ class Challenge(ABC):
         for (cont, cport), port in port_mappings.items():
             cache_entry[f"{cont}:{cport}"] = port
         t = int(time())
-        if exp > t:
+        if cache_entry and exp > t:
             rclient.set(cache_key, json.dumps(cache_entry), ex=exp - t)
 
         return DeploymentInfo(exp, start_time_stamp, port_mappings)
