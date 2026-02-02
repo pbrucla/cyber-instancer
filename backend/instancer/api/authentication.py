@@ -50,7 +50,7 @@ def verify_captcha_token(token: str | None) -> bool:
     # If recaptcha is not configured, bypass verification
     if config.recaptcha_secret is None:
         return True
-        
+
     if token == None:
         return False
 
