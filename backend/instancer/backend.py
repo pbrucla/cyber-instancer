@@ -836,6 +836,27 @@ class Challenge(ABC):
                                     kclient.V1NetworkPolicyPort(port=53, protocol="UDP")
                                 ],
                             ),
+                            # allow egress to traefik
+                            kclient.V1NetworkPolicyEgressRule(
+                                to=[
+                                    kclient.V1NetworkPolicyPeer(
+                                        namespace_selector=kclient.V1LabelSelector(
+                                            match_expressions=[
+                                                kclient.V1LabelSelectorRequirement(
+                                                    key="kubernetes.io/metadata.name",
+                                                    operator="In",
+                                                    values=["default", "traefik"],
+                                                )
+                                            ]
+                                        ),
+                                        pod_selector=kclient.V1LabelSelector(
+                                            match_labels={
+                                                "app.kubernetes.io/name": "traefik"
+                                            }
+                                        ),
+                                    )
+                                ],
+                            ),
                         ],
                     ),
                 )
