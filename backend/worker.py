@@ -1,10 +1,11 @@
 from time import sleep, time
 
+from kubernetes.client.exceptions import ApiException
+
 # For some reason mypy says kclient isn't explicitly exported even though it is
 from instancer.backend import Challenge, kclient  # type: ignore[attr-defined]
 from instancer.config import config, rclient
 from instancer.lock import Lock
-from kubernetes.client.exceptions import ApiException
 
 
 def main() -> None:

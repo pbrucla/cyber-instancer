@@ -1,5 +1,5 @@
-import secrets
 import sqlite3
+import secrets
 
 con = sqlite3.connect("./login.db")
 cur = con.cursor()

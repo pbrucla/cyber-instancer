@@ -1,5 +1,6 @@
 from flask import Blueprint, g, request
 from flask.typing import ResponseReturnValue
+
 from instancer.config import config
 
 from . import account, admin, authentication, challenge, challenges

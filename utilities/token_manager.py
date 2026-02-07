@@ -155,11 +155,13 @@ if __name__ == "__main__":
         instancer_url = "http://localhost:8080"
 
     while True:
-        print("""What would you like to do? Type the number:
+        print(
+            """What would you like to do? Type the number:
         1 - Generate a login URL
         2 - Decode a login URL
         3 - Exit
-        """)
+        """
+        )
         choice = input()
         if choice == "1":
             token_type = int(input("Token type (leave empty if unsure): ") or "16")
