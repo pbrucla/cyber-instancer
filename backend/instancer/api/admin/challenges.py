@@ -3,9 +3,8 @@ import re
 import jsonschema
 from flask import Blueprint, json, request
 from flask.typing import ResponseReturnValue
-from psycopg.errors import UniqueViolation
-
 from instancer.backend import Challenge, ChallengeMetadata, ChallengeTag
+from psycopg.errors import UniqueViolation
 
 blueprint = Blueprint("admin_challenges", __name__, url_prefix="/challenges")
 

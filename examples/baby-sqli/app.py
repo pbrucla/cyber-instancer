@@ -1,6 +1,7 @@
-from flask import Flask, request, Response
 import os
 import sqlite3
+
+from flask import Flask, Response, request
 
 flag = os.environ.get("FLAG", "flag{placeholder_flag}")
 

@@ -4,7 +4,6 @@ import secrets
 import time
 import urllib.parse
 import uuid
-
 # Login token handling
 from base64 import b64decode, b64encode
 from dataclasses import dataclass
@@ -14,9 +13,8 @@ from uuid import uuid4
 from Crypto.Cipher import AES
 from flask import Blueprint, g, request
 from flask.typing import ResponseReturnValue
-from psycopg.errors import IntegrityError
-
 from instancer.config import config, connect_pg
+from psycopg.errors import IntegrityError
 
 from . import authentication
 

@@ -10,13 +10,12 @@ from hashlib import sha256
 from time import time
 from typing import Any, Self
 
+from instancer.config import config, connect_pg, rclient
+from instancer.lock import Lock, LockException
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 from kubernetes.client.exceptions import ApiException
 from psycopg.types.json import Jsonb
-
-from instancer.config import config, connect_pg, rclient
-from instancer.lock import Lock, LockException
 
 CHALL_CACHE_TIME = 3600
 

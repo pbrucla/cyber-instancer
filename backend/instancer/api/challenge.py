@@ -3,7 +3,6 @@ from typing import Any
 
 from flask import Blueprint, g, request
 from flask.typing import ResponseReturnValue
-
 from instancer.backend import Challenge, ChallengeTag, ResourceUnavailableError
 from instancer.config import config
 

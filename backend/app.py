@@ -3,7 +3,6 @@ import os
 import redis
 from flask import Flask, render_template, request
 from flask.typing import ResponseReturnValue
-
 from instancer import api, backend
 from instancer.config import config, connect_pg
 from instancer.config import rclient as r

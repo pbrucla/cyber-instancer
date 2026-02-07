@@ -2,9 +2,8 @@ import re
 
 from flask import Blueprint, request
 from flask.typing import ResponseReturnValue
-from psycopg.errors import UniqueViolation
-
 from instancer.backend import Challenge, ChallengeTag
+from psycopg.errors import UniqueViolation
 
 blueprint = Blueprint("admin_challenge", __name__, url_prefix="/challenge")
 
@@ -13,7 +12,6 @@ from typing import Any
 
 from flask import Blueprint, g, request
 from flask.typing import ResponseReturnValue
-
 from instancer.backend import Challenge, ChallengeTag, ResourceUnavailableError
 from instancer.config import config
 
