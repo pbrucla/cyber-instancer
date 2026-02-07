@@ -1,6 +1,7 @@
 import flask
 from flask import Blueprint, g
 from flask.typing import ResponseReturnValue
+
 from instancer.backend import Challenge
 from instancer.config import config
 
