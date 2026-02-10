@@ -150,7 +150,9 @@ def challenge_upload() -> ResponseReturnValue:
             description=request.form["description"],
             author=request.form["author"],
         )
-        categories = [s for x in request.form["categories"].split(",") if (s := x.strip())]
+        categories = [
+            s for x in request.form["categories"].split(",") if (s := x.strip())
+        ]
         other_tags = [s for x in request.form["tags"].split(",") if (s := x.strip())]
         replace_existing = request.form.get("replace_existing", False)
     except (KeyError, ValueError):
